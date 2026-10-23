@@ -1,0 +1,12 @@
+{
+  "name": "getdon24",
+  "private": true,
+  "type": "module",
+  "description": "받는돈 - 세금 떼고 진짜 받는 돈 계산기 (getdon24.com)",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "update": "node scripts/update-lotto.mjs && node scripts/update-pension.mjs",
+    "test": "node scripts/test.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
