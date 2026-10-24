@@ -131,6 +131,13 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
     'minwage-check': '최저임금법 제6조에 따라 사용자는 최저임금액 이상의 임금을 지급해야 하며, 위반 시 3년 이하의 징역 또는 2천만원 이하의 벌금에 처해질 수 있습니다. 최저임금 산입범위는 최저임금법 시행규칙에서 정합니다.',
     'daily-worker-tax': '소득세법 제129조 및 제134조에 따라 일용근로소득은 1일 15만원을 공제한 금액에 6% 세율을 적용하고 55% 세액공제 후 원천징수합니다.'
   };
+  // 3.3% 원천징수: 소득세·지방소득세 모두 10원 미만 버림, 소득세 1,000원 미만은 소액부징수
+  const tax33 = g => { const it=Math.floor(g*0.03/10)*10; return it<1000 ? {it:0,lt:0} : {it, lt:Math.floor(it*0.1/10)*10}; };
+  const wht33 = g => { const t=tax33(g); return {g, it:t.it, lt:t.lt, net:g-t.it-t.lt}; };
+  const rev33 = net => { let g=Math.round(net/0.967), t=tax33(g);
+    if(t.it===0) return {g:net, it:0, lt:0, net};
+    for(let k=0;k<3&&g-t.it-t.lt!==net;k++){ g+=net-(g-t.it-t.lt); t=tax33(g); }
+    return {g, it:t.it, lt:t.lt, net}; };
   const calcs = [
     { id:'salary', label:'연봉 실수령액', title:'연봉 실수령액 계산기', group:'employee',
       fields:[{id:'annual',label:'연봉(세전, 세금·보험 떼기 전 총액)',unit:'만원',placeholder:'예: 4000'},{id:'nonTaxable',label:'비과세액(식대 등, 월)',unit:'만원',placeholder:'예: 20'},{id:'dependents',label:'부양가족 수(본인 포함)',unit:'명',placeholder:'예: 1'}],
@@ -222,11 +229,12 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
         const dailyEq=Math.min(wh/5,8), allowance=dailyEq*hourly;
         return { main: won(allowance)+' / 주', sub:[['환산 1일 근무시간',dailyEq.toFixed(1)+'시간'],['주당 근무시간',wh+'시간']], related: RELATED['weekly-rest'] };
       }},
-    { id:'freelance', label:'프리랜서 3.3%', title:'프리랜서 원천징수 계산기', group:'freelance',
-      fields:[{id:'contract',label:'계약금액(세전)',unit:'원',placeholder:'예: 2000000'}],
+    { id:'freelance', label:'프리랜서 3.3% 계산기 (계약금액·실수령액 양방향)', title:'프리랜서 3.3% 계산기 (계약금액·실수령액 양방향)', group:'freelance', dual:true,
+      disclaimerExtra:'원천징수 소득세가 1,000원 미만이면 떼지 않아요(소액부징수). 세금은 10원 미만을 버리고 떼요.',
+      fields:[{id:'contract',label:'계약 금액',unit:'원',placeholder:'예: 2000000'},{id:'net',label:'실제 받은 금액',unit:'원',placeholder:'예: 1934000'}],
       run(v){
-        const c=+v.contract||0, wht=c*0.033;
-        return { main: won(c-wht)+' 실수령', sub:[['원천징수세액(3.3%)',won(wht)],['계약금액',won(c)]], related: RELATED.freelance };
+        const r=wht33(+v.contract||0);
+        return { main: won(r.net)+' 실수령', sub:[['소득세 3%',won(r.it)],['지방소득세 0.3%',won(r.lt)],['계약금액',won(r.g)]], related: RELATED.freelance };
       }},
     { id:'tax-refund', label:'환급액 예측', title:'5월 종합소득세 환급액 예측기', group:'freelance',
       disclaimerExtra:'업종별 경비율은 예시값이며 실제 국세청 고시 업종코드·경비율과 다를 수 있어요. 정확한 값은 홈택스에서 확인하세요.',
@@ -446,12 +454,11 @@ function penAll(){return `<div class="crumb">${A('pension','','연금복권')} �
 let lottoF='win',calcG='all',boardQ='';const CV={};
 const GL={all:'전체',employee:'직장인',freelance:'프리랜서·N잡',employer:'사업주',lotto:'복권'};
 const LCALC=[{id:'lotto-tax',label:'로또 실수령액',title:'로또 당첨금 실수령액 계산기',group:'lotto'},{id:'pension-tax',label:'연금복권 실수령액',title:'연금복권720+ 실수령액 계산기',group:'lotto'}];
-calcs.splice(calcs.findIndex(c=>c.id=='freelance')+1,0,{id:'freelance-reverse',label:'3.3% 거꾸로 계산',title:'3.3% 역산 계산기 (받은 돈 → 세전 금액)',group:'freelance',
+calcs.splice(calcs.findIndex(c=>c.id=='freelance')+1,0,{id:'freelance-reverse',label:'3.3% 거꾸로 계산',title:'3.3% 역산 계산기 (받은 돈 → 세전 금액)',group:'freelance',dual:true,hidden:true,
  disclaimerExtra:'원천징수 소득세가 1,000원 미만이면 떼지 않아요(소액부징수). 이 경우 받은 금액이 곧 세전 금액이에요.',
- fields:[{id:'net',label:'통장에 실제로 들어온 금액',unit:'원',placeholder:'예: 1934000'}],
- run(v){const net=+v.net||0;let g=Math.round(net/0.967);let it=Math.floor(g*0.03/10)*10,lt=Math.floor(it*0.1/10)*10;
-  if(it<1000){g=net;it=0;lt=0}else{for(let k=0;k<3&&g-it-lt!==net;k++){g+=net-(g-it-lt);it=Math.floor(g*0.03/10)*10;lt=Math.floor(it*0.1/10)*10}}
-  return{main:won(g)+' (세전 금액)',sub:[['받은 금액',won(net)],['소득세 3%',won(it)],['지방소득세 0.3%',won(lt)],['떼인 세금 합계',won(it+lt)],['계산식','받은 금액 ÷ 0.967'],['확인: 세전 − 세금',won(g-it-lt)]],related:RELATED.freelance}}});
+ fields:[{id:'net',label:'실제로 받은 금액',unit:'원',placeholder:'예: 1934000'},{id:'contract',label:'계약 금액',unit:'원',placeholder:'예: 2000000'}],
+ run(v){const r=rev33(+v.net||0);
+  return{main:won(r.g)+' (세전 금액)',sub:[['받은 금액',won(r.net)],['소득세 3%',won(r.it)],['지방소득세 0.3%',won(r.lt)],['떼인 세금 합계',won(r.it+r.lt)],['계산식','받은 금액 ÷ 0.967'],['확인: 세전 − 세금',won(r.g-r.it-r.lt)]],related:RELATED.freelance}}});
 const CARD_TIER=[['연매출 3억 이하 (영세)',0.40,0.15],['3억~5억 (중소1)',1.00,0.75],['5억~10억 (중소2)',1.15,0.90],['10억~30억 (중소3)',1.45,1.15],['30억 초과 (일반, 평균 예시)',2.00,1.50]];
 calcs.push({id:'card-fee',label:'카드 결제 입금액',title:'카드 결제 입금액·수수료·부가세 계산기',group:'employer',
  disclaimerExtra:'카드 수수료율은 금융위원회가 정한 우대수수료율 기준이고, 30억 초과 일반가맹점은 카드사별로 달라 평균 예시값을 썼어요. 입금은 보통 결제 후 2~3영업일 뒤에 들어와요.',
@@ -484,28 +491,56 @@ CALC_FAQ['weekly-rest'].push({q:'주 14시간 근무면 주휴수당이 없나�
 LEGAL_BASIS['split-14h']='근로기준법 제18조 제3항에 따라 4주 평균 1주 소정근로시간이 15시간 미만인 초단시간근로자에게는 주휴일(제55조)과 연차(제60조)가 적용되지 않고, 근로자퇴직급여 보장법 제4조에 따라 퇴직급여도 적용되지 않아요.';
 CALC_FAQ['freelance-reverse']=[{q:'왜 0.967로 나누나요?',a:'3.3%를 떼고 받으면 세전 금액의 96.7%가 들어와요. 그래서 받은 금액을 0.967로 나누면 세전 금액이 나와요.'},{q:'원 단위가 조금 안 맞아요',a:'세금은 10원 미만을 버리고 떼기 때문에 몇 원 차이가 날 수 있어요. 지급명세서나 홈택스의 지급 내역이 가장 정확해요.'}];
 LEGAL_BASIS['freelance-reverse']=LEGAL_BASIS.freelance;
+CALC_FAQ.freelance=(CALC_FAQ.freelance||[]).concat(CALC_FAQ['freelance-reverse']);
 CALC_FAQ['lotto-tax']=[{q:'3억이 넘으면 전부 33%인가요?',a:'아니요. 3억원까지는 22%, 3억원을 넘는 부분에만 33%가 붙어요.'},{q:'다른 소득과 합쳐서 신고해야 하나요?',a:'복권 당첨금은 분리과세라 지급할 때 세금을 떼면 끝나요. 따로 신고하지 않아요.'}];
 LEGAL_BASIS['lotto-tax']='소득세법에 따라 복권 당첨금은 기타소득으로 분리과세돼요. 3억원까지 20%, 초과분 30%의 소득세에 지방소득세 10%가 더해지고, 200만원 이하는 과세하지 않아요.';
 CALC_FAQ['pension-tax']=[{q:'1등이면 2등도 같이 받나요?',a:'같은 번호를 1~5조 모두 샀다면 나머지 4장은 2등이 돼요. 계산기의 1등+2등 4장을 눌러 보세요.'},{q:'매달 세금을 떼나요?',a:'네, 매달 지급할 때 22%를 떼고 들어와요.'}];
 LEGAL_BASIS['pension-tax']='연금복권 당첨금도 기타소득으로 분리과세돼요. 매달 지급액에 소득세 20%와 지방소득세 2%를 합친 22%를 원천징수해요.';
-const ALLC=()=>calcs.concat(LCALC);
+const ALLC=()=>calcs.concat(LCALC),VIS=()=>ALLC().filter(c=>!c.hidden);
 function openCalc(id){go('c-'+id)}
-function home(){const M=[['calc','계산기',`${ALLC().length}종`,'연봉 실수령액, 퇴직금, 주휴수당, 3.3% 역산까지'],['lotto','로또',`${DRAWS[0].r}회`,'당첨번호, 1등 지역·명당, 실수령액'],['pension','연금복권',`${PEN[0][0]}회`,'당첨번호, 1등+2등 동시 당첨 실수령액'],['guide','게시판',`글 ${allPosts().length}개`,'급여·세금·복권 정보글']];
+function home(){const M=[['calc','계산기',`${VIS().length}종`,'연봉 실수령액, 퇴직금, 주휴수당, 3.3% 역산까지'],['lotto','로또',`${DRAWS[0].r}회`,'당첨번호, 1등 지역·명당, 실수령액'],['pension','연금복권',`${PEN[0][0]}회`,'당첨번호, 1등+2등 동시 당첨 실수령액'],['guide','게시판',`글 ${allPosts().length}개`,'급여·세금·복권 정보글']];
  return `<section class="intro"><h1 class="hero-h1">세금 떼고<br><span>진짜 받는 돈</span>을 계산해요</h1><p>월급부터 퇴직금, 프리랜서 3.3%, 로또와 연금복권 당첨금까지. 세전 금액만 넣으면 통장에 들어올 금액을 바로 보여 드려요.</p></section>
  <div class="menu2">${M.map(m=>A(m[0],'',`<span class="mt"><b>${m[1]}</b><small>${m[2]}</small></span><span class="md">${m[3]}</span>`)).join('')}</div>${foot}`}
-function calcList(){const list=ALLC().filter(c=>calcG=='all'||c.group==calcG);
- return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${ALLC().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
+function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
+ return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
  ${list.map(c=>A('c-'+c.id,'gcard',`<div><b class="one">${c.label}</b><small class="one">${GL[c.group]} · ${c.title}</small></div><span>›</span>`)).join('')}${foot}`}
 const ex=f=>f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
+const H1={freelance:'3.3% 계산기','freelance-reverse':'3.3% 역산 계산기'};
+const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
+ 'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
+ severance:'최근 3개월 급여와 근속기간으로 퇴직금을 계산해요','annual-leave':'남은 연차를 돈으로 바꾸면 얼마인지 계산해요',
+ 'weekly-rest':'시급과 주당 근무시간으로 주휴수당을 계산해요',freelance:'계약 금액에서도, 받은 금액에서도 3.3%를 바로 계산해요',
+ 'freelance-reverse':'통장에 들어온 금액에서 계약 금액을 거꾸로 계산해요','tax-refund':'작년 소득으로 5월 환급액을 미리 가늠해 봐요',
+ 'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이 최저임금을 지키는지 바로 확인해요',
+ 'daily-worker-tax':'일당과 근무일수로 일용직 세금과 실제 지급액을 계산해요','card-fee':'카드 결제액에서 수수료와 부가세를 뺀 남는 돈이에요',
+ 'split-14h':'주 15시간 1명 고용과 14시간 쪼개기를 비교해요'};
+// 천 단위 쉼표: CV 에는 쉼표 없는 숫자만 저장하고 화면에만 쉼표를 붙인다
+const fmtN=x=>{const [i,...d]=String(x).replace(/[^\d.]/g,'').split('.');return i.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(d.length?'.'+d.join(''):'')};
+function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.slice(0,el.selectionStart).replace(/[^\d.]/g,'').length,f=fmtN(raw);el.value=f;
+ let n=0,p=0;while(p<f.length&&n<left){if(/[\d.]/.test(f[p]))n++;p++}try{el.setSelectionRange(p,p)}catch(e){}
+ CV[id][fid]=raw;runC(id)}
+const fieldHtml=(id,f,big)=>`<label class="fl2" for="f-${f.id}">${f.label}</label>`+(f.type=='select'?`<select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(CV[id][f.id])?'selected':''}>${o.label}</option>`).join('')}</select>`:`<div class="inw"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][f.id])}" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="un">${f.unit}</span>`:''}</div>`)+(f.hint?`<p class="note">${f.hint}</p>`:'');
+const rwH=(a,b)=>`<div class="rw"><span>${a}</span><b>${b}</b></div>`;
+function resHtml(id){const c=calcs.find(x=>x.id==id),v=CV[id];
+ if(c.dual){const a=wht33(+v.contract||0),b=rev33(+v.net||0),rows=r=>rwH('소득세 3%',won(r.it))+rwH('지방소득세 0.3%',won(r.lt))+rwH('총 3.3% 금액',won(r.it+r.lt));
+  return{contract:rows(a)+`<hr class="cdiv"><div class="cl">실제 수령액</div><div class="cmain">${won(a.net)}</div>`,net:rows(b)+`<hr class="cdiv"><div class="cl">계약 금액 (역산)</div><div class="cmain">${won(b.g)}</div>`}}
+ let r;try{r=c.run(v)}catch(e){return '<p class="note">숫자를 확인해 주세요.</p>'}
+ return (r.sub||[]).map(([a,b])=>b===null?`<b class="rh">${a}</b>`:b===''?`<p class="note">${a}</p>`:rwH(a,b)).join('')+`<hr class="cdiv"><div class="cmain">${r.main}</div>`+(c.disclaimerExtra?`<p class="note">${c.disclaimerExtra}</p>`:'')}
+function relHtml(id){const c=calcs.find(x=>x.id==id);let r;try{r=c.run(CV[id])}catch(e){return ''}
+ const l=(r.related||[]).filter(s=>ARTICLES[s]);return l.length?`<p class="note" style="margin-top:14px">관련 글</p>`+l.map(s=>A('b-'+s,'rl one',`${ARTICLES[s].title} ›`)).join(''):''}
 function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
  return `<div class="crumb">${A('calc','','계산기')} › 복권</div><h1 class="h1">${L.title}</h1><div class="panel">${id=='lotto-tax'?taxPanel():penCalc()}</div><details class="dt"><summary>법적 근거·이용 안내</summary><p>${LEGAL_BASIS[id]}</p></details><h2>자주 묻는 질문</h2><div>${faq}</div>${foot}`}
  const c=calcs.find(x=>x.id==id);if(!c)return calcList();CV[id]=CV[id]||{};c.fields.forEach(f=>{if(CV[id][f.id]==null)CV[id][f.id]=ex(f)});
- const fi=c.fields.map(f=>`<label class="fl2" for="f-${f.id}">${f.label}${f.unit?` <small>(${f.unit})</small>`:''}</label>`+(f.type=='select'?`<select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(CV[id][f.id])?'selected':''}>${o.label}</option>`).join('')}</select>`:`<input id="f-${f.id}" inputmode="decimal" value="${CV[id][f.id]}" oninput="CV['${id}']['${f.id}']=this.value;runC('${id}')">`)+(f.hint?`<p class="note">${f.hint}</p>`:'')).join('');
  const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- return `<div class="crumb">${A('calc','','계산기')} › ${GL[c.group]}</div><h1 class="h1">${c.title}</h1><div class="panel">${fi}<p class="note">예시 값이 들어 있어요. 내 숫자로 바꾸면 바로 계산돼요.</p></div>
- <h2>결과</h2><div class="panel" id="cres"></div>${LEGAL_BASIS[id]?`<details class="dt"><summary>법적 근거·이용 안내</summary><p>${LEGAL_BASIS[id]}</p></details>`:''}${faq?`<h2>자주 묻는 질문</h2><div class="dtw">${faq}</div>`:''}${foot}`}
-function runC(id){const c=calcs.find(x=>x.id==id),el=document.getElementById('cres');if(!el)return;let r;try{r=c.run(CV[id])}catch(e){el.innerHTML='<p class="note">숫자를 확인해 주세요.</p>';return}
- el.innerHTML=`<div class="cmain">${r.main}</div>`+(r.sub||[]).map(([a,b])=>b===null?`<b style="margin-top:8px">${a}</b>`:b===''?`<p class="note">${a}</p>`:`<div class="res"><span>${a}</span><b>${b}</b></div>`).join('')+(c.disclaimerExtra?`<p class="note">${c.disclaimerExtra}</p>`:'')+((r.related||[]).filter(s=>ARTICLES[s]).length?`<p class="note" style="margin-top:6px">관련 글</p>`+r.related.filter(s=>ARTICLES[s]).map(s=>A('b-'+s,'rl one',`${ARTICLES[s].title} ›`)).join(''):'')}
+ const head=`<div class="crumb">${A('calc','','계산기')} › ${GL[c.group]}</div><header class="chead"><h1>${H1[id]||c.title}</h1><p>${LEAD[id]||'숫자만 넣으면 바로 계산돼요'}</p></header>`;
+ let body;
+ if(c.dual){const R=resHtml(id),F=k=>c.fields.find(f=>f.id==k),ttl={contract:'계약 금액 기준',net:'실제 수령액 기준'},
+  card=k=>`<section class="ccard"><h2 class="ct">${ttl[k]}</h2>${fieldHtml(id,F(k))}<div id="dres-${k}">${R[k]}</div></section>`;
+  body=`<div class="dual">${(id=='freelance-reverse'?['net','contract']:['contract','net']).map(card).join('')}</div><p class="note" style="margin-top:10px">예시 값이 들어 있어요. 내 숫자로 바꾸면 바로 계산돼요.</p>${c.disclaimerExtra?`<p class="note" style="margin-top:4px">${c.disclaimerExtra}</p>`:''}`}
+ else body=`<section class="ccard">${c.fields.map(f=>fieldHtml(id,f)).join('')}<div id="cres">${resHtml(id)}</div></section><p class="note" style="margin-top:10px">예시 값이 들어 있어요. 내 숫자로 바꾸면 바로 계산돼요.</p>`;
+ return head+body+`<div id="crel">${relHtml(id)}</div>${LEGAL_BASIS[id]?`<details class="dt"><summary>법적 근거·이용 안내</summary><p>${LEGAL_BASIS[id]}</p></details>`:''}${faq?`<h2>자주 묻는 질문</h2><div class="dtw">${faq}</div>`:''}${foot}`}
+function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>{const e=document.getElementById(i);if(e)e.innerHTML=h};
+ if(c.dual){const R=resHtml(id);set('dres-contract',R.contract);set('dres-net',R.net)}else set('cres',resHtml(id));set('crel',relHtml(id))}
 const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);

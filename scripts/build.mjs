@@ -22,7 +22,7 @@ const TODAY = process.env.BUILD_DATE || new Date(Date.now() + 9 * 3600e3).toISOS
 
 // ---------- 게시글 ----------
 function parsePost(slug, text) {
-  const m = text.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  const m = text.replace(/\r\n/g, '\n').match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/); // 윈도우 CRLF 줄바꿈 대응
   if (!m) throw new Error(`${slug}.md: 맨 위 --- 머리말이 없어요`);
   const meta = {};
   for (const line of m[1].split('\n')) {
@@ -161,7 +161,7 @@ const CALC_DESC = {
   severance: '최근 3개월 급여와 근속기간을 넣으면 법정 퇴직금을 계산해요. 1일 평균임금 계산 과정까지 보여 드려요.',
   'annual-leave': '통상시급과 남은 연차 일수를 넣으면 받을 수 있는 연차수당을 계산해요.',
   'weekly-rest': '시급과 주당 근무시간을 넣으면 주휴수당을 계산해요. 주 15시간 미만이면 대상이 아닌 이유도 알려 드려요.',
-  freelance: '프리랜서 계약금액에서 3.3% 원천징수를 떼면 실제로 얼마를 받는지 계산해요.',
+  freelance: '프리랜서 3.3% 계산기예요. 계약 금액을 넣으면 실수령액을, 받은 금액을 넣으면 계약 금액을 바로 계산해요. 소득세 3%와 지방소득세 0.3%를 나눠 보여 드려요.',
   'freelance-reverse': '3.3% 떼고 통장에 들어온 금액만 넣으면 세전 금액과 떼인 세금을 거꾸로 계산해요. 10원 단위 버림까지 맞춰 정확히 역산해요.',
   'tax-refund': '작년 프리랜서 소득과 업종을 넣으면 5월 종합소득세 신고 때 환급받을지, 더 낼지 미리 계산해요.',
   'labor-cost': '직원 월급을 넣으면 사업주가 부담하는 4대보험까지 더한 실제 총 인건비를 계산해요.',
@@ -269,9 +269,9 @@ await emit('home', {
 });
 
 // 계산기
-const calcs = JSON.parse(call('JSON.stringify(ALLC().map(c=>({id:c.id,title:c.title,label:c.label})))'));
+const calcs = JSON.parse(call('JSON.stringify(ALLC().map(c=>({id:c.id,title:c.title,label:c.label,hidden:!!c.hidden})))'));
 const faqs = JSON.parse(call('JSON.stringify(CALC_FAQ)'));
-await emit('calc', { title: `실수령액 계산기 모음 ${calcs.length}종 | ${site}`, desc: `연봉, 4대보험, 퇴직금, 주휴수당, 3.3% 역산, 카드 수수료, 로또 세금까지 ${calcs.length}가지 계산기를 한곳에 모았어요.` });
+await emit('calc', { title: `실수령액 계산기 모음 ${calcs.filter((c) => !c.hidden).length}종 | ${site}`, desc: `연봉, 4대보험, 퇴직금, 주휴수당, 3.3% 계산·역산, 카드 수수료, 로또 세금까지 ${calcs.filter((c) => !c.hidden).length}가지 계산기를 한곳에 모았어요.` });
 for (const c of calcs) {
   const faq = faqs[c.id] || [];
   await emit(`c-${c.id}`, {
