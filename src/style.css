@@ -5,7 +5,7 @@ body{margin:0;font-size:14px;line-height:1.5}img{max-width:100%}[hidden]{display
 a{color:inherit}
 /* layout: 앱처럼 쓰는 단일 컬럼 + 하단 고정 탭바, 한 줄 원칙(줄바꿈 대신 말줄임) */
 :root{--bg:#fff;--soft:#f3f4f8;--fg:#15161c;--mute:#7c8090;--line:#e8e9ef;--navy:#1e2a5a;--navy2:#141c44;--gold:#e7b84a;--red:#e03b3b;--blue:#2f6fd6;--o1:#ff8a3d;--card:#fff;
---ink2:#1e2a5a;--disp:"Black Han Sans","Noto Sans KR",sans-serif;--body:"Noto Sans KR",system-ui,sans-serif}
+--ink2:#1e2a5a;--disp:"Pretendard",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;--body:"Pretendard",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101219;--soft:#1c2030;--fg:#eceef4;--mute:#9a9fb0;--line:#262a37;--card:#181b25;--blue:#6b9bff;--ink2:#e7b84a;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#101219;--soft:#1c2030;--fg:#eceef4;--mute:#9a9fb0;--line:#262a37;--card:#181b25;--blue:#6b9bff;--ink2:#e7b84a;color-scheme:dark}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);word-break:keep-all}
@@ -13,7 +13,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wrap{max-width:520px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg)}
 .hd{display:flex;align-items:center;justify-content:space-between;height:52px}
-.logo{font-family:var(--disp);font-size:26px}.logo b{color:var(--red);font-weight:400}
+.logo{font-family:var(--disp);font-size:26px;font-weight:800;letter-spacing:-.5px}.logo b{color:var(--red);font-weight:inherit}
 .hd small{color:var(--mute);font-size:12px;white-space:nowrap}
 .one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 h2{font-size:18px;font-weight:900;margin:26px 0 10px;white-space:nowrap;display:flex;justify-content:space-between;align-items:baseline}
@@ -25,7 +25,7 @@ h2 small{font-size:12px;color:var(--mute);font-weight:500}
 .ball.sm{width:28px;height:28px;font-size:12px}
 .y{background:#e8b923;color:#2a2105;text-shadow:none}.b{background:#3a73d8}.r{background:#e2544f}.g{background:#9aa0ac}.n{background:#3aab62}
 .plus{font-weight:900;font-size:16px;opacity:.7;flex:none}
-.big{font-family:var(--disp);font-size:clamp(28px,9vw,42px);color:var(--gold);margin:12px 0 2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.big{font-family:var(--disp);font-weight:800;font-size:clamp(28px,9vw,42px);color:var(--gold);margin:12px 0 2px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .meta{font-size:clamp(11px,3.3vw,14px);opacity:.85;white-space:nowrap}
 .cdw{margin-top:16px;display:flex;justify-content:center;align-items:center;gap:8px;font-size:13px;white-space:nowrap}
 .cd{font:900 18px var(--body);font-variant-numeric:tabular-nums;background:#fff;color:var(--navy2);border-radius:8px;padding:4px 10px}
@@ -76,11 +76,11 @@ button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:8px;padding-bottom:2px}.chips button{flex:none;border:1px solid var(--line);border-radius:99px;padding:7px 13px;background:var(--card);color:var(--fg);font:500 13px var(--body);cursor:pointer}.chips button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .fl2{font-size:13px;font-weight:700}.fl2 small{color:var(--mute);font-weight:400}
 select{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font:15px var(--body);background:var(--bg);color:var(--fg)}
-.cmain{font-family:var(--disp);font-size:clamp(20px,6vw,28px);color:var(--blue)}
+.cmain{font-family:var(--disp);font-weight:800;font-size:clamp(20px,6vw,28px);color:var(--blue)}
 .rl{display:block;color:var(--blue);font-size:14px;cursor:pointer;padding:4px 0}
 details{border-bottom:1px solid var(--line);padding:12px 0;font-size:14px}details summary{cursor:pointer;font-weight:700}details p{color:var(--mute);line-height:1.7;margin:8px 0 0}
 .dt{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:12px}
-.intro{padding-block:22px 6px}.intro h1{font-family:var(--disp);font-weight:400;font-size:clamp(28px,8.4vw,38px);line-height:1.2;margin:0 0 12px;letter-spacing:-.5px}.intro h1 span{color:var(--red)}.intro p{color:var(--mute);font-size:15px;line-height:1.7;margin:0;max-width:34em}
+.intro{padding-block:22px 6px}.intro h1{font-family:var(--disp);font-weight:800;font-size:clamp(28px,8.4vw,38px);line-height:1.2;margin:0 0 12px;letter-spacing:-.5px}.intro h1 span{color:var(--red)}.intro p{color:var(--mute);font-size:15px;line-height:1.7;margin:0;max-width:34em}
 .menu2{display:grid;gap:10px;margin-top:22px}.menu2 button{display:grid;gap:4px;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:16px;padding:16px 18px;cursor:pointer;font-family:var(--body)}
 .menu2 .mt{display:flex;justify-content:space-between;align-items:baseline}.menu2 b{font-size:18px;font-weight:900}.menu2 small{color:var(--mute);font-size:13px}.menu2 .md{color:var(--mute);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .menu2 button:first-child{background:var(--navy);border-color:var(--navy);color:#fff}.menu2 button:first-child small,.menu2 button:first-child .md{color:#ffffffb3}
@@ -122,3 +122,7 @@ a.more{display:inline-block}
 @media (max-width:540px){.dual{grid-template-columns:1fr}}
 @media (min-width:760px){.dual{margin-inline:-150px}}
 .dual .inw{padding:8px 12px}.dual .inw input{font-size:clamp(22px,6vw,26px)}.dual .ccard .cmain{font-size:clamp(22px,6vw,26px)}
+.crow{display:flex;align-items:center;gap:10px}.cl2{flex:none;font-size:15px;font-weight:800;white-space:nowrap}.crow .inw{flex:1;min-width:0}
+.hl{color:var(--red);font-weight:inherit}
+.rbig{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rbig span{font-size:16px;font-weight:800;white-space:nowrap}
+.rbig>b{font:800 clamp(24px,7vw,30px)/1.25 var(--body);color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}

@@ -11,7 +11,7 @@
 | 주소 | 내용 |
 |---|---|
 | `/` | 홈 |
-| `/calc/` , `/calc/{계산기}/` | 계산기 목록, 계산기 16종 (예: `/calc/freelance-reverse/`) |
+| `/calc/` , `/calc/{계산기}/` | 계산기 목록, 계산기 16종 (예: `/calc/freelance/`) |
 | `/lotto/` , `/lotto/{회차}/` , `/lotto/all/` | 로또 최신 회차, 회차별 상세, 전체 목록 |
 | `/pension/` , `/pension/all/` | 연금복권 |
 | `/blog/` , `/blog/{글}/` | 게시판 |

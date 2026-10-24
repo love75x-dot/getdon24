@@ -121,8 +121,8 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta name="theme-color" content="#1e2a5a">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="icon" href="/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png">
 ${verify}
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <link rel="stylesheet" href="/assets/style.css?v=${assets.css}">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 ${ads}${ga}
@@ -161,8 +161,7 @@ const CALC_DESC = {
   severance: '최근 3개월 급여와 근속기간을 넣으면 법정 퇴직금을 계산해요. 1일 평균임금 계산 과정까지 보여 드려요.',
   'annual-leave': '통상시급과 남은 연차 일수를 넣으면 받을 수 있는 연차수당을 계산해요.',
   'weekly-rest': '시급과 주당 근무시간을 넣으면 주휴수당을 계산해요. 주 15시간 미만이면 대상이 아닌 이유도 알려 드려요.',
-  freelance: '프리랜서 3.3% 계산기예요. 계약 금액을 넣으면 실수령액을, 받은 금액을 넣으면 계약 금액을 바로 계산해요. 소득세 3%와 지방소득세 0.3%를 나눠 보여 드려요.',
-  'freelance-reverse': '3.3% 떼고 통장에 들어온 금액만 넣으면 세전 금액과 떼인 세금을 거꾸로 계산해요. 10원 단위 버림까지 맞춰 정확히 역산해요.',
+  freelance: '프리랜서 3.3% 계산기예요. 계약 금액을 넣으면 실수령액을, 받은 금액을 넣으면 계약 금액을 거꾸로 계산해요. 소득세 3%와 지방소득세 0.3%를 나눠 보여 주고, 10원 단위 버림과 소액부징수까지 반영해요.',
   'tax-refund': '작년 프리랜서 소득과 업종을 넣으면 5월 종합소득세 신고 때 환급받을지, 더 낼지 미리 계산해요.',
   'labor-cost': '직원 월급을 넣으면 사업주가 부담하는 4대보험까지 더한 실제 총 인건비를 계산해요.',
   'minwage-check': '월급과 월 근무시간을 넣으면 최저임금 위반인지 바로 확인해요. 주휴시간 포함 기준으로 계산해요.',
@@ -175,8 +174,7 @@ const CALC_DESC = {
 
 // 검색 결과 <title>: 짧은 화면 이름 뒤에 검색어를 붙인다 (없으면 화면 이름 그대로)
 const CALC_SEO = {
-  freelance: '3.3% 계산기 - 프리랜서 원천징수 실수령액',
-  'freelance-reverse': '3.3% 역산 계산기 - 실수령액으로 계약금액 구하기',
+  freelance: '3.3% 계산기 - 프리랜서 원천징수·역산',
   insurance: '4대보험 계산기 - 국민연금·건강보험·고용보험 공제액',
   'tax-refund': '종합소득세 환급 계산기 - 5월 프리랜서 환급액 예측',
   'labor-cost': '인건비 계산기 - 사업주 4대보험 포함 총 인건비',
@@ -336,6 +334,8 @@ await emit('privacy', { title: `개인정보처리방침 | ${site}`, desc: '받�
 await writeFile(join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map(([r, d]) => `<url><loc>${SITE}${pathOf(r)}</loc><lastmod>${d}</lastmod></url>`).join('\n')}\n</urlset>\n`);
 await writeFile(join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 if (config.adsenseClient) await writeFile(join(DIST, 'ads.txt'), `google.com, ${config.adsenseClient.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
+// 옛 주소는 합쳐진 계산기로 301 이동
+await writeFile(join(DIST, '_redirects'), '/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
 await writeFile(join(DIST, '_headers'), `/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  Cache-Control: public, max-age=86400\n`);
 await writeFile(join(DIST, 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>받는돈 정보 게시판</title><link>${SITE}/blog/</link><description>급여·세금·복권 정보글</description>\n${posts.slice(0, 30).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}${pathOf('b-' + p.slug)}</link><guid>${SITE}${pathOf('b-' + p.slug)}</guid><pubDate>${new Date(p.date + 'T09:00:00+09:00').toUTCString()}</pubDate><description>${esc(p.excerpt)}</description></item>`).join('\n')}\n</channel></rss>\n`);
 
