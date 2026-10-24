@@ -130,3 +130,4 @@ a.more{display:inline-block}
 /* 하단 탭: 본문과 같은 최대 폭(760px) 가운데, 5칸 같은 간격 */
 .tabbar{padding-left:max(6px,env(safe-area-inset-left,0px),calc((100% - 760px)/2));padding-right:max(6px,env(safe-area-inset-right,0px),calc((100% - 760px)/2))}
 .tabbar a{flex:1 1 0;min-width:0}
+.gcard.lg{padding:20px 0}.gcard.lg b{font-size:20px;font-weight:800}.gcard.lg span{font-size:24px;color:var(--mute)}

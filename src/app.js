@@ -496,7 +496,7 @@ function home(){const M=[['calc','계산기',`${VIS().length}종`,'연봉 실수
  <div class="menu2">${M.map(m=>A(m[0],'',`<span class="mt"><b>${m[1]}</b><small>${m[2]}</small></span><span class="md">${m[3]}</span>`)).join('')}</div>${foot}`}
 function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
  return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
- ${list.map(c=>A('c-'+c.id,'gcard',`<div><b class="one">${c.label}</b><small class="one">${GL[c.group]}${LEAD[c.id]?' · '+LEAD[c.id]:''}</small></div><span>›</span>`)).join('')}${foot}`}
+ ${list.map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}${foot}`}
 const ex=f=>f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
  'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
