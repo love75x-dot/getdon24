@@ -24,12 +24,16 @@ const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
   const POSTS=(window.DATA&&window.DATA.posts)||[];
   const ARTICLES={};POSTS.forEach(p=>ARTICLES[p.slug]=p);
   const DEFAULT_RELATED = {
-    salary: ['insurance-rate-2026','salary-illusion'],
+    salary: ['salary-4000-breakdown','insurance-rate-2026','salary-illusion'],
     insurance: ['pension-estimate','health-local-insured'],
-    severance: ['severance-irp'],
+    severance: ['severance-calc-example','severance-irp'],
     'annual-leave': ['annual-leave-deadline'],
-    freelance: ['freelance-may-tax','freelance-refund'],
+    freelance: ['freelance-33-calc-guide','freelance-may-tax','freelance-refund'],
     'weekly-rest': ['weekly-rest-15h','minimum-wage-calc'],
+    'minwage-check': ['minimum-wage-calc','weekly-rest-15h'],
+    'daily-worker-tax': ['daily-worker-tax-guide'],
+    'card-fee': ['card-fee-deposit-guide'],
+    'split-14h': ['split-14h-labor-cost','weekly-rest-15h'],
     'tax-refund': ['freelance-may-tax','samjjeomsam-fee-compare','refund-negative-tips']
   };
 const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
@@ -315,7 +319,7 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
             ['시급 차액',(diff>=0?'+':'')+won(diff)],
             ['입력한 월 근무시간',hours+'시간']
           ],
-          related: [] };
+          related: RELATED['minwage-check'] };
       }},
     { id:'daily-worker-tax', label:'일용직 근로소득세', title:'일용직 근로소득세 계산기', group:'employer',
       disclaimerExtra:'일용근로소득세는 동일 고용주에게 3개월(건설공사는 1년) 미만 계속 근로하는 세법상 일용근로자에게 적용되는 계산식이에요. 4대보험(고용·산재보험은 일용직도 의무가입 대상인 경우가 많아요) 공제분은 이 계산에 포함되지 않았습니다.',
@@ -346,7 +350,7 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
             [`${days}일 근무 시 실지급 합계`,won(netDaily*days)],
             [`${days}일 근무 시 원천징수세액 합계`,won(totalTaxDaily*days)]
           ],
-          related: [] };
+          related: RELATED['daily-worker-tax'] };
       }}
   ];
 const DATA=window.DATA||{draws:[],pension:[],places:{},config:{}};
@@ -466,7 +470,7 @@ calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수�
   supply=Math.round(a/1.1),vat=a-supply,credit=+v.biz?0:Math.floor(a*0.013),keep=dep-vat+credit;
   return{main:won(dep)+' 통장 입금',sub:[['결제 금액',won(a)],[`카드 수수료 (${rate}%)`,'− '+won(fee)],['통장에 들어오는 돈',won(dep)],
    ['나중에 낼 부가세 (결제액의 1/11)','− '+won(vat)],[+v.biz?'카드매출 세액공제 (법인은 없음)':'카드매출 세액공제 (1.3%)','+ '+won(credit)],['세금까지 빼고 실제로 남는 돈',won(keep)],
-   ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:[]}}});
+   ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:RELATED['card-fee']}}});
 CALC_FAQ['card-fee']=[{q:'통장에 들어올 때 부가세도 빠지나요?',a:'아니요. 카드사는 수수료만 빼고 보내요. 결제 금액에 들어 있는 부가세(1/11)는 나중에 부가세 신고 때 사업자가 직접 내요.'},{q:'카드매출 세액공제는 누구나 받나요?',a:'직전 연도 공급가액 10억원 이하 개인사업자가 받아요. 연간 한도가 있고 법인은 받을 수 없어요.'},{q:'간이과세자는 어떻게 되나요?',a:'간이과세자는 업종별 부가가치율을 적용해 부가세가 훨씬 적어요. 이 계산기는 일반과세자 기준이라 부가세가 실제보다 크게 나와요.'}];
 LEGAL_BASIS['card-fee']='여신전문금융업법에 따른 영세·중소가맹점 우대수수료율과 부가가치세법(세율 10%), 신용카드 등 매출세액공제(부가가치세법 제46조)를 기준으로 한 추정치예요.';
 calcs.push({id:'split-14h',label:'쪼개기 고용 계산기',title:'쪼개기 고용 계산기',group:'employer',
@@ -481,7 +485,7 @@ calcs.push({id:'split-14h',label:'쪼개기 고용 계산기',title:'쪼개기 �
    [`B. ${n}명이 주 ${parts.map(x=>+x.toFixed(1)).join('·')}시간씩 근무`,null],['기본급 합계',won(cs.reduce((a,c)=>a+c.base,0))],['주휴수당','0원'],['4대보험 사업주 부담',won(cs.reduce((a,c)=>a+c.ins,0))],['퇴직금 적립','0원'],['B. 월 총 인건비',won(tot)],['B. 실제 시간당 비용',won(tot/(need*W))],
    ['1년으로 보면 차이',won(Math.abs(diff)*12)],
    ['주 15시간 이상 일하면 주휴수당, 연차, 퇴직금(1년 이상 근무 시)이 생겨요. 쪼개면 아끼는 대신 사람을 더 뽑고 관리해야 해요.',''],
-   ['계약은 14시간이어도 실제로 4주 평균 15시간 이상 일했다면 주휴수당을 줘야 해요.','']],related:RELATED['weekly-rest']}}});
+   ['계약은 14시간이어도 실제로 4주 평균 15시간 이상 일했다면 주휴수당을 줘야 해요.','']],related:RELATED['split-14h']}}});
 CALC_FAQ['split-14h']=[{q:'주 14시간으로 계약하면 불법인가요?',a:'계약 자체는 불법이 아니에요. 다만 실제 근무가 4주 평균 주 15시간 이상이면 주휴수당, 연차, 퇴직금 지급 의무가 생겨요. 연장근무가 잦으면 결국 15시간을 넘기 쉬워요.'},{q:'시간당 실제 인건비는 얼마인가요?',a:'주 15시간 이상이면 주휴수당이 붙어 시급의 약 1.2배가 실제 시간당 비용이에요. 여기에 4대보험과 퇴직금 적립까지 더하면 더 올라가요.'}];
 CALC_FAQ['weekly-rest'].push({q:'주 14시간 근무면 주휴수당이 없나요?',a:'네, 4주 평균 주 15시간 미만이면 주휴수당이 없어요. 15시간 근무와 14시간 쪼개기의 인건비 차이는 주 14시간 쪼개기 비교 계산기에서 볼 수 있어요.'});
 LEGAL_BASIS['split-14h']='근로기준법 제18조 제3항에 따라 4주 평균 1주 소정근로시간이 15시간 미만인 초단시간근로자에게는 주휴일(제55조)과 연차(제60조)가 적용되지 않고, 근로자퇴직급여 보장법 제4조에 따라 퇴직급여도 적용되지 않아요.';
