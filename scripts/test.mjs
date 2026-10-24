@@ -23,8 +23,9 @@ const raw = { ltEpsd: 1246, ltRflYmd: '20261017', tm1WnNo: 28, tm2WnNo: 16, tm3W
   rnk1WnAmt: 1881025430, rnk1WnNope: 16, rnk2WnAmt: 78376060, rnk2WnNope: 64, rnk3WnAmt: 1497334, rnk3WnNope: 3350, rnk4WnAmt: 50000, rnk4WnNope: 155108, rnk5WnAmt: 5000, rnk5WnNope: 2608922,
   winType1: 11, winType2: 4, winType3: 1, rlvtEpsdSumNtslAmt: 60928553620 };
 const conv = toDraw(raw);
-if (JSON.stringify(conv) !== JSON.stringify(lotto.at(-1))) bad('공식 응답 변환 결과가 저장된 1246회와 달라요');
-if (checkDraw({ ...conv, round: 1247, date: '2026-10-24', ranks: conv.ranks.map((r, i) => (i === 4 ? [0, 0] : r)) }, lotto.at(-1)) !== '아직 당첨금 집계 전이에요') bad('집계 전 판별 실패');
+const d1246 = lotto.find((d) => d.round === 1246); // 변환 확인용 고정 회차 (새 회차가 늘어나도 그대로)
+if (JSON.stringify(conv) !== JSON.stringify(d1246)) bad('공식 응답 변환 결과가 저장된 1246회와 달라요');
+if (checkDraw({ ...conv, round: 1247, date: '2026-10-24', ranks: conv.ranks.map((r, i) => (i === 4 ? [0, 0] : r)) }, d1246) !== '아직 당첨금 집계 전이에요') bad('집계 전 판별 실패');
 if (!checkDraw({ ...conv, numbers: [1, 1, 2, 3, 4, 5] })) bad('중복 번호를 걸러내지 못함');
 
 // 3) 연금복권

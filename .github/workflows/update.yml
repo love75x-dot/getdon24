@@ -13,7 +13,7 @@ on:
   # 업데이트 스크립트를 고쳐서 올리면 바로 한 번 돌려 본다
   push:
     branches: [main]
-    paths: ['scripts/update-*.mjs', 'scripts/lib.mjs', '.github/workflows/update.yml']
+    paths: ['scripts/update-*.mjs', 'scripts/lib.mjs', 'scripts/test.mjs', '.github/workflows/update.yml']
   workflow_dispatch:
     inputs:
       full:
