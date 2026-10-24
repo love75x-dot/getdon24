@@ -10,7 +10,7 @@ a{color:inherit}
 :root[data-theme="dark"]{--bg:#101219;--soft:#1c2030;--fg:#eceef4;--mute:#9a9fb0;--line:#262a37;--card:#181b25;--blue:#6b9bff;--ink2:#e7b84a;color-scheme:dark}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);word-break:keep-all}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.wrap{max-width:520px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg)}
 .hd{display:flex;align-items:center;justify-content:space-between;height:52px}
 .logo{font-family:var(--disp);font-size:26px;font-weight:800;letter-spacing:-.5px}.logo b{color:var(--red);font-weight:inherit}
@@ -106,23 +106,27 @@ a.more{display:inline-block}
 .art h2{font-size:17px;font-weight:900;margin:22px 0 8px;white-space:normal;display:block}
 .art ul{padding-left:20px;margin:0 0 12px}.art a{color:var(--blue)}
 .ad-slot:empty{display:none}
-/* 계산기 화면: 제목 가운데, 두꺼운 테두리 카드, 큰 입력칸, 한 줄씩 항목, 구분선 아래 결과 */
-.chead{text-align:center;margin:14px 0 16px}.chead h1{font:900 clamp(24px,7.4vw,30px)/1.25 var(--body);letter-spacing:-.4px;margin:0 0 6px;color:var(--ink2);text-wrap:balance}.chead p{margin:0;color:var(--mute);font-size:14px;text-wrap:balance}
-.ccard{border:3px solid var(--ink2);border-radius:20px;padding:16px;background:var(--card);display:grid;gap:10px;min-width:0}
-.ct{margin:0;font-size:16px;font-weight:900;color:var(--ink2);text-align:center}
-.inw{display:flex;align-items:baseline;gap:6px;border:2px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--bg)}.inw:focus-within{border-color:var(--gold)}
-.inw input{flex:1;min-width:0;border:0;background:transparent;padding:0;text-align:right;font:900 clamp(24px,7.5vw,30px) var(--body);color:var(--fg);outline:0;font-variant-numeric:tabular-nums}
-.inw .un{flex:none;font-size:18px;font-weight:700;color:var(--mute)}
-.rw{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px}.rw span{color:var(--mute);min-width:0}.rw b{flex:none;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
-.rh{margin-top:6px;font-size:14px;color:var(--ink2)}
-.cdiv{border:0;border-top:2px solid var(--line);margin:6px 0 0;width:100%}
-.ccard .cl{font-size:13px;font-weight:700;color:var(--mute);text-align:right}
-.ccard .cmain{font:900 clamp(24px,7.5vw,32px)/1.25 var(--body);color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums;text-wrap:balance}
+/* 계산기 화면: 글자 크기 28 / 17 / 15 / 13 네 가지, 입력 숫자 24, 결과 금액 32. 굵기 800 은 제목·금액만 */
+.calc{font-size:15px;font-weight:400}.calc .crumb{font-size:13px}.calc .note{font-size:13px}
+.chead{text-align:center;margin:14px 0 18px}.chead h1{font:800 28px/1.3 var(--body);letter-spacing:-.4px;margin:0 0 6px;color:var(--ink2);text-wrap:balance}.chead p{margin:0;color:var(--mute);font-size:15px;text-wrap:balance}
+.ccard{border:3px solid var(--ink2);border-radius:20px;padding:16px;background:var(--card);display:grid;gap:10px;min-width:0;overflow:hidden}
+.crow{display:flex;align-items:center;gap:10px}.ct{flex:none;font-size:17px;font-weight:800;white-space:nowrap}.hl{color:var(--red)}
+.calc .fl2{font-size:15px;font-weight:500}.calc .fl2 small{font-size:13px}
+.inw{flex:1;display:flex;align-items:baseline;gap:6px;border:2px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--bg);min-width:0}.inw:focus-within{border-color:var(--gold)}
+.inw input{flex:1;min-width:0;border:0;background:transparent;padding:0;text-align:right;font:800 24px var(--body);color:var(--fg);outline:0;font-variant-numeric:tabular-nums}
+.inw .un{flex:none;font-size:15px;font-weight:500;color:var(--mute)}
+.calc select{font:500 15px var(--body)}
+.rw{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:15px;line-height:1.6;font-weight:400}.rw span{color:var(--mute);min-width:0}.rw b{flex:none;font-weight:400;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rh{margin-top:6px;font-size:15px;font-weight:500;color:var(--ink2)}
+.cdiv{border:0;border-top:1px solid var(--line);margin:2px 0;width:100%}
+.rbig{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:2px 10px;margin:4px -16px -16px;padding:16px;background:var(--soft);background:color-mix(in srgb,var(--red) 9%,var(--card))}
+.rbig span{font-size:17px;font-weight:500}
+.rbig b{margin-left:auto;text-align:right;font:800 clamp(26px,8vw,32px)/1.25 var(--body);color:var(--red);font-variant-numeric:tabular-nums;text-wrap:balance}
 .dual{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-@media (max-width:540px){.dual{grid-template-columns:1fr}}
-@media (min-width:760px){.dual{margin-inline:-150px}}
-.dual .inw{padding:8px 12px}.dual .inw input{font-size:clamp(22px,6vw,26px)}.dual .ccard .cmain{font-size:clamp(22px,6vw,26px)}
-.crow{display:flex;align-items:center;gap:10px}.cl2{flex:none;font-size:15px;font-weight:800;white-space:nowrap}.crow .inw{flex:1;min-width:0}
-.hl{color:var(--red);font-weight:inherit}
-.rbig{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.rbig span{font-size:16px;font-weight:800;white-space:nowrap}
-.rbig>b{font:800 clamp(24px,7vw,30px)/1.25 var(--body);color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+@media (max-width:680px){.dual{grid-template-columns:1fr}}
+.info{margin-top:22px;border:0;padding:0;font-size:15px}.info>summary{font-size:17px;font-weight:800;padding:14px 0;border-bottom:1px solid var(--line)}
+.info h3{font-size:17px;font-weight:800;margin:20px 0 4px}.info p{font-size:15px;color:var(--mute);line-height:1.7}
+.info details{font-size:15px}.info details summary{font-weight:500}.info .rl{font-size:15px}
+/* 하단 탭: 본문과 같은 최대 폭(760px) 가운데, 5칸 같은 간격 */
+.tabbar{padding-left:max(6px,env(safe-area-inset-left,0px),calc((100% - 760px)/2));padding-right:max(6px,env(safe-area-inset-right,0px),calc((100% - 760px)/2))}
+.tabbar a{flex:1 1 0;min-width:0}
