@@ -173,6 +173,20 @@ const CALC_DESC = {
   'pension-tax': '연금복권720+ 1등, 2등, 1등과 2등 동시 당첨까지 세금 22%를 뗀 매달 실수령액과 총액을 계산해요.',
 };
 
+// 검색 결과 <title>: 짧은 화면 이름 뒤에 검색어를 붙인다 (없으면 화면 이름 그대로)
+const CALC_SEO = {
+  freelance: '3.3% 계산기 - 프리랜서 원천징수 실수령액',
+  'freelance-reverse': '3.3% 역산 계산기 - 실수령액으로 계약금액 구하기',
+  insurance: '4대보험 계산기 - 국민연금·건강보험·고용보험 공제액',
+  'tax-refund': '종합소득세 환급 계산기 - 5월 프리랜서 환급액 예측',
+  'labor-cost': '인건비 계산기 - 사업주 4대보험 포함 총 인건비',
+  'minwage-check': '최저임금 계산기 - 월급 최저임금 위반 확인',
+  'card-fee': '카드 수수료 계산기 - 카드 결제 입금액·부가세',
+  'split-14h': '쪼개기 고용 계산기 - 주 15시간 vs 14시간 인건비 비교',
+  'lotto-tax': '로또 세금 계산기 - 당첨금 실수령액',
+  'pension-tax': '연금복권 세금 계산기 - 연금복권720+ 실수령액',
+};
+
 // ---------- 실행 ----------
 const args = process.argv.slice(2);
 const posts = await loadPosts();
@@ -275,7 +289,7 @@ await emit('calc', { title: `실수령액 계산기 모음 ${calcs.filter((c) =>
 for (const c of calcs) {
   const faq = faqs[c.id] || [];
   await emit(`c-${c.id}`, {
-    title: `${c.title} | ${site}`,
+    title: `${CALC_SEO[c.id] || c.title} | ${site}`,
     desc: CALC_DESC[c.id] || `${c.title}. 숫자만 넣으면 바로 계산해요.`,
     jsonld: faq.length ? { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faq.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) } : null,
   });

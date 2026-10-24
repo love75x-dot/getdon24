@@ -185,7 +185,7 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
           related: RELATED.salary
         };
       }},
-    { id:'insurance', label:'4대보험', title:'4대보험 공제액 계산기', group:'employee',
+    { id:'insurance', label:'4대보험 계산기', title:'4대보험 계산기', group:'employee',
       fields:[{id:'monthly',label:'월 급여(세전)',unit:'만원',placeholder:'예: 300'}],
       run(v){
         const m=(+v.monthly||0)*10000, pBase=pensionBase(m), pension=pBase*(RATES.pension/100);
@@ -229,14 +229,14 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
         const dailyEq=Math.min(wh/5,8), allowance=dailyEq*hourly;
         return { main: won(allowance)+' / 주', sub:[['환산 1일 근무시간',dailyEq.toFixed(1)+'시간'],['주당 근무시간',wh+'시간']], related: RELATED['weekly-rest'] };
       }},
-    { id:'freelance', label:'프리랜서 3.3% 계산기 (계약금액·실수령액 양방향)', title:'프리랜서 3.3% 계산기 (계약금액·실수령액 양방향)', group:'freelance', dual:true,
+    { id:'freelance', label:'3.3% 계산기', title:'3.3% 계산기', group:'freelance', dual:true,
       disclaimerExtra:'원천징수 소득세가 1,000원 미만이면 떼지 않아요(소액부징수). 세금은 10원 미만을 버리고 떼요.',
       fields:[{id:'contract',label:'계약 금액',unit:'원',placeholder:'예: 2000000'},{id:'net',label:'실제 받은 금액',unit:'원',placeholder:'예: 1934000'}],
       run(v){
         const r=wht33(+v.contract||0);
         return { main: won(r.net)+' 실수령', sub:[['소득세 3%',won(r.it)],['지방소득세 0.3%',won(r.lt)],['계약금액',won(r.g)]], related: RELATED.freelance };
       }},
-    { id:'tax-refund', label:'환급액 예측', title:'5월 종합소득세 환급액 예측기', group:'freelance',
+    { id:'tax-refund', label:'종합소득세 환급 계산기', title:'종합소득세 환급 계산기', group:'freelance',
       disclaimerExtra:'업종별 경비율은 예시값이며 실제 국세청 고시 업종코드·경비율과 다를 수 있어요. 정확한 값은 홈택스에서 확인하세요.',
       fields:[
         {id:'netIncome', label:'작년 한 해 총소득(3.3% 떼고 받은 금액)', unit:'만원', placeholder:'예: 3000'},
@@ -265,7 +265,7 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
           related: RELATED['tax-refund']
         };
       }},
-    { id:'labor-cost', label:'총 인건비', title:'총 인건비 계산기(사업주용)', group:'employer',
+    { id:'labor-cost', label:'인건비 계산기', title:'인건비 계산기', group:'employer',
       disclaimerExtra:'산재보험료율은 업종에 따라 0.6%~18.6%까지 크게 차이나며 여기서는 평균적인 예시값(1.0%)을 사용했어요. 정확한 요율은 근로복지공단 토탈서비스에서 사업장 업종코드로 조회하세요. 고용보험 사업주 부담분(고용안정·직업능력개발사업)도 기업 규모별로 달라 예시값을 반영했어요.',
       fields:[
         {id:'monthlyWage',label:'직원 월 급여(세전, 1인 기준)',unit:'만원',placeholder:'예: 250'},
@@ -293,7 +293,7 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
           ],
           related: [] };
       }},
-    { id:'minwage-check', label:'최저임금 위반 체크', title:'최저임금 위반 체크 계산기', group:'employer',
+    { id:'minwage-check', label:'최저임금 계산기', title:'최저임금 계산기', group:'employer',
       disclaimerExtra:'최저임금 산입범위는 기본급·정기상여금 일부·복리후생비 일부가 포함되고 식대 등 비과세성 항목 일부는 제외되는 등 기준이 복잡해요. 여기서는 입력하신 월급 총액을 월 근무시간(유급 주휴시간 포함)으로 나눈 단순 환산값으로 비교하니, 정확한 판정은 고용노동부 최저임금 모의계산기를 함께 확인하세요.',
       fields:[
         {id:'monthlyPay',label:'월 급여 총액(세전, 주휴수당 포함)',unit:'만원',placeholder:'예: 209'},
@@ -453,14 +453,14 @@ function allDraws(){return `<div class="crumb">${A('lotto','','로또')} › 전
 function penAll(){return `<div class="crumb">${A('pension','','연금복권')} › 전체 회차</div><h1 class="h1">연금복권720+ 전체 회차 당첨번호</h1><p class="note">1회부터 ${PEN.length}회까지 · 1등 번호와 보너스 번호</p>${PEN.slice(0,penN).map(p=>`<div class="pen"><span><strong>${p[0]}회</strong><small>${p[4]}</small></span><b>${p[2]}</b></div>`).join('')}${penN<PEN.length?`<button class="btn ghost" style="width:100%;margin-top:10px" onclick="penN+=50;render()">50회 더 보기</button>`:''}<a class="ext" href="https://www.dhlottery.co.kr/pt720/result" target="_blank" rel="noopener">동행복권 공식 결과 확인하기 ↗</a>${foot}`}
 let lottoF='win',calcG='all',boardQ='';const CV={};
 const GL={all:'전체',employee:'직장인',freelance:'프리랜서·N잡',employer:'사업주',lotto:'복권'};
-const LCALC=[{id:'lotto-tax',label:'로또 실수령액',title:'로또 당첨금 실수령액 계산기',group:'lotto'},{id:'pension-tax',label:'연금복권 실수령액',title:'연금복권720+ 실수령액 계산기',group:'lotto'}];
-calcs.splice(calcs.findIndex(c=>c.id=='freelance')+1,0,{id:'freelance-reverse',label:'3.3% 거꾸로 계산',title:'3.3% 역산 계산기 (받은 돈 → 세전 금액)',group:'freelance',dual:true,hidden:true,
+const LCALC=[{id:'lotto-tax',label:'로또 세금 계산기',title:'로또 세금 계산기',group:'lotto'},{id:'pension-tax',label:'연금복권 세금 계산기',title:'연금복권 세금 계산기',group:'lotto'}];
+calcs.splice(calcs.findIndex(c=>c.id=='freelance')+1,0,{id:'freelance-reverse',label:'3.3% 역산 계산기',title:'3.3% 역산 계산기',group:'freelance',dual:true,hidden:true,
  disclaimerExtra:'원천징수 소득세가 1,000원 미만이면 떼지 않아요(소액부징수). 이 경우 받은 금액이 곧 세전 금액이에요.',
  fields:[{id:'net',label:'실제로 받은 금액',unit:'원',placeholder:'예: 1934000'},{id:'contract',label:'계약 금액',unit:'원',placeholder:'예: 2000000'}],
  run(v){const r=rev33(+v.net||0);
   return{main:won(r.g)+' (세전 금액)',sub:[['받은 금액',won(r.net)],['소득세 3%',won(r.it)],['지방소득세 0.3%',won(r.lt)],['떼인 세금 합계',won(r.it+r.lt)],['계산식','받은 금액 ÷ 0.967'],['확인: 세전 − 세금',won(r.g-r.it-r.lt)]],related:RELATED.freelance}}});
 const CARD_TIER=[['연매출 3억 이하 (영세)',0.40,0.15],['3억~5억 (중소1)',1.00,0.75],['5억~10억 (중소2)',1.15,0.90],['10억~30억 (중소3)',1.45,1.15],['30억 초과 (일반, 평균 예시)',2.00,1.50]];
-calcs.push({id:'card-fee',label:'카드 결제 입금액',title:'카드 결제 입금액·수수료·부가세 계산기',group:'employer',
+calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수수료 계산기',group:'employer',
  disclaimerExtra:'카드 수수료율은 금융위원회가 정한 우대수수료율 기준이고, 30억 초과 일반가맹점은 카드사별로 달라 평균 예시값을 썼어요. 입금은 보통 결제 후 2~3영업일 뒤에 들어와요.',
  fields:[{id:'amount',label:'손님이 카드로 결제한 금액 (부가세 포함)',unit:'원',placeholder:'예: 25000'},
   {id:'tier',label:'우리 가게 연매출',type:'select',options:CARD_TIER.map((t,i)=>({value:i,label:`${t[0]} · 신용 ${t[1]}% / 체크 ${t[2]}%`}))},
@@ -473,7 +473,7 @@ calcs.push({id:'card-fee',label:'카드 결제 입금액',title:'카드 결제 �
    ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:[]}}});
 CALC_FAQ['card-fee']=[{q:'통장에 들어올 때 부가세도 빠지나요?',a:'아니요. 카드사는 수수료만 빼고 보내요. 결제 금액에 들어 있는 부가세(1/11)는 나중에 부가세 신고 때 사업자가 직접 내요.'},{q:'카드매출 세액공제는 누구나 받나요?',a:'직전 연도 공급가액 10억원 이하 개인사업자가 받아요. 연간 한도가 있고 법인은 받을 수 없어요.'},{q:'간이과세자는 어떻게 되나요?',a:'간이과세자는 업종별 부가가치율을 적용해 부가세가 훨씬 적어요. 이 계산기는 일반과세자 기준이라 부가세가 실제보다 크게 나와요.'}];
 LEGAL_BASIS['card-fee']='여신전문금융업법에 따른 영세·중소가맹점 우대수수료율과 부가가치세법(세율 10%), 신용카드 등 매출세액공제(부가가치세법 제46조)를 기준으로 한 추정치예요.';
-calcs.push({id:'split-14h',label:'주 14시간 쪼개기 비교',title:'주 15시간 vs 14시간 쪼개기 인건비 비교 계산기',group:'employer',
+calcs.push({id:'split-14h',label:'쪼개기 고용 계산기',title:'쪼개기 고용 계산기',group:'employer',
  disclaimerExtra:'한 달은 4.345주로 계산했어요. 4대보험은 월 60시간 이상이면 가입 대상으로 보고 사업주 부담분(산재 1.0% 예시 포함)을 넣었어요. 실제 가입 여부와 요율은 근로조건에 따라 달라요.',
  fields:[{id:'wage',label:'시급',unit:'원',placeholder:'예: '+RATES.minimumWage},{id:'need',label:'가게에 필요한 주간 총 근무시간',unit:'시간',placeholder:'예: 30'},{id:'split',label:'쪼갤 때 1명당 주 근무시간',unit:'시간',placeholder:'예: 14'}],
  run(v){const w=+v.wage||0,need=+v.need||0,sp=Math.min(+v.split||14,14.99),W=4.345;
@@ -503,17 +503,17 @@ function home(){const M=[['calc','계산기',`${VIS().length}종`,'연봉 실수
  <div class="menu2">${M.map(m=>A(m[0],'',`<span class="mt"><b>${m[1]}</b><small>${m[2]}</small></span><span class="md">${m[3]}</span>`)).join('')}</div>${foot}`}
 function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
  return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
- ${list.map(c=>A('c-'+c.id,'gcard',`<div><b class="one">${c.label}</b><small class="one">${GL[c.group]} · ${c.title}</small></div><span>›</span>`)).join('')}${foot}`}
+ ${list.map(c=>A('c-'+c.id,'gcard',`<div><b class="one">${c.label}</b><small class="one">${GL[c.group]}${LEAD[c.id]?' · '+LEAD[c.id]:''}</small></div><span>›</span>`)).join('')}${foot}`}
 const ex=f=>f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
-const H1={freelance:'3.3% 계산기','freelance-reverse':'3.3% 역산 계산기'};
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
  'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
  severance:'최근 3개월 급여와 근속기간으로 퇴직금을 계산해요','annual-leave':'남은 연차를 돈으로 바꾸면 얼마인지 계산해요',
- 'weekly-rest':'시급과 주당 근무시간으로 주휴수당을 계산해요',freelance:'계약 금액에서도, 받은 금액에서도 3.3%를 바로 계산해요',
- 'freelance-reverse':'통장에 들어온 금액에서 계약 금액을 거꾸로 계산해요','tax-refund':'작년 소득으로 5월 환급액을 미리 가늠해 봐요',
+ 'weekly-rest':'시급과 주당 근무시간으로 주휴수당을 계산해요',freelance:'계약 금액 기준으로도, 실제 수령액 기준으로도 계산해요',
+ 'freelance-reverse':'통장에 들어온 돈으로 세전 계약 금액을 찾아요','tax-refund':'작년 소득으로 5월 환급액을 미리 가늠해 봐요',
  'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이 최저임금을 지키는지 바로 확인해요',
  'daily-worker-tax':'일당과 근무일수로 일용직 세금과 실제 지급액을 계산해요','card-fee':'카드 결제액에서 수수료와 부가세를 뺀 남는 돈이에요',
- 'split-14h':'주 15시간 1명 고용과 14시간 쪼개기를 비교해요'};
+ 'split-14h':'주 15시간 1명과 14시간 여러 명의 인건비를 비교해요',
+ 'lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
 // 천 단위 쉼표: CV 에는 쉼표 없는 숫자만 저장하고 화면에만 쉼표를 붙인다
 const fmtN=x=>{const [i,...d]=String(x).replace(/[^\d.]/g,'').split('.');return i.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(d.length?'.'+d.join(''):'')};
 function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.slice(0,el.selectionStart).replace(/[^\d.]/g,'').length,f=fmtN(raw);el.value=f;
@@ -532,7 +532,7 @@ function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[
  return `<div class="crumb">${A('calc','','계산기')} › 복권</div><h1 class="h1">${L.title}</h1><div class="panel">${id=='lotto-tax'?taxPanel():penCalc()}</div><details class="dt"><summary>법적 근거·이용 안내</summary><p>${LEGAL_BASIS[id]}</p></details><h2>자주 묻는 질문</h2><div>${faq}</div>${foot}`}
  const c=calcs.find(x=>x.id==id);if(!c)return calcList();CV[id]=CV[id]||{};c.fields.forEach(f=>{if(CV[id][f.id]==null)CV[id][f.id]=ex(f)});
  const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- const head=`<div class="crumb">${A('calc','','계산기')} › ${GL[c.group]}</div><header class="chead"><h1>${H1[id]||c.title}</h1><p>${LEAD[id]||'숫자만 넣으면 바로 계산돼요'}</p></header>`;
+ const head=`<div class="crumb">${A('calc','','계산기')} › ${GL[c.group]}</div><header class="chead"><h1>${c.title}</h1><p>${LEAD[id]||'숫자만 넣으면 바로 계산돼요'}</p></header>`;
  let body;
  if(c.dual){const R=resHtml(id),F=k=>c.fields.find(f=>f.id==k),ttl={contract:'계약 금액 기준',net:'실제 수령액 기준'},
   card=k=>`<section class="ccard"><h2 class="ct">${ttl[k]}</h2>${fieldHtml(id,F(k))}<div id="dres-${k}">${R[k]}</div></section>`;
