@@ -136,5 +136,10 @@ async function main() {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch((e) => { console.error('실패:', e.message); process.exit(1); });
+  main().catch((e) => {
+    console.error('실패:', e.message);
+    // GitHub Actions 요약 화면에도 이유가 보이게
+    if (process.env.GITHUB_ACTIONS) console.log(`::error title=${process.argv[1].split('/').pop()}::${e.message.replace(/\n/g, ' / ')}`);
+    process.exit(1);
+  });
 }
