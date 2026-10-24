@@ -321,6 +321,8 @@ for (const p of posts) {
 // 소개·문의·개인정보
 await emit('about', { title: `소개 | ${site}`, desc: '받는돈은 세금과 공제를 떼고 실제로 손에 들어오는 돈을 계산해 주는 사이트예요.' });
 await emit('contact', { title: `문의 | ${site}`, desc: '받는돈에 잘못된 정보나 추가했으면 하는 계산기를 알려 주세요.' });
+await emit('method', { title: `계산 기준과 출처 | ${site}`, desc: '받는돈 계산기가 쓰는 4대보험 요율, 3.3% 원천징수, 최저임금, 복권 세금 기준과 출처, 계산의 한계를 정리했어요.' });
+await emit('terms', { title: `이용약관·면책 | ${site}`, desc: '받는돈 이용약관과 면책 안내예요. 계산 결과는 참고용 추정치예요.' });
 await emit('privacy', { title: `개인정보처리방침 | ${site}`, desc: '받는돈의 개인정보처리방침이에요.' });
 
 // 404
