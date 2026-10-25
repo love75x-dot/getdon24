@@ -2,7 +2,7 @@ const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
   const DEFAULT_RATES = {
     pension: 4.75, health: 3.595, ltc: 13.14, employment: 0.9,
     floor: 410000, ceiling: 6590000, minimumWage: 10320, minimumWageYear: 2026,
-    updated: '2026-09-01', note: '국민연금공단·국민건강보험공단 2026년 고시 기준 (최저시급은 예시값이며 고용노동부 고시로 반드시 확인하세요)'
+    updated: '2026-09-01', note: '국민연금공단·국민건강보험공단 2026년 고시 기준. 최저시급은 고용노동부 고시(2026년 10,320원, 2027년 10,700원)를 연도별로 적용'
   };
   const JOB_TABLE = [
     { code:'940306', name:'1인미디어콘텐츠창작자(유튜버·BJ)', aliases:['유튜버','유튜브','bj','스트리머','크리에이터','1인미디어'], rate:64.1 },
@@ -37,6 +37,9 @@ const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
     'tax-refund': ['freelance-may-tax','samjjeomsam-fee-compare','refund-negative-tips']
   };
 const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
+// 연도별 최저시급 (고용노동부 고시). 해가 바뀌면 그 해 값이 자동으로 쓰인다(한국 날짜 기준).
+const MINWAGE={2026:10320,2027:10700};
+(function(){const y=new Date(Date.now()+9*3600e3).getUTCFullYear(),ys=Object.keys(MINWAGE).map(Number).filter(k=>k<=y);const k=ys.length?Math.max(...ys):Math.min(...Object.keys(MINWAGE).map(Number));RATES.minimumWage=MINWAGE[k];RATES.minimumWageYear=k})();
   function estimateMonthlyIncomeTax(monthlyGross, dependents){
     const g = monthlyGross;
     let rate;
@@ -116,6 +119,7 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
     ],
     'minwage-check': [
       { q:'상여금도 최저임금 계산에 포함되나요?', a:'2024년 이후 정기상여금과 복리후생비는 전액 최저임금 산입범위에 포함돼요. 다만 식대 등 일부 비과세성 항목의 산입 여부는 세부 기준을 확인해야 해요.' },
+      { q:'2027년 최저임금은 얼마인가요?', a:'2027년 최저시급은 10,700원이에요. 주 40시간 기준 월 2,236,300원이고, 2027년 1월 1일부터 이 계산기에도 자동으로 적용돼요.' },
       { q:'수습기간에는 최저임금보다 적게 줘도 되나요?', a:'수습 시작일로부터 3개월 이내에는 최저임금의 90%까지 감액할 수 있지만, 1년 미만 근로계약이거나 단순노무직종이면 감액이 적용되지 않아요.' }
     ],
     'daily-worker-tax': [
@@ -297,29 +301,25 @@ const RATES=DEFAULT_RATES,RELATED=DEFAULT_RELATED;
           related: [] };
       }},
     { id:'minwage-check', label:'최저임금 계산기', title:'최저임금 계산기', group:'employer',
-      disclaimerExtra:'최저임금 산입범위는 기본급·정기상여금 일부·복리후생비 일부가 포함되고 식대 등 비과세성 항목 일부는 제외되는 등 기준이 복잡해요. 여기서는 입력하신 월급 총액을 월 근무시간(유급 주휴시간 포함)으로 나눈 단순 환산값으로 비교하니, 정확한 판정은 고용노동부 최저임금 모의계산기를 함께 확인하세요.',
+      disclaimerExtra:'식대 등 일부 수당은 최저임금 계산에서 빠질 수 있어요.',
       fields:[
-        {id:'monthlyPay',label:'월 급여 총액(세전, 주휴수당 포함)',unit:'만원',placeholder:'예: 209'},
-        {id:'monthlyHours',label:'월 총 근무시간(유급 주휴시간 포함)',unit:'시간',placeholder:'예: 209',hint:'주 40시간 근무면 보통 월 209시간(주휴시간 포함)이 기준이에요.'}
+        {id:'mode',type:'seg',label:'어떻게 받나요?',options:[{value:'month',label:'월급으로'},{value:'hour',label:'시급으로'}]},
+        {id:'monthlyPay',when:'month',label:'월 급여 총액 (세전, 주휴수당 포함)',unit:'원',placeholder:'예: '+RATES.minimumWage*209},
+        {id:'monthlyHours',when:'month',label:'월 근무시간 (유급 주휴시간 포함)',unit:'시간',placeholder:'예: 209',hint:'주 40시간 근무면 보통 월 209시간이에요.'},
+        {id:'hourly',when:'hour',label:'내 시급',unit:'원',placeholder:'예: '+RATES.minimumWage}
       ],
       run(v){
-        const pay=(+v.monthlyPay||0)*10000, hours=+v.monthlyHours||0;
-        if (hours<=0) return { main:'월 근무시간을 입력해주세요', sub:[['월 근무시간은 0보다 커야 해요','']], related: [] };
-        const effectiveHourly = pay/hours;
-        const minWage = RATES.minimumWage;
-        const diff = effectiveHourly-minWage;
-        const violation = diff < -1;
-        return {
-          main: violation
-            ? `⚠️ 최저임금 위반 가능성 (시간당 ${won(Math.abs(diff))} 부족)`
-            : `✅ 최저임금 이상으로 보여요 (시간당 +${won(diff)})`,
-          sub:[
-            ['환산 시급(월급÷월근무시간)',won(effectiveHourly)],
-            [`${RATES.minimumWageYear}년 최저시급`,won(minWage)],
-            ['시급 차액',(diff>=0?'+':'')+won(diff)],
-            ['입력한 월 근무시간',hours+'시간']
-          ],
-          related: RELATED['minwage-check'] };
+        const min=RATES.minimumWage, yr=RATES.minimumWageYear;
+        const verdict=d=>d<-0.5?`⚠️ 최저임금보다 시간당 ${won(-d)} 적어요`:`✅ 최저임금 이상이에요${d>=0.5?` (시간당 +${won(d)})`:''}`;
+        if(v.mode==='hour'){
+          const h=+v.hourly||0; if(h<=0) return {main:'시급을 입력해 주세요',sub:[],related:[]};
+          return {main:verdict(h-min),sub:[['내 시급',won(h)],[`${yr}년 최저시급`,won(min)],[`${yr}년 최저 월급(209시간)`,won(min*209)],['주 15시간 이상 일하면 주휴수당은 따로 받아요.','']],related:RELATED['weekly-rest']||[]};
+        }
+        const pay=+v.monthlyPay||0, hours=+v.monthlyHours||0;
+        if(hours<=0) return {main:'월 근무시간을 입력해 주세요',sub:[],related:[]};
+        const eff=pay/hours, rows=[['내 월급',won(pay)],['시급으로 바꾸면',won(eff)],[`${yr}년 최저시급`,won(min)],[`${yr}년 최저 월급(209시간)`,won(min*209)]];
+        if(Math.abs(hours-209)>0.01) rows.push([`${hours}시간 기준 최저 월급`,won(min*hours)]);
+        return {main:verdict(eff-min),sub:rows,related:RELATED['minwage-check']};
       }},
     { id:'daily-worker-tax', label:'일용직 근로소득세', title:'일용직 근로소득세 계산기', group:'employer',
       disclaimerExtra:'일용근로소득세는 동일 고용주에게 3개월(건설공사는 1년) 미만 계속 근로하는 세법상 일용근로자에게 적용되는 계산식이에요. 4대보험(고용·산재보험은 일용직도 의무가입 대상인 경우가 많아요) 공제분은 이 계산에 포함되지 않았습니다.',
@@ -503,13 +503,13 @@ function home(){const M=[['calc','계산기',`${VIS().length}종`,'연봉 실수
 function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
  return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
  ${list.map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}${foot}`}
-const ex=f=>f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
+const ex=f=>f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
  'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
  severance:'최근 3개월 급여와 근속기간으로 퇴직금을 계산해요','annual-leave':'남은 연차를 돈으로 바꾸면 얼마인지 계산해요',
  'weekly-rest':'시급과 주당 근무시간으로 주휴수당을 계산해요',freelance:'프리랜서 원천징수 3.3%를 뗀 실제 수령액을 확인해 보세요.',
 'tax-refund':'작년 소득으로 5월 환급액을 미리 가늠해 봐요',
- 'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이 최저임금을 지키는지 바로 확인해요',
+ 'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이나 시급이 최저임금을 지키는지 바로 확인해요',
  'daily-worker-tax':'일당과 근무일수로 일용직 세금과 실제 지급액을 계산해요','card-fee':'카드 결제액에서 수수료와 부가세를 뺀 남는 돈이에요',
  'split-14h':'주 15시간 1명과 14시간 여러 명의 인건비를 비교해요',
  'lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
@@ -518,14 +518,14 @@ const fmtN=x=>{const [i,...d]=String(x).replace(/[^\d.]/g,'').split('.');return 
 function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.slice(0,el.selectionStart).replace(/[^\d.]/g,'').length,f=fmtN(raw);el.value=f;
  let n=0,p=0;while(p<f.length&&n<left){if(/[\d.]/.test(f[p]))n++;p++}try{el.setSelectionRange(p,p)}catch(e){}
  CV[id][fid]=raw;runC(id)}
-const fieldHtml=(id,f,big)=>`<label class="fl2" for="f-${f.id}">${f.label}</label>`+(f.type=='select'?`<select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(CV[id][f.id])?'selected':''}>${o.label}</option>`).join('')}</select>`:`<div class="inw"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][f.id])}" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="un">${f.unit}</span>`:''}</div>`)+(f.hint?`<p class="note">${f.hint}</p>`:'');
+const fieldHtml=(id,f,big)=>f.type=='seg'?`<div class="seg mseg" role="group" aria-label="${f.label}">${f.options.map(o=>`<button type="button" class="${CV[id][f.id]==o.value?'on':''}" onclick="CV['${id}']['${f.id}']='${o.value}';render()">${o.label}</button>`).join('')}</div>`:`<label class="fl2" for="f-${f.id}">${f.label}</label>`+(f.type=='select'?`<select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(CV[id][f.id])?'selected':''}>${o.label}</option>`).join('')}</select>`:`<div class="inw"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][f.id])}" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="un">${f.unit}</span>`:''}</div>`)+(f.hint?`<p class="note">${f.hint}</p>`:'');
 const rwH=(a,b)=>`<div class="rw"><span>${a}</span><b>${b}</b></div>`;
 function resHtml(id){const c=calcs.find(x=>x.id==id),v=CV[id];
  if(c.dual){const a=wht33(+v.contract||0),b=rev33(+v.net||0),
   card=(r,l,m)=>rwH('기본세율(3%)',won(r.it))+rwH('지방소득세율(0.3%)',won(r.lt))+'<hr class="cdiv">'+rwH('총 3.3% 금액',won(r.it+r.lt))+`<div class="rbig"><span>${l}</span><b>${won(m)}</b></div>`;
   return{contract:card(a,'실제 수령액',a.net),net:card(b,'계약 금액',b.g)}}
  let r;try{r=c.run(v)}catch(e){return '<p class="note">숫자를 확인해 주세요.</p>'}
- return (r.sub||[]).map(([a,b])=>b===null?`<b class="rh">${a}</b>`:b===''?`<p class="note">${a}</p>`:rwH(a,b)).join('')+(c.disclaimerExtra?`<p class="note">${c.disclaimerExtra}</p>`:'')+`<div class="rbig"><b>${r.main}</b></div>`}
+ return (r.sub||[]).map(([a,b])=>b===null?`<b class="rh">${a}</b>`:b===''?`<p class="note">${a}</p>`:rwH(a,b)).join('')+(c.disclaimerExtra?`<p class="note">${c.disclaimerExtra}</p>`:'')+`<div class="rbig${/^✅/.test(r.main)?' ok':''}"><b>${r.main}</b></div>`}
 function relHtml(id){const c=calcs.find(x=>x.id==id);let r;try{r=c.run(CV[id])}catch(e){return ''}
  const l=(r.related||[]).filter(s=>ARTICLES[s]);return l.length?`<p class="note" style="margin-top:14px">관련 글</p>`+l.map(s=>A('b-'+s,'rl one',`${ARTICLES[s].title} ›`)).join(''):''}
 function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
@@ -537,7 +537,7 @@ function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[
  if(c.dual){const R=resHtml(id),LB={contract:'<b class="hl">계약 금액</b> 기준',net:'<b class="hl">실제 수령액</b> 기준'},
   card=k=>`<section class="ccard"><div class="crow"><label class="ct" for="f-${k}">${LB[k]}</label><div class="inw"><input id="f-${k}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][k])}" onfocus="this.select()" oninput="nIn(this,'${id}','${k}')"><span class="un">원</span></div></div><div id="dres-${k}">${R[k]}</div></section>`;
   body=`<div class="dual">${['contract','net'].map(card).join('')}</div>`}
- else body=`<section class="ccard">${c.fields.map(f=>fieldHtml(id,f)).join('')}<div id="cres">${resHtml(id)}</div></section>`;
+ else body=`<section class="ccard">${c.fields.filter(f=>!f.when||f.when==CV[id].mode).map(f=>fieldHtml(id,f)).join('')}<div id="cres">${resHtml(id)}</div></section>`;
  const info=`<details class="info"><summary>자세히 알아보기</summary><div id="crel">${relHtml(id)}</div>${LEGAL_BASIS[id]?`<h3>법적 근거·이용 안내</h3><p>${LEGAL_BASIS[id]}</p>`:''}${faq?`<h3>자주 묻는 질문</h3>${faq}`:''}</details>`;
  return `<div class="calc">${head}${body}${info}</div>${foot}`}
 function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>{const e=document.getElementById(i);if(e)e.innerHTML=h};
