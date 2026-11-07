@@ -457,7 +457,7 @@ let allN=30,penN=30;
 function allDraws(){return `<div class="crumb">${A('lotto','','로또')} › 전체 회차</div><h1 class="h1">로또 전체 회차 당첨번호</h1><p class="note">1회부터 ${DRAWS.length}회까지</p>${DRAWS.slice(0,allN).map(d=>A('draw'+d.r,'gcard',`<div><b>${d.r}회 <small>${ymd(d.date)}</small></b><div class="balls" style="justify-content:flex-start;margin:6px 0 0;gap:3px">${d.n.map(n=>ball(n,'sm')).join('')}<span class="plus">+</span>${ball(d.b,'sm')}</div></div><span>›</span>`)).join('')}${allN<DRAWS.length?`<button class="btn ghost" style="width:100%;margin-top:10px" onclick="allN+=50;render()">50회 더 보기</button>`:''}${foot}`}
 function penAll(){return `<div class="crumb">${A('pension','','연금복권')} › 전체 회차</div><h1 class="h1">연금복권720+ 전체 회차 당첨번호</h1><p class="note">1회부터 ${PEN.length}회까지 · 1등 번호와 보너스 번호</p>${PEN.slice(0,penN).map(p=>`<div class="pen"><span><strong>${p[0]}회</strong><small>${p[4]}</small></span><b>${p[2]}</b></div>`).join('')}${penN<PEN.length?`<button class="btn ghost" style="width:100%;margin-top:10px" onclick="penN+=50;render()">50회 더 보기</button>`:''}<a class="ext" href="https://www.dhlottery.co.kr/pt720/result" target="_blank" rel="noopener">동행복권 공식 결과 확인하기 ↗</a>${foot}`}
 let lottoF='win',calcG='all',boardQ='';const CV={};
-const GL={all:'전체',employee:'직장인',freelance:'프리랜서·N잡',employer:'사업주',lotto:'복권'};
+const GL={all:'전체',employee:'직장인',freelance:'프리랜서·N잡',employer:'사업주',money:'재테크',lotto:'복권'};
 const LCALC=[{id:'lotto-tax',label:'로또 세금 계산기',title:'로또 세금 계산기',group:'lotto'},{id:'pension-tax',label:'연금복권 세금 계산기',title:'연금복권 세금 계산기',group:'lotto'}];
 const CARD_TIER=[['연매출 3억 이하 (영세)',0.40,0.15],['3억~5억 (중소1)',1.00,0.75],['5억~10억 (중소2)',1.15,0.90],['10억~30억 (중소3)',1.45,1.15],['30억 초과 (일반, 평균 예시)',2.00,1.50]];
 calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수수료 계산기',group:'employer',
@@ -471,6 +471,31 @@ calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수�
   return{main:won(dep)+' 통장 입금',sub:[['결제 금액',won(a)],[`카드 수수료 (${rate}%)`,'− '+won(fee)],['통장에 들어오는 돈',won(dep)],
    ['나중에 낼 부가세 (결제액의 1/11)','− '+won(vat)],[+v.biz?'카드매출 세액공제 (법인은 없음)':'카드매출 세액공제 (1.3%)','+ '+won(credit)],['세금까지 빼고 실제로 남는 돈',won(keep)],
    ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:RELATED['card-fee']}}});
+// 복리 계산기: 매달 계산, 적립은 매달 말에 넣는다고 가정
+function compound(v){const P=+v.principal||0,M=+v.monthly||0,rate=(+v.rate||0)/100,Y=Math.min(Math.max(Math.round(+v.years||0),0),60),monthlyComp=(v.freq||'month')==='month',taxed=(v.tax||'normal')==='normal';
+ let B=P,pending=0,simpleInt=0;const rows=[];
+ for(let m=1;m<=Y*12;m++){const it=B*rate/12;if(monthlyComp)B+=it;else pending+=it;B+=M;if(!monthlyComp&&m%12===0){B+=pending;pending=0}
+  if(m%12===0)rows.push([m/12,P+M*m,B])}
+ simpleInt=P*rate*Y+M*rate/12*(Y*12)*(Y*12-1)/2; // 단리였다면 (적립금은 넣은 뒤 남은 달만큼)
+ const paid=P+M*Y*12,interest=B-paid,tax=taxed?Math.floor(interest*0.154/10)*10:0;
+ return{B,paid,interest,tax,net:B-tax,simpleInt,rows,Y}}
+calcs.push({id:'compound',label:'복리 계산기',title:'복리 계산기',group:'money',
+ disclaimerExtra:'이자율이 기간 내내 같다고 가정한 계산이에요. 예·적금 상품마다 이자 계산 방식과 세금 혜택이 다를 수 있어요.',
+ fields:[{id:'principal',label:'처음에 넣는 돈',unit:'원',placeholder:'예: 10000000'},
+  {id:'monthly',label:'매달 더 넣는 돈',unit:'원',placeholder:'예: 500000'},
+  {id:'rate',label:'연 이자율 (수익률)',unit:'%',placeholder:'예: 4'},
+  {id:'years',label:'기간',unit:'년',placeholder:'예: 10'},
+  {id:'freq',type:'select',label:'이자 붙는 방식',options:[{value:'month',label:'월복리 (매달 이자에 이자)'},{value:'year',label:'연복리 (1년마다 이자에 이자)'}]},
+  {id:'tax',type:'select',label:'이자 세금',options:[{value:'normal',label:'일반과세 15.4%'},{value:'free',label:'비과세 (ISA·비과세 상품 등)'}]}],
+ run(v){if(v.freq==='0')v.freq='month';if(v.tax==='0')v.tax='normal';
+  const r=compound(v);if(!r.Y)return{main:'기간을 1년 이상 넣어 주세요',sub:[],related:[]};
+  const pick=new Set([1,3,5,...Array.from({length:12},(_,i)=>(i+1)*5),r.Y]),yr=r.rows.filter(x=>pick.has(x[0]));
+  return{main:`${r.Y}년 뒤 ${won(r.net)}`,sub:[
+   ['넣은 돈 합계',won(r.paid)],['붙은 이자 (세전)',won(r.interest)],[v.tax==='free'?'이자 세금 (비과세)':'이자 세금 15.4%','− '+won(r.tax)],['받는 이자 (세후)',won(r.interest-r.tax)],
+   ['단리였다면 이자',won(r.simpleInt)],['복리로 더 붙은 이자',won(r.interest-r.simpleInt)],
+   ['연도별 잔액 (세전)',null],...yr.map(([y,p,b])=>[`${y}년 뒤`,won(b)])],related:[]}}});
+CALC_FAQ['compound']=[{q:'복리와 단리는 뭐가 다른가요?',a:'단리는 처음 넣은 돈에만 이자가 붙고, 복리는 붙은 이자에도 다시 이자가 붙어요. 기간이 길수록 차이가 커져요.'},{q:'월복리와 연복리 중 뭘 골라야 하나요?',a:'가입한 상품 설명서에 적힌 방식을 고르세요. 같은 이자율이면 월복리가 조금 더 많아요. 주식·펀드 수익률처럼 1년 기준 수익률이면 연복리가 더 가까워요.'},{q:'세금은 언제 떼나요?',a:'예·적금 이자는 받을 때 이자소득세 14%와 지방소득세 1.4%, 합계 15.4%를 떼요. 이 계산기는 만기에 한 번에 뗀다고 보고 계산해요.'}];
+LEGAL_BASIS['compound']='예·적금 이자는 소득세법에 따른 이자소득으로, 지급할 때 소득세 14%와 지방소득세 1.4%(합계 15.4%)가 원천징수돼요. 비과세 종합저축, ISA 등은 조건에 따라 세금이 줄거나 없어요.';
 CALC_FAQ['card-fee']=[{q:'통장에 들어올 때 부가세도 빠지나요?',a:'아니요. 카드사는 수수료만 빼고 보내요. 결제 금액에 들어 있는 부가세(1/11)는 나중에 부가세 신고 때 사업자가 직접 내요.'},{q:'카드매출 세액공제는 누구나 받나요?',a:'직전 연도 공급가액 10억원 이하 개인사업자가 받아요. 연간 한도가 있고 법인은 받을 수 없어요.'},{q:'간이과세자는 어떻게 되나요?',a:'간이과세자는 업종별 부가가치율을 적용해 부가세가 훨씬 적어요. 이 계산기는 일반과세자 기준이라 부가세가 실제보다 크게 나와요.'}];
 LEGAL_BASIS['card-fee']='여신전문금융업법에 따른 영세·중소가맹점 우대수수료율과 부가가치세법(세율 10%), 신용카드 등 매출세액공제(부가가치세법 제46조)를 기준으로 한 추정치예요.';
 calcs.push({id:'split-14h',label:'쪼개기 고용 계산기',title:'쪼개기 고용 계산기',group:'employer',
@@ -512,7 +537,7 @@ const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 �
  'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이나 시급이 최저임금을 지키는지 바로 확인해요',
  'daily-worker-tax':'일당과 근무일수로 일용직 세금과 실제 지급액을 계산해요','card-fee':'카드 결제액에서 수수료와 부가세를 뺀 남는 돈이에요',
  'split-14h':'주 15시간 1명과 14시간 여러 명의 인건비를 비교해요',
- 'lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
+ compound:'이자에 이자가 붙으면 얼마가 되는지 계산해요','lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
 // 천 단위 쉼표: CV 에는 쉼표 없는 숫자만 저장하고 화면에만 쉼표를 붙인다
 const fmtN=x=>{const [i,...d]=String(x).replace(/[^\d.]/g,'').split('.');return i.replace(/^0+(?=[0-9])/,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')+(d.length?'.'+d.join(''):'')};
 function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.slice(0,el.selectionStart).replace(/[^\d.]/g,'').length,f=fmtN(raw);el.value=f;
