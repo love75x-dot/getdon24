@@ -136,3 +136,9 @@ a.more{display:inline-block}
 /* 좋은 결과(✅)는 경고처럼 보이지 않게 파란색 */
 .rbig.ok{background:color-mix(in srgb,var(--blue) 9%,var(--card))}
 .rbig.ok b{color:var(--blue)}
+/* 알바 월급 계산기: 요일 선택, 시간 입력 */
+.dayp{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:6px 0 14px}
+.dayp button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:10px;padding:10px 0;font:600 15px var(--body);cursor:pointer;min-height:44px}
+.dayp button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.tpair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.tcell{min-width:0}.tcell input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font:600 17px var(--body);background:var(--bg);color:var(--fg);min-height:48px}

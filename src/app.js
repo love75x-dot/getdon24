@@ -471,6 +471,55 @@ calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수�
   return{main:won(dep)+' 통장 입금',sub:[['결제 금액',won(a)],[`카드 수수료 (${rate}%)`,'− '+won(fee)],['통장에 들어오는 돈',won(dep)],
    ['나중에 낼 부가세 (결제액의 1/11)','− '+won(vat)],[+v.biz?'카드매출 세액공제 (법인은 없음)':'카드매출 세액공제 (1.3%)','+ '+won(credit)],['세금까지 빼고 실제로 남는 돈',won(keep)],
    ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:RELATED['card-fee']}}});
+// 알바 월급 계산기: 출퇴근·휴게시간·요일로 주급·월급, 주휴수당 성립 여부
+const tmin=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):null};
+function shiftMinutes(st,en,bs,be){let a=tmin(st),b=tmin(en);if(a==null||b==null)return null;if(b<=a)b+=1440;
+ let br=0,x=tmin(bs),y=tmin(be);if(x!=null&&y!=null){if(x<a)x+=1440;if(y<=x)y+=1440;br=Math.max(0,Math.min(y,b)-Math.max(x,a))}
+ // 야간(22:00~06:00) 근무 분: 휴게시간과 겹치는 부분은 뺀다
+ let night=0;for(let m=a;m<b;m++){const h=m%1440;const inBreak=x!=null&&y!=null&&m>=x&&m<y;if(!inBreak&&(h>=1320||h<360))night++}
+ return{work:b-a-br,brk:br,night}}
+function partTime(v){const mode=v.mode||'hour',days=String(v.days||'').split('').filter(d=>'1234567'.includes(d)),n=days.length,sh=shiftMinutes(v.start,v.end,v.bstart,v.bend);
+ if(!sh||sh.work<=0||!n)return null;
+ const dh=sh.work/60,wh=dh*n,big=(v.size||'5up')==='5up';
+ const wage=mode==='day'?(+v.daily||0)/dh:(+v.hourly||0);
+ const base=mode==='day'?(+v.daily||0)*n:wage*wh;
+ const otH=big?Math.max(Math.max(dh-8,0)*n,Math.max(wh-40,0)):0,ot=otH*wage*0.5;
+ const ntH=big?sh.night/60*n:0,nt=ntH*wage*0.5;
+ const juOk=wh>=15,ju=juOk?Math.min(wh,40)/40*8*wage:0;
+ const week=base+ot+nt+ju,month=week*365/7/12;
+ const dedType=v.ded||'none';let ded=0,dedRows=[];
+ if(dedType==='33'){const it=Math.floor(month*0.03/10)*10,lt=Math.floor(it*0.1/10)*10;ded=it+lt;dedRows=[['3.3% (소득세 3% + 지방세 0.3%)','− '+won(ded)]]}
+ if(dedType==='ins'){const pen=pensionBase(month)*RATES.pension/100,hea=month*RATES.health/100,ltc=hea*RATES.ltc/100,emp=month*RATES.employment/100,itx=estimateMonthlyIncomeTax(month,1),ltx=itx*0.1;
+  ded=pen+hea+ltc+emp+itx+ltx;dedRows=[['4대보험 + 소득세 (근로자 부담)','− '+won(ded)]]}
+ return{n,dh,wh,brk:sh.brk/60,wage,base,otH,ot,ntH,nt,juOk,ju,week,month,ded,dedRows,net:month-ded,big}}
+const DAYN='월화수목금토일';
+calcs.push({id:'parttime',label:'알바 월급 계산기',title:'알바 월급 계산기',group:'employee',
+ disclaimerExtra:'한 달은 평균 4.345주로 계산했어요. 주휴수당은 그 주 출근하기로 한 날을 모두 나왔을 때 받아요. 4대보험 세금은 추정치예요.',
+ fields:[
+  {id:'mode',type:'seg',label:'어떻게 받나요?',options:[{value:'hour',label:'시급으로'},{value:'day',label:'일당으로'}]},
+  {id:'hourly',when:'hour',label:'시급',unit:'원',placeholder:'예: '+RATES.minimumWage},
+  {id:'daily',when:'day',label:'일당',unit:'원',placeholder:'예: 90000'},
+  {id:'days',type:'days',label:'출근하는 요일',def:'12345'},
+  {id:'start',type:'time',label:'출근',def:'11:00',half:1},{id:'end',type:'time',label:'퇴근',def:'21:00',half:1},
+  {id:'bstart',type:'time',label:'휴게 시작',def:'15:30',half:1},{id:'bend',type:'time',label:'휴게 끝',def:'17:00',half:1},
+  {id:'size',type:'select',label:'가게 직원 수',options:[{value:'5up',label:'5명 이상 (연장·야간수당 1.5배)'},{value:'u5',label:'5명 미만 (가산수당 없음)'}]},
+  {id:'ded',type:'select',label:'떼는 돈',options:[{value:'none',label:'안 떼고 그대로 받아요 (세전)'},{value:'33',label:'3.3% 떼고 받아요'},{value:'ins',label:'4대보험 가입했어요'}]}],
+ run(v){if(v.size==='0')v.size='5up';if(v.ded==='0')v.ded='none';
+  const r=partTime(v);if(!r)return{main:'출근 요일과 근무시간을 확인해 주세요',sub:[],related:[]};
+  const h=x=>(Math.round(x*10)/10)+'시간',min=RATES.minimumWage,rows=[];
+  rows.push(['근무시간',null],['하루 일하는 시간',r.brk?`${h(r.dh)} (휴게 ${h(r.brk)} 빼고)`:`${h(r.dh)} (휴게 없음)`],['일주일 일하는 시간',`${h(r.wh)} (주 ${r.n}일)`]);
+  rows.push([r.juOk?`✅ 주휴수당 받아요 (주 15시간 이상)`:`❌ 주휴수당 없어요 (주 ${h(r.wh)}, 15시간 미만)`,'']);
+  if(!r.juOk){const need=15-r.wh,dayAdd=r.dh*(r.n+1)>=15&&r.n<7;rows.push([dayAdd?`하루 더 출근하면 주 ${h(r.dh*(r.n+1))}이 돼서 주휴수당이 생겨요.`:`주 ${h(need)} 더 일하면 주휴수당이 생겨요.`,''])}
+  rows.push(['일주일에 받는 돈 (세전)',null],[v.mode==='day'?`일당 × ${r.n}일`:`시급 × ${h(r.wh)}`,won(r.base)]);
+  if(r.ot)rows.push([`연장수당 (${h(r.otH)} × 0.5배)`,won(r.ot)]);
+  if(r.nt)rows.push([`야간수당 (${h(r.ntH)} × 0.5배)`,won(r.nt)]);
+  if(r.ju)rows.push([`주휴수당 (${h(Math.min(r.wh,40)/40*8)}분)`,won(r.ju)]);
+  rows.push(['주급 합계',won(r.week)],['한 달에 받는 돈',null],['월급 (세전)',won(r.month)],...r.dedRows,['월급 (실수령)',won(r.net)]);
+  if(r.wage+0.5<min)rows.push([`⚠️ 시급으로 바꾸면 ${won(r.wage)}이라 최저시급(${won(min)})보다 적어요.`,'']);
+  if(!r.big&&(Math.max(r.dh-8,0)>0))rows.push(['5명 미만 가게는 8시간을 넘겨도 연장수당(1.5배)이 의무가 아니에요.','']);
+  return{main:`한 달 ${won(r.net)}`,sub:rows,related:RELATED['weekly-rest']||[]}}});
+CALC_FAQ['parttime']=[{q:'주휴수당은 언제 받을 수 있나요?',a:'일주일에 일하기로 한 시간이 15시간 이상이고, 그 주에 출근하기로 한 날을 모두 나오면 받아요. 하루 일한 만큼(주 40시간 이상이면 8시간분)을 더 받아요.'},{q:'휴게시간은 돈을 받나요?',a:'아니요. 휴게시간은 일한 시간에서 빠져요. 4시간 일하면 30분, 8시간 일하면 1시간 이상 쉬는 시간을 줘야 해요.'},{q:'연장·야간수당은 누구나 받나요?',a:'직원이 5명 이상인 가게에서 하루 8시간 또는 주 40시간을 넘기거나, 밤 10시~아침 6시에 일하면 그 시간에 시급의 0.5배를 더 받아요. 5명 미만 가게는 의무가 아니에요.'},{q:'3.3%와 4대보험 중 뭐가 맞나요?',a:'원래 직원으로 일하면 4대보험 대상인 경우가 많아요. 3.3%는 프리랜서(사업소득)로 처리할 때 떼는 세금이에요. 내가 어떻게 처리되는지는 급여명세서에서 확인하세요.'}];
+LEGAL_BASIS['parttime']='근로기준법 제55조(주휴일)와 제18조 제3항(주 15시간 미만 초단시간근로자 예외), 제54조(휴게: 4시간에 30분, 8시간에 1시간 이상), 제56조(연장·야간근로 50% 가산, 상시 5명 이상 사업장 적용)를 기준으로 계산해요.';
 // 복리 계산기: 매달 계산, 적립은 매달 말에 넣는다고 가정
 function compound(v){const P=+v.principal||0,M=+v.monthly||0,rate=(+v.rate||0)/100,Y=Math.min(Math.max(Math.round(+v.years||0),0),60),monthlyComp=(v.freq||'month')==='month',taxed=(v.tax||'normal')==='normal';
  let B=P,pending=0,simpleInt=0;const rows=[];
@@ -528,7 +577,7 @@ function home(){const M=[['calc','계산기',`${VIS().length}종`,'연봉 실수
 function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
  return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
  ${list.map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}${foot}`}
-const ex=f=>f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
+const ex=f=>f.def!=null?f.def:f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
  'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
  severance:'최근 3개월 급여와 근속기간으로 퇴직금을 계산해요','annual-leave':'남은 연차를 돈으로 바꾸면 얼마인지 계산해요',
@@ -537,13 +586,18 @@ const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 �
  'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이나 시급이 최저임금을 지키는지 바로 확인해요',
  'daily-worker-tax':'일당과 근무일수로 일용직 세금과 실제 지급액을 계산해요','card-fee':'카드 결제액에서 수수료와 부가세를 뺀 남는 돈이에요',
  'split-14h':'주 15시간 1명과 14시간 여러 명의 인건비를 비교해요',
- compound:'이자에 이자가 붙으면 얼마가 되는지 계산해요','lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
+ parttime:'시급·일당으로 월급과 주휴수당을 계산해요',compound:'이자에 이자가 붙으면 얼마가 되는지 계산해요','lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
 // 천 단위 쉼표: CV 에는 쉼표 없는 숫자만 저장하고 화면에만 쉼표를 붙인다
 const fmtN=x=>{const [i,...d]=String(x).replace(/[^\d.]/g,'').split('.');return i.replace(/^0+(?=[0-9])/,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')+(d.length?'.'+d.join(''):'')};
 function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.slice(0,el.selectionStart).replace(/[^\d.]/g,'').length,f=fmtN(raw);el.value=f;
  let n=0,p=0;while(p<f.length&&n<left){if(/[\d.]/.test(f[p]))n++;p++}try{el.setSelectionRange(p,p)}catch(e){}
  CV[id][fid]=raw;runC(id)}
-const fieldHtml=(id,f,big)=>f.type=='seg'?`<div class="seg mseg" role="group" aria-label="${f.label}">${f.options.map(o=>`<button type="button" class="${CV[id][f.id]==o.value?'on':''}" onclick="CV['${id}']['${f.id}']='${o.value}';render()">${o.label}</button>`).join('')}</div>`:`<label class="fl2" for="f-${f.id}">${f.label}</label>`+(f.type=='select'?`<select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(CV[id][f.id])?'selected':''}>${o.label}</option>`).join('')}</select>`:`<div class="inw"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][f.id])}" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="un">${f.unit}</span>`:''}</div>`)+(f.hint?`<p class="note">${f.hint}</p>`:'');
+function dayTg(id,fid,d){let v=String(CV[id][fid]||'');v=v.includes(d)?v.replace(d,''):(v+d).split('').sort().join('');CV[id][fid]=v;render()}
+const fieldHtml0=(id,f)=>f.type=='days'?`<label class="fl2">${f.label}</label><div class="dayp">${[...DAYN].map((n,k)=>`<button type="button" class="${String(CV[id][f.id]).includes(String(k+1))?'on':''}" onclick="dayTg('${id}','${f.id}','${k+1}')">${n}</button>`).join('')}</div>`
+ :f.type=='time'?`<div class="tcell"><label class="fl2" for="f-${f.id}">${f.label}</label><input type="time" id="f-${f.id}" value="${CV[id][f.id]}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')"></div>`:null;
+// half 칸(시간 입력)은 두 개씩 한 줄에
+function fieldsHtml(id,fs){let out='';for(let k=0;k<fs.length;k++){const f=fs[k];if(f.half){const g=fs[k+1]&&fs[k+1].half?fs[++k]:null;out+=`<div class="tpair">${fieldHtml(id,f)}${g?fieldHtml(id,g):''}</div>`}else out+=fieldHtml(id,f)}return out}
+const fieldHtml=(id,f,big)=>fieldHtml0(id,f)!=null?fieldHtml0(id,f):f.type=='seg'?`<div class="seg mseg" role="group" aria-label="${f.label}">${f.options.map(o=>`<button type="button" class="${CV[id][f.id]==o.value?'on':''}" onclick="CV['${id}']['${f.id}']='${o.value}';render()">${o.label}</button>`).join('')}</div>`:`<label class="fl2" for="f-${f.id}">${f.label}</label>`+(f.type=='select'?`<select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(CV[id][f.id])?'selected':''}>${o.label}</option>`).join('')}</select>`:`<div class="inw"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][f.id])}" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="un">${f.unit}</span>`:''}</div>`)+(f.hint?`<p class="note">${f.hint}</p>`:'');
 const rwH=(a,b)=>`<div class="rw"><span>${a}</span><b>${b}</b></div>`;
 function resHtml(id){const c=calcs.find(x=>x.id==id),v=CV[id];
  if(c.dual){const a=wht33(+v.contract||0),b=rev33(+v.net||0),
@@ -562,7 +616,7 @@ function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[
  if(c.dual){const R=resHtml(id),LB={contract:'<b class="hl">계약 금액</b> 기준',net:'<b class="hl">실제 수령액</b> 기준'},
   card=k=>`<section class="ccard"><div class="crow"><label class="ct" for="f-${k}">${LB[k]}</label><div class="inw"><input id="f-${k}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][k])}" onfocus="this.select()" oninput="nIn(this,'${id}','${k}')"><span class="un">원</span></div></div><div id="dres-${k}">${R[k]}</div></section>`;
   body=`<div class="dual">${['contract','net'].map(card).join('')}</div>`}
- else body=`<section class="ccard">${c.fields.filter(f=>!f.when||f.when==CV[id].mode).map(f=>fieldHtml(id,f)).join('')}<div id="cres">${resHtml(id)}</div></section>`;
+ else body=`<section class="ccard">${fieldsHtml(id,c.fields.filter(f=>!f.when||f.when==CV[id].mode))}<div id="cres">${resHtml(id)}</div></section>`;
  const info=`<details class="info"><summary>자세히 알아보기</summary><div id="crel">${relHtml(id)}</div>${LEGAL_BASIS[id]?`<h3>법적 근거·이용 안내</h3><p>${LEGAL_BASIS[id]}</p>`:''}${faq?`<h3>자주 묻는 질문</h3>${faq}`:''}</details>`;
  return `<div class="calc">${head}${body}${info}</div>${foot}`}
 function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>{const e=document.getElementById(i);if(e)e.innerHTML=h};
