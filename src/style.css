@@ -142,3 +142,9 @@ a.more{display:inline-block}
 .dayp button.on{background:var(--navy);border-color:var(--navy);color:#fff}
 .tpair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .tcell{min-width:0}.tcell input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:12px;padding:12px;font:600 17px var(--body);background:var(--bg);color:var(--fg);min-height:48px}
+/* 요일마다 다른 시간 */
+.ptg{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:12px;padding:12px 14px;font:600 15px var(--body);cursor:pointer;min-height:48px;margin:2px 0 12px;text-align:left}
+.ptg .ck{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);font-size:14px;color:#fff;flex:none}
+.ptg.on{border-color:var(--navy)}.ptg.on .ck{background:var(--navy);border-color:var(--navy)}
+.pday{border-top:1px solid var(--line);padding-top:10px;margin-top:6px}.pday>b{display:block;font-size:15px;margin-bottom:6px}
+.pday .tpair{margin-bottom:8px}

@@ -478,20 +478,22 @@ function shiftMinutes(st,en,bs,be){let a=tmin(st),b=tmin(en);if(a==null||b==null
  // 야간(22:00~06:00) 근무 분: 휴게시간과 겹치는 부분은 뺀다
  let night=0;for(let m=a;m<b;m++){const h=m%1440;const inBreak=x!=null&&y!=null&&m>=x&&m<y;if(!inBreak&&(h>=1320||h<360))night++}
  return{work:b-a-br,brk:br,night}}
-function partTime(v){const mode=v.mode||'hour',days=String(v.days||'').split('').filter(d=>'1234567'.includes(d)),n=days.length,sh=shiftMinutes(v.start,v.end,v.bstart,v.bend);
- if(!sh||sh.work<=0||!n)return null;
- const dh=sh.work/60,wh=dh*n,big=(v.size||'5up')==='5up';
- const wage=mode==='day'?(+v.daily||0)/dh:(+v.hourly||0);
- const base=mode==='day'?(+v.daily||0)*n:wage*wh;
- const otH=big?Math.max(Math.max(dh-8,0)*n,Math.max(wh-40,0)):0,ot=otH*wage*0.5;
- const ntH=big?sh.night/60*n:0,nt=ntH*wage*0.5;
+// 요일별 시간: custom 이 켜져 있으면 s{요일}/e{요일}/bs{요일}/be{요일}, 없으면 공통 시간
+const dayT=(v,d,k)=>{const key={start:'s',end:'e',bstart:'bs',bend:'be'}[k]+d;return v.custom==='1'&&v[key]!=null?v[key]:v[k]};
+function partTime(v){const mode=v.mode||'hour',days=String(v.days||'').split('').filter(d=>'1234567'.includes(d)),n=days.length;
+ if(!n)return null;const per=[];
+ for(const d of days){const sh=shiftMinutes(dayT(v,d,'start'),dayT(v,d,'end'),dayT(v,d,'bstart'),dayT(v,d,'bend'));if(!sh||sh.work<=0)return null;per.push({d,h:sh.work/60,brk:sh.brk/60,night:sh.night/60,st:dayT(v,d,'start'),en:dayT(v,d,'end')})}
+ const wh=per.reduce((a,x)=>a+x.h,0),dh=wh/n,big=(v.size||'5up')==='5up';
+ const base=mode==='day'?(+v.daily||0)*n:(+v.hourly||0)*wh,wage=mode==='day'?base/wh:(+v.hourly||0);
+ const otH=big?Math.max(per.reduce((a,x)=>a+Math.max(x.h-8,0),0),Math.max(wh-40,0)):0,ot=otH*wage*0.5;
+ const ntH=big?per.reduce((a,x)=>a+x.night,0):0,nt=ntH*wage*0.5;
  const juOk=wh>=15,ju=juOk?Math.min(wh,40)/40*8*wage:0;
- const week=base+ot+nt+ju,month=week*365/7/12;
+ const week=base+ot+nt+ju,month=week*365/7/12,sameBrk=per.every(x=>x.brk===per[0].brk)?per[0].brk:null;
  const dedType=v.ded||'none';let ded=0,dedRows=[];
  if(dedType==='33'){const it=Math.floor(month*0.03/10)*10,lt=Math.floor(it*0.1/10)*10;ded=it+lt;dedRows=[['3.3% (소득세 3% + 지방세 0.3%)','− '+won(ded)]]}
  if(dedType==='ins'){const pen=pensionBase(month)*RATES.pension/100,hea=month*RATES.health/100,ltc=hea*RATES.ltc/100,emp=month*RATES.employment/100,itx=estimateMonthlyIncomeTax(month,1),ltx=itx*0.1;
   ded=pen+hea+ltc+emp+itx+ltx;dedRows=[['4대보험 + 소득세 (근로자 부담)','− '+won(ded)]]}
- return{n,dh,wh,brk:sh.brk/60,wage,base,otH,ot,ntH,nt,juOk,ju,week,month,ded,dedRows,net:month-ded,big}}
+ return{n,dh,wh,per,custom:v.custom==='1',brk:sameBrk,wage,base,otH,ot,ntH,nt,juOk,ju,week,month,ded,dedRows,net:month-ded,big}}
 const DAYN='월화수목금토일';
 calcs.push({id:'parttime',label:'알바 월급 계산기',title:'알바 월급 계산기',group:'employee',
  disclaimerExtra:'한 달은 평균 4.345주로 계산했어요. 주휴수당은 그 주 출근하기로 한 날을 모두 나왔을 때 받아요. 4대보험 세금은 추정치예요.',
@@ -502,19 +504,24 @@ calcs.push({id:'parttime',label:'알바 월급 계산기',title:'알바 월급 �
   {id:'days',type:'days',label:'출근하는 요일',def:'12345'},
   {id:'start',type:'time',label:'출근',def:'11:00',half:1},{id:'end',type:'time',label:'퇴근',def:'21:00',half:1},
   {id:'bstart',type:'time',label:'휴게 시작',def:'15:30',half:1},{id:'bend',type:'time',label:'휴게 끝',def:'17:00',half:1},
+  {id:'custom',type:'perday',label:'요일마다 시간이 달라요',def:'0'},
   {id:'size',type:'select',label:'가게 직원 수',options:[{value:'5up',label:'5명 이상 (연장·야간수당 1.5배)'},{value:'u5',label:'5명 미만 (가산수당 없음)'}]},
   {id:'ded',type:'select',label:'떼는 돈',options:[{value:'none',label:'안 떼고 그대로 받아요 (세전)'},{value:'33',label:'3.3% 떼고 받아요'},{value:'ins',label:'4대보험 가입했어요'}]}],
  run(v){if(v.size==='0')v.size='5up';if(v.ded==='0')v.ded='none';
   const r=partTime(v);if(!r)return{main:'출근 요일과 근무시간을 확인해 주세요',sub:[],related:[]};
   const h=x=>(Math.round(x*10)/10)+'시간',min=RATES.minimumWage,rows=[];
-  rows.push(['근무시간',null],['하루 일하는 시간',r.brk?`${h(r.dh)} (휴게 ${h(r.brk)} 빼고)`:`${h(r.dh)} (휴게 없음)`],['일주일 일하는 시간',`${h(r.wh)} (주 ${r.n}일)`]);
+  rows.push(['근무시간',null]);
+  if(r.custom)r.per.forEach(x=>rows.push([`${DAYN[x.d-1]} ${x.st}~${x.en}`+(x.brk?` (휴게 ${h(x.brk)})`:''),h(x.h)]));
+  else rows.push(['하루 일하는 시간',r.brk?`${h(r.dh)} (휴게 ${h(r.brk)} 빼고)`:`${h(r.dh)} (휴게 없음)`]);
+  rows.push(['일주일 일하는 시간',`${h(r.wh)} (주 ${r.n}일)`]);
   rows.push([r.juOk?`✅ 주휴수당 받아요 (주 15시간 이상)`:`❌ 주휴수당 없어요 (주 ${h(r.wh)}, 15시간 미만)`,'']);
-  if(!r.juOk){const need=15-r.wh,dayAdd=r.dh*(r.n+1)>=15&&r.n<7;rows.push([dayAdd?`하루 더 출근하면 주 ${h(r.dh*(r.n+1))}이 돼서 주휴수당이 생겨요.`:`주 ${h(need)} 더 일하면 주휴수당이 생겨요.`,''])}
+  if(!r.juOk){const need=15-r.wh,dayAdd=r.wh+r.dh>=15&&r.n<7;rows.push([dayAdd?`비슷한 시간으로 하루 더 출근하면 주 ${h(r.wh+r.dh)}이 돼서 주휴수당이 생겨요.`:`주 ${h(need)} 더 일하면 주휴수당이 생겨요.`,''])}
   rows.push(['일주일에 받는 돈 (세전)',null],[v.mode==='day'?`일당 × ${r.n}일`:`시급 × ${h(r.wh)}`,won(r.base)]);
   if(r.ot)rows.push([`연장수당 (${h(r.otH)} × 0.5배)`,won(r.ot)]);
   if(r.nt)rows.push([`야간수당 (${h(r.ntH)} × 0.5배)`,won(r.nt)]);
   if(r.ju)rows.push([`주휴수당 (${h(Math.min(r.wh,40)/40*8)}분)`,won(r.ju)]);
   rows.push(['주급 합계',won(r.week)],['한 달에 받는 돈',null],['월급 (세전)',won(r.month)],...r.dedRows,['월급 (실수령)',won(r.net)]);
+  const lack=r.per.filter(x=>(x.h+x.brk>=8&&x.brk<1)||(x.h+x.brk>=4&&x.brk<0.5));if(lack.length)rows.push([`${lack.map(x=>DAYN[x.d-1]).join('·')}요일은 쉬는 시간이 법정 기준보다 짧아요 (4시간에 30분, 8시간에 1시간 이상).`,'']);
   if(r.wage+0.5<min)rows.push([`⚠️ 시급으로 바꾸면 ${won(r.wage)}이라 최저시급(${won(min)})보다 적어요.`,'']);
   if(!r.big&&(Math.max(r.dh-8,0)>0))rows.push(['5명 미만 가게는 8시간을 넘겨도 연장수당(1.5배)이 의무가 아니에요.','']);
   return{main:`한 달 ${won(r.net)}`,sub:rows,related:RELATED['weekly-rest']||[]}}});
@@ -593,7 +600,11 @@ function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.s
  let n=0,p=0;while(p<f.length&&n<left){if(/[\d.]/.test(f[p]))n++;p++}try{el.setSelectionRange(p,p)}catch(e){}
  CV[id][fid]=raw;runC(id)}
 function dayTg(id,fid,d){let v=String(CV[id][fid]||'');v=v.includes(d)?v.replace(d,''):(v+d).split('').sort().join('');CV[id][fid]=v;render()}
-const fieldHtml0=(id,f)=>f.type=='days'?`<label class="fl2">${f.label}</label><div class="dayp">${[...DAYN].map((n,k)=>`<button type="button" class="${String(CV[id][f.id]).includes(String(k+1))?'on':''}" onclick="dayTg('${id}','${f.id}','${k+1}')">${n}</button>`).join('')}</div>`
+function perdayHtml(id,f){const v=CV[id],on=v.custom==='1',days=String(v.days||'').split('').sort();
+ const tin=(d,k,lab)=>{const key={start:'s',end:'e',bstart:'bs',bend:'be'}[k]+d;return `<div class="tcell"><label class="fl2" for="f-${key}">${lab}</label><input type="time" id="f-${key}" value="${dayT(v,d,k)||''}" onchange="CV['${id}']['${key}']=this.value;runC('${id}')"></div>`};
+ return `<button type="button" class="ptg${on?' on':''}" aria-pressed="${on}" onclick="CV['${id}'].custom=CV['${id}'].custom==='1'?'0':'1';render()"><span class="ck">${on?'✓':''}</span>${f.label}</button>`
+  +(on?`<p class="note">위 공통 시간이 먼저 들어가 있어요. 다른 요일만 고치세요.</p>`+days.map(d=>`<div class="pday"><b>${DAYN[d-1]}</b><div class="tpair">${tin(d,'start','출근')}${tin(d,'end','퇴근')}</div><div class="tpair">${tin(d,'bstart','휴게 시작')}${tin(d,'bend','휴게 끝')}</div></div>`).join(''):'')}
+const fieldHtml0=(id,f)=>f.type=='perday'?perdayHtml(id,f):f.type=='days'?`<label class="fl2">${f.label}</label><div class="dayp">${[...DAYN].map((n,k)=>`<button type="button" class="${String(CV[id][f.id]).includes(String(k+1))?'on':''}" onclick="dayTg('${id}','${f.id}','${k+1}')">${n}</button>`).join('')}</div>`
  :f.type=='time'?`<div class="tcell"><label class="fl2" for="f-${f.id}">${f.label}</label><input type="time" id="f-${f.id}" value="${CV[id][f.id]}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')"></div>`:null;
 // half 칸(시간 입력)은 두 개씩 한 줄에
 function fieldsHtml(id,fs){let out='';for(let k=0;k<fs.length;k++){const f=fs[k];if(f.half){const g=fs[k+1]&&fs[k+1].half?fs[++k]:null;out+=`<div class="tpair">${fieldHtml(id,f)}${g?fieldHtml(id,g):''}</div>`}else out+=fieldHtml(id,f)}return out}
