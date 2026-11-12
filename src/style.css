@@ -279,3 +279,17 @@ h2 .more2,h2 a.more2{font-size:13px;font-weight:500;color:var(--mute);text-decor
 .nlot .btns .btn{padding:8px;font-size:13px;font-weight:500}
 .nlot .seg button{padding:7px;font-size:13px}
 .nlot .note{font-size:12px}
+/* /life/ */
+.lsub{color:var(--mute);font-size:14px;margin:0 0 14px}
+.lgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lcard{display:flex;flex-direction:column;gap:2px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card);color:inherit;text-decoration:none}
+.lcard .le{font-size:22px}.lcard b{font-size:16px}.lcard small{color:var(--mute);font-size:12.5px}
+.ltl{list-style:none;padding:0;margin:0 0 6px;border-left:2px solid var(--line);margin-left:6px}
+.ltl li{position:relative;padding:0 0 14px 16px}
+.ltl li::before{content:'';position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--card);border:2px solid var(--navy)}
+.ltl em{font-style:normal;font-size:12.5px;font-weight:700;color:var(--navy)}
+.ltl p{margin:2px 0 0;font-size:14.5px;line-height:1.6}
+.ltl .ll a{font-size:13px;color:var(--blue);text-decoration:none}
+.lh{font-size:17px;font-weight:900;margin:20px 0 8px}
+.lnav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.lnav a{padding:7px 12px;border:1px solid var(--line);border-radius:99px;font-size:13.5px;color:inherit;text-decoration:none}

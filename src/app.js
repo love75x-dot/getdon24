@@ -395,8 +395,8 @@ const TABS=[['home','⌂','홈'],['calc','≡','계산기'],['find','◎','받�
 const col=n=>n<=10?'y':n<=20?'b':n<=30?'r':n<=40?'g':'n';
 const ball=(n,s='')=>`<span class="ball ${col(n)} ${s}">${n}</span>`;
 const balls=(d,s='')=>`<div class="balls">${d.n.map(n=>ball(n,s)).join('')}<span class="plus">+</span>${ball(d.b,s)}</div>`;
-function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';return '/'+t+'/'}
-function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';return a}
+function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';return '/'+t+'/'}
+function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';if(a=='life')return b?'l-'+b:'life';return a}
 let cur=(typeof window!='undefined'&&window.__ROUTE)||routeOf(typeof location!='undefined'?location.pathname:'/'),pick=new Set,placeF='region',gens=[];
 function go(t){location.href=pathOf(t)}
 const LOTNOTE=`<div class="lotnote"><div>로또·연금복권 정보는 동행복권 공식 발표 자료 기준이에요.</div><div>만 19세 이상 구매 가능 · 도박 문제 상담 <b>1336</b> (24시간)</div><div>통계와 번호 뽑기는 재미로 보는 정보예요. 당첨 확률을 바꾸지 않아요.</div></div>`;
@@ -504,7 +504,7 @@ calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수�
    ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:RELATED['card-fee']}}});
 // 관련 계산기 (계산기 화면 아래에 링크로 보여 줌)
 const CALC_SRC={salary:()=>'소득세: 국세청 근로소득 간이세액표(2026.3.1. 시행) · 4대보험 2026년 요율','salary-compare':()=>'소득세: 국세청 간이세액표(2026.3.1. 시행)',unemployment:()=>`${UB.year}년 기준 · 고용노동부, 고용보험법`,overtime:()=>'근로기준법 제56조 기준',resign:()=>`실업급여 ${UB.year}년 기준 · 고용노동부`,'minwage-check':()=>`${RATES.minimumWageYear}년 최저시급 기준 · 고용노동부 고시`};
-const CALC_REL={unemployment:['resign','severance','annual-leave'],overtime:['parttime','weekly-rest','minwage-check'],resign:['unemployment','severance','annual-leave'],severance:['resign','unemployment'],'annual-leave':['resign','overtime'],parttime:['overtime','weekly-rest','minwage-check'],'weekly-rest':['parttime','overtime'],'minwage-check':['parttime','overtime']};
+const CALC_REL={salary:['goal-100m','goal-50m','savings'],deposit:['savings','goal','compound'],savings:['deposit','goal-50m','goal-100m'],goal:['goal-50m','goal-100m','savings'],'goal-50m':['goal-100m','savings','salary'],'goal-100m':['goal-50m','savings','salary'],loan:['prepay-fee','goal'],'prepay-fee':['loan'],compound:['goal','deposit'],unemployment:['resign','severance','annual-leave'],overtime:['parttime','weekly-rest','minwage-check'],resign:['unemployment','severance','annual-leave'],severance:['resign','unemployment'],'annual-leave':['resign','overtime'],parttime:['overtime','weekly-rest','minwage-check'],'weekly-rest':['parttime','overtime'],'minwage-check':['parttime','overtime']};
 // ---------- 1단계: 일하다 받는 돈 ----------
 // 실업급여 기준 (출처·기준일 확인한 값만). 해가 바뀌면 새 연도 값을 확인해서 추가한다.
 //  - 지급률 60%, 소정급여일수 표: 고용노동부 FAQ (2019.10.1. 이후 이직자 기준)
@@ -690,6 +690,84 @@ calcs.push({id:'compound',label:'복리 계산기',title:'복리 계산기',grou
    ['연도별 잔액 (세전)',null],...yr.map(([y,p,b])=>[`${y}년 뒤`,won(b)])],related:[]}}});
 CALC_FAQ['compound']=[{q:'복리와 단리는 뭐가 다른가요?',a:'단리는 처음 넣은 돈에만 이자가 붙고, 복리는 붙은 이자에도 다시 이자가 붙어요. 기간이 길수록 차이가 커져요.'},{q:'월복리와 연복리 중 뭘 골라야 하나요?',a:'가입한 상품 설명서에 적힌 방식을 고르세요. 같은 이자율이면 월복리가 조금 더 많아요. 주식·펀드 수익률처럼 1년 기준 수익률이면 연복리가 더 가까워요.'},{q:'세금은 언제 떼나요?',a:'예·적금 이자는 받을 때 이자소득세 14%와 지방소득세 1.4%, 합계 15.4%를 떼요. 이 계산기는 만기에 한 번에 뗀다고 보고 계산해요.'}];
 LEGAL_BASIS['compound']='예·적금 이자는 소득세법에 따른 이자소득으로, 지급할 때 소득세 14%와 지방소득세 1.4%(합계 15.4%)가 원천징수돼요. 비과세 종합저축, ISA 등은 조건에 따라 세금이 줄거나 없어요.';
+// ── 금융 계산기 (예금·적금·모으기·대출·중도상환수수료) ──
+// 이자 세금: 이자소득세 14%(10원 미만 버림) + 지방소득세(그 10%, 10원 미만 버림)
+function intTax(i,kind){if(kind=='free'||i<=0)return{it:0,lt:0,t:0};const it=Math.floor(i*0.14/10)*10,lt=Math.floor(it*0.1/10)*10;return{it,lt,t:it+lt}}
+const nMon=v=>{const n=+v.n||0;return Math.max(0,Math.round(v.pu=='m'?n:n*12))};
+const PU={id:'pu',type:'seg',label:'기간 단위',options:[{value:'y',label:'년'},{value:'m',label:'월'}]};
+const NF=(lb)=>({id:'n',label:lb,unit:v=>v.pu=='m'?'개월':'년',placeholder:'예: 1'});
+const RM={id:'how',type:'seg',label:'이자 방식',options:[{value:'s',label:'단리'},{value:'c',label:'월복리'}]};
+const TX={id:'tax',type:'seg',label:'이자 세금',options:[{value:'normal',label:'일반과세 15.4%'},{value:'free',label:'비과세'}]};
+function depInt(P,r,n,how){return how=='c'?P*(Math.pow(1+r/12,n)-1):P*r*n/12}
+function savInt(M,r,n,how){const i=r/12;if(!i)return 0;return how=='c'?M*((1+i)*(Math.pow(1+i,n)-1)/i-n):M*i*n*(n+1)/2}
+calcs.push({id:'deposit',label:'예금 이자 계산기',title:'예금 이자 계산기',group:'money',
+ disclaimerExtra:'만기에 이자를 한 번에 받는다고 보고 계산했어요. 실제 이자는 은행의 일수 계산 방식에 따라 몇 원~몇백 원 다를 수 있어요.',
+ fields:[{id:'p',label:'예치금액',unit:'원',placeholder:'예: 10000000'},PU,NF('예금기간'),{id:'rate',label:'연 이자율',unit:'%',placeholder:'예: 3'},RM,TX],
+ run(v){const P=+v.p||0,n=nMon(v),r=(+v.rate||0)/100;if(!P||!n)return{main:'예치금액과 기간을 넣어 주세요',sub:[]};
+  const I=Math.floor(depInt(P,r,n,v.how)),T=intTax(I,v.tax);
+  return{main:`만기 수령액 ${won(P+I-T.t)}`,sub:[['원금',won(P)],['세전 이자',won(I)],...(v.tax=='free'?[['이자 세금','비과세 0원']]:[['이자소득세 14%','− '+won(T.it)],['지방소득세 1.4%','− '+won(T.lt)]]),['세후 이자',won(I-T.t)],['기간',`${n}개월`]]}}});
+calcs.push({id:'savings',label:'적금 이자 계산기',title:'적금 이자 계산기',group:'money',
+ disclaimerExtra:'매달 같은 날 같은 금액을 넣는다고 보고 계산했어요. 적금 이자율은 넣은 돈 전체에 1년 내내 붙는 게 아니라, 매달 넣은 돈이 남은 기간만큼만 붙어요.',
+ fields:[{id:'m',label:'월 납입액',unit:'원',placeholder:'예: 500000'},PU,NF('적립기간'),{id:'rate',label:'연 이자율',unit:'%',placeholder:'예: 4'},RM,TX],
+ run(v){const M=+v.m||0,n=nMon(v),r=(+v.rate||0)/100;if(!M||!n)return{main:'월 납입액과 기간을 넣어 주세요',sub:[]};
+  const paid=M*n,I=Math.floor(savInt(M,r,n,v.how)),T=intTax(I,v.tax);
+  return{main:`만기 수령액 ${won(paid+I-T.t)}`,sub:[['넣은 돈 합계',won(paid)],['세전 이자',won(I)],...(v.tax=='free'?[['이자 세금','비과세 0원']]:[['이자소득세 14%','− '+won(T.it)],['지방소득세 1.4%','− '+won(T.lt)]]),['세후 이자',won(I-T.t)],['이자율로 보면',`실제로는 원금의 ${(I/paid*100).toFixed(2)}%`]]}}});
+// 모으기: 지금 있는 돈(예금처럼) + 매달 적금. 세후 금액이 목표에 닿는지
+function goalNet(P,M,r,n,how,tax){const I=Math.floor(depInt(P,r,n,how)+savInt(M,r,n,how)),T=intTax(I,tax);return{paid:P+M*n,I,T:T.t,net:P+M*n+I-T.t}}
+function goalNeed(G,P,r,n,how,tax){if(n<=0)return 0;let lo=0,hi=G;while(hi-lo>1){const m=Math.floor((lo+hi)/2);goalNet(P,m,r,n,how,tax).net>=G?hi=m:lo=m}return Math.ceil(hi/1000)*1000}
+function goalRun(v){const G=(+v.goal||0)*10000,P=(+v.have||0)*10000,r=(+v.rate||0)/100,how=v.how,tax=v.tax;
+ if(!G)return{main:'목표 금액을 넣어 주세요',sub:[]};
+ if(P>=G)return{main:'이미 목표를 넘었어요 🎉',sub:[]};
+ const cmp=[3,5,7,10].map(y=>[`${y}년이면`,`월 ${won(goalNeed(G,P,r,y*12,how,tax))}`]);
+ if(v.mode=='time'){const M=+v.m||0;if(!M)return{main:'매달 모을 금액을 넣어 주세요',sub:[]};
+  let n=0,g;do{n++;g=goalNet(P,M,r,n,how,tax)}while(g.net<G&&n<1200);
+  if(g.net<G)return{main:'100년 안에 닿지 않아요. 금액을 늘려 보세요',sub:[]};
+  return{main:`${Math.floor(n/12)?Math.floor(n/12)+'년 ':''}${n%12?n%12+'개월':''} 걸려요`,sub:[['목표',won(G)],['넣은 돈 합계',won(g.paid)],['붙는 이자 (세후)',won(g.I-g.T)],['그때 모인 돈',won(g.net)],['기간별로 보면',null],...cmp]}}
+ const n=Math.round((+v.y||0)*12);if(!n)return{main:'기간을 넣어 주세요',sub:[]};
+ const M=goalNeed(G,P,r,n,how,tax),g=goalNet(P,M,r,n,how,tax);
+ return{main:`매달 ${won(M)}씩`,sub:[['목표',won(G)],['기간',`${+v.y}년 (${n}개월)`],['넣은 돈 합계',won(g.paid)],['붙는 이자 (세후)',won(g.I-g.T)],['만기에 모인 돈',won(g.net)],['하루로 치면',`${won(Math.ceil(M*12/365/100)*100)}`],['기간별로 보면',null],...cmp]}}
+const goalF=(def)=>[{id:'mode',type:'seg',label:'알고 싶은 것',options:[{value:'month',label:'매달 얼마?'},{value:'time',label:'몇 년 걸려?'}]},
+ {id:'goal',label:'목표 금액',unit:'만원',placeholder:'예: 10000',def},{id:'have',label:'지금 모아 둔 돈',unit:'만원',placeholder:'예: 0'},
+ {id:'y',label:'모을 기간',unit:'년',placeholder:'예: 5',when:'month',def:'5'},{id:'m',label:'매달 모을 돈',unit:'원',placeholder:'예: 1000000',when:'time'},
+ {id:'rate',label:'연 이자율',unit:'%',placeholder:'예: 3.5',def:'3.5'},RM,TX];
+const GOALD='지금 모아 둔 돈은 예금처럼, 매달 모으는 돈은 적금처럼 같은 이자율로 계산했어요. 실제 상품은 기간·한도가 있어 이자율이 바뀔 수 있어요. 매달 금액은 천 원 단위로 올렸어요.';
+calcs.push({id:'goal',label:'목돈 모으기 계산기',title:'목돈 모으기 계산기',group:'money',disclaimerExtra:GOALD,fields:goalF(''),run:goalRun});
+calcs.push({id:'goal-50m',label:'5천만원 모으기',title:'5천만원 모으기 계산기',group:'money',disclaimerExtra:GOALD,fields:goalF('5000'),run:goalRun});
+calcs.push({id:'goal-100m',label:'1억 모으기',title:'1억 모으기 계산기',group:'money',disclaimerExtra:GOALD,fields:goalF('10000'),run:goalRun});
+calcs.push({id:'loan',label:'대출 이자 계산기',title:'대출 이자 계산기',group:'money',
+ disclaimerExtra:'금리가 대출 기간 내내 같다고 보고 계산했어요. 변동금리는 금리가 바뀔 때마다 상환액도 바뀌어요.',
+ fields:[{id:'p',label:'대출금액',unit:'원',placeholder:'예: 100000000'},PU,NF('대출기간'),{id:'rate',label:'대출금리',unit:'%',placeholder:'예: 4.5'},
+  {id:'how',type:'seg',label:'상환방법',options:[{value:'eq',label:'원리금균등'},{value:'pr',label:'원금균등'},{value:'bul',label:'만기일시'}]}],
+ run(v){const P=+v.p||0,n=nMon(v),i=(+v.rate||0)/100/12;if(!P||!n)return{main:'대출금액과 기간을 넣어 주세요',sub:[]};
+  let bal=P,tot=0;const rows=[];
+  for(let k=1;k<=n;k++){const it=Math.round(bal*i);let pr;
+   if(v.how=='pr')pr=k==n?bal:Math.round(P/n);else if(v.how=='bul')pr=k==n?bal:0;else{const A=i?P*i/(1-Math.pow(1+i,-n)):P/n;pr=k==n?bal:Math.round(A)-it}
+   bal-=pr;tot+=it;rows.push([k,pr+it,pr,it,bal])}
+  const f=rows[0],l=rows[n-1],head=v.how=='eq'?`매달 ${won(f[1])}`:v.how=='pr'?`첫 달 ${won(f[1])}`:`매달 이자 ${won(f[3])}`;
+  const show=rows.filter(r=>r[0]<=3||r[0]==n||(n>24&&r[0]%(n>120?60:12)==0));
+  return{main:head,sub:[['대출금액',won(P)],['총 이자',won(tot)],['총 상환금액',won(P+tot)],...(v.how=='pr'?[['마지막 달',won(l[1])]]:[]),...(v.how=='bul'?[['만기에 갚을 돈',won(l[1])]]:[]),
+   ['회차별 상환 (상환액 · 남은 원금)',null],...show.map(r=>[`${r[0]}회차`,`${won(r[1])} · ${won(Math.max(r[4],0))}`])]}}});
+const dd=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+calcs.push({id:'prepay-fee',label:'중도상환수수료 계산기',title:'중도상환수수료 계산기',group:'money',
+ disclaimerExtra:'많이 쓰는 방식(상환금액 × 수수료율 × 남은 기간 ÷ 기준 기간)으로 계산했어요. 수수료율과 면제기간은 대출 약정서에 적힌 값을 넣어 주세요.',
+ fields:[{id:'amt',label:'갚을 금액',unit:'원',placeholder:'예: 50000000'},{id:'rate',label:'수수료율',unit:'%',placeholder:'예: 1.2'},
+  {id:'start',type:'date',label:'대출일',def:'2025-03-01'},{id:'pay',type:'date',label:'갚는 날',def:'2026-11-12'},{id:'end',type:'date',label:'만기일',def:'2030-03-01'},
+  {id:'ex',label:'면제기간',unit:'년',placeholder:'예: 3',def:'3',hint:'대출 후 이 기간이 지나면 수수료가 없어요. 보통 3년이에요. 없으면 비워 두세요.'}],
+ run(v){const A=+v.amt||0,R=(+v.rate||0)/100;if(!A)return{main:'갚을 금액을 넣어 주세요',sub:[]};
+  if(!v.start||!v.pay||!v.end)return{main:'날짜를 모두 골라 주세요',sub:[]};
+  const total=dd(v.start,v.end),used=dd(v.start,v.pay);if(total<=0||used<0)return{main:'날짜 순서를 확인해 주세요',sub:[]};
+  const exD=+v.ex?Math.min(dd(v.start,new Date(new Date(v.start).setFullYear(new Date(v.start).getFullYear()+(+v.ex))).toISOString().slice(0,10)),total):total;
+  const left=Math.max(exD-used,0),fee=Math.floor(A*R*left/exD);
+  return{main:left?`수수료 ${won(fee)}`:'수수료 0원 (면제)',sub:[['갚을 금액',won(A)],['수수료율',`${+v.rate||0}%`],['기준 기간',`${exD}일${+v.ex?' (면제기간)':' (대출기간)'}`],['지난 기간',`${used}일`],['남은 기간',`${left}일`],['계산식',`${won(A)} × ${+v.rate||0}% × ${left}/${exD}`]]}}});
+CALC_FAQ['deposit']=[{q:'단리와 월복리는 뭐가 달라요?',a:'단리는 원금에만 이자가 붙고, 월복리는 매달 붙은 이자에도 다시 이자가 붙어요. 기간이 길수록 월복리가 조금 더 많아요.'},{q:'이자 세금은 얼마나 떼요?',a:'이자소득세 14%와 지방소득세 1.4%, 합계 15.4%를 떼요. 비과세 종합저축 같은 상품은 조건이 맞으면 떼지 않아요.'}];
+CALC_FAQ['savings']=[{q:'적금 4%면 이자가 넣은 돈의 4%인가요?',a:'아니에요. 첫 달에 넣은 돈만 1년 내내 이자가 붙고, 마지막 달 넣은 돈은 한 달만 붙어요. 그래서 1년 적금의 실제 이자는 넣은 돈의 약 절반 이율만큼이에요.'},{q:'세금은 언제 떼요?',a:'만기에 이자를 받을 때 15.4%를 떼고 줘요.'}];
+CALC_FAQ['goal']=[{q:'1억 모으려면 매달 얼마씩 모아야 해요?',a:'이자 3.5%, 일반과세 기준으로 5년이면 매달 150만원대, 10년이면 70만원대예요. 위 계산기에 지금 모아 둔 돈과 이자율을 넣으면 정확히 나와요.'},{q:'이자는 어떻게 계산해요?',a:'지금 있는 돈은 예금처럼, 매달 넣는 돈은 적금처럼 같은 이자율로 계산해요. 세금 15.4%를 뗀 금액이 목표에 닿는 최소 금액을 찾아요.'}];
+CALC_FAQ['goal-50m']=CALC_FAQ['goal'].map(x=>({q:x.q.replace('1억','5천만원'),a:x.a.replace('5년이면 매달 150만원대, 10년이면 70만원대','계산기 결과')}));CALC_FAQ['goal-100m']=CALC_FAQ['goal'];
+CALC_FAQ['loan']=[{q:'원리금균등과 원금균등은 뭐가 달라요?',a:'원리금균등은 매달 갚는 돈이 같아요. 원금균등은 매달 같은 원금에 줄어드는 이자를 더해서, 처음에 많이 내고 점점 줄어요. 총 이자는 원금균등이 더 적어요.'},{q:'만기일시는요?',a:'매달 이자만 내다가 만기에 원금을 한 번에 갚아요. 매달 부담은 적지만 총 이자가 가장 많아요.'}];
+CALC_FAQ['prepay-fee']=[{q:'중도상환수수료는 언제 안 내요?',a:'약정서의 면제기간(보통 대출 후 3년)이 지나면 내지 않아요. 상품에 따라 매년 일부 금액은 수수료 없이 갚을 수 있기도 해요.'},{q:'수수료율은 어디서 봐요?',a:'대출 약정서나 은행 앱의 대출 상세 화면에 적혀 있어요. 상품마다 달라서 이 계산기는 직접 넣게 했어요.'}];
+LEGAL_BASIS['deposit']=LEGAL_BASIS['savings']=LEGAL_BASIS['goal']=LEGAL_BASIS['goal-50m']=LEGAL_BASIS['goal-100m']='이자소득은 지급할 때 소득세 14%(소득세법 제129조)와 지방소득세 1.4%가 원천징수돼요. 비과세종합저축·ISA 등은 조건에 따라 세금이 줄거나 없어요.';
+LEGAL_BASIS['loan']='상환액은 금리와 기간으로 계산한 일반적인 공식이에요. 실제 이자는 은행의 일할 계산 방식에 따라 조금 달라요.';
+LEGAL_BASIS['prepay-fee']='금융소비자보호법은 대출 후 3년이 지나면 중도상환수수료를 받지 못하게 해요(일부 예외 있음). 수수료율은 금융회사·상품마다 달라 약정서를 확인해야 해요.';
 CALC_FAQ['card-fee']=[{q:'통장에 들어올 때 부가세도 빠지나요?',a:'아니요. 카드사는 수수료만 빼고 보내요. 결제 금액에 들어 있는 부가세(1/11)는 나중에 부가세 신고 때 사업자가 직접 내요.'},{q:'카드매출 세액공제는 누구나 받나요?',a:'직전 연도 공급가액 10억원 이하 개인사업자가 받아요. 연간 한도가 있고 법인은 받을 수 없어요.'},{q:'간이과세자는 어떻게 되나요?',a:'간이과세자는 업종별 부가가치율을 적용해 부가세가 훨씬 적어요. 이 계산기는 일반과세자 기준이라 부가세가 실제보다 크게 나와요.'}];
 LEGAL_BASIS['card-fee']='여신전문금융업법에 따른 영세·중소가맹점 우대수수료율과 부가가치세법(세율 10%), 신용카드 등 매출세액공제(부가가치세법 제46조)를 기준으로 한 추정치예요.';
 calcs.push({id:'split-14h',label:'쪼개기 고용 계산기',title:'쪼개기 고용 계산기',group:'employer',
@@ -757,6 +835,58 @@ function benCard(b){const c=b.calc&&ALLC().find(x=>x.id==b.calc);
  ${b.who?`<p><em>누가</em>${b.who}</p>`:''}${b.period?`<p><em>얼마나</em>${b.period}</p>`:''}${b.apply?`<p><em>신청</em>${b.apply}</p>`:''}${b.note?`<p class="bnote">${b.note}</p>`:''}
  <div class="bl">${b.url?`<a href="${b.url}" target="_blank" rel="noopener">공식 안내 보기 ↗</a>`:''}${c?A('c-'+c.id,'',`${c.label} ›`):''}</div>
  <small class="asof">기준일 ${b.asof} · 공식 안내를 꼭 확인하세요</small></article>`}
+// ── /life/ 인생 이벤트별로 받을 돈·할 일 ──
+// steps: [언제, 할 일, 링크(선택: 공식 URL 또는 'c-계산기')]. ben: data/benefits.json 의 id. 금액은 확인된 것만.
+const LIFE=[
+ {k:'marriage',e:'💍',t:'결혼',d:'혼인신고부터 연말정산까지',
+  steps:[['혼인신고 할 때','혼인신고는 시·구청이나 읍·면사무소에서 해요. 결혼세액공제는 2024~2026년에 혼인신고한 사람만 받아요','https://www.gov.kr'],
+   ['다음 해 연말정산','결혼세액공제: 부부 각자 50만원, 평생 한 번 (2024~2026년 혼인신고분)','https://www.hometax.go.kr'],
+   ['다음 해 연말정산','배우자 연 소득이 100만원 이하(근로소득만 있으면 총급여 500만원 이하)면 배우자 기본공제를 받을 수 있어요','https://www.hometax.go.kr'],
+   ['집 구할 때','신혼부부 전세·구입 대출은 조건이 자주 바뀌어요. 주택도시기금에서 지금 기준을 확인하세요','https://nhuf.molit.go.kr'],
+   ['돈 모을 때','둘이 합쳐 목표를 정하고 매달 얼마씩 모을지 계산해 보세요','c-goal-100m']],
+  calcs:['goal-100m','loan','salary'],ben:['eitc'],
+  src:'결혼세액공제: 세정일보 「2025년 달라지는 조세제도」(조세특례제한법 개정) 기준 · 2026-11-12 확인'},
+ {k:'birth',e:'👶',t:'출산',d:'출생신고 때 한 번에 신청하는 돈',
+  steps:[['임신 중','임신·출산 진료비 바우처(국민행복카드)는 건강보험공단·카드사에서 신청해요','https://www.nhis.or.kr'],
+   ['출생신고 할 때','부모급여·아동수당·첫만남이용권을 행정복지센터나 복지로에서 한 번에 신청할 수 있어요 (출생 후 60일 안에)','https://www.bokjiro.go.kr'],
+   ['아이 키우는 동안','육아휴직급여는 고용24에서 신청해요','https://www.work24.go.kr'],
+   ['다음 해 5월','자녀장려금 대상인지 확인하세요','https://www.hometax.go.kr'],
+   ['다음 해 연말정산','자녀가 있으면 자녀세액공제·출산입양 세액공제를 받을 수 있어요','https://www.hometax.go.kr']],
+  calcs:['goal','savings'],ben:['parent-pay','child-allowance','first-voucher','parental-leave','eitc']},
+ {k:'moving',e:'📦',t:'이사',d:'대출·전입신고·월세 지원',
+  steps:[['집 고를 때','대출이면 매달 얼마씩 갚는지 먼저 계산해 보세요','c-loan'],
+   ['기존 대출 갚을 때','중도상환수수료가 있는지 약정서를 보고 계산해 보세요','c-prepay-fee'],
+   ['이사한 날부터 14일 안에','전입신고를 해요 (주민등록법). 정부24에서 온라인으로도 돼요','https://www.gov.kr'],
+   ['계약서 받으면','전입신고와 함께 확정일자를 받아 두면 보증금을 지키는 데 도움이 돼요','https://www.gov.kr'],
+   ['월세 사는 청년이면','청년월세 지원 대상인지 확인하세요','https://www.bokjiro.go.kr'],
+   ['다음 해 연말정산','무주택 세대주라면 월세 세액공제를 받을 수 있는지 확인하세요','https://www.hometax.go.kr']],
+  calcs:['loan','prepay-fee','deposit'],ben:['youth-rent']},
+ {k:'resign',e:'🚪',t:'퇴사',d:'퇴직금·실업급여·세금 정리',
+  steps:[['퇴사 전','퇴직금·남은 연차수당·실업급여를 한 번에 계산해 보세요','c-resign'],
+   ['퇴사 후 14일 안에','퇴직금은 퇴사 후 14일 안에 받아야 해요 (근로자퇴직급여 보장법). 늦으면 회사에 먼저 물어보세요','c-severance'],
+   ['퇴사 후 바로','실업급여는 고용24에서 구직 등록 후 신청해요. 퇴사 다음 날부터 12개월 안에 다 받아야 해서 늦으면 손해예요','https://www.work24.go.kr'],
+   ['실업급여가 안 되면','국민취업지원제도를 확인하세요','https://www.work24.go.kr'],
+   ['건강보험','지역가입자로 바뀌어 보험료가 오를 수 있어요. 임의계속가입을 신청할 수 있는지 건강보험공단에서 확인하세요','https://www.nhis.or.kr'],
+   ['다음 해 5월','중간에 퇴사해서 연말정산을 못 했다면 5월 종합소득세 신고 때 정산해요','https://www.hometax.go.kr']],
+  calcs:['resign','severance','unemployment'],ben:['unemployment','kua']},
+ {k:'retire',e:'🌿',t:'은퇴',d:'연금과 모아 둔 돈 점검',
+  steps:[['은퇴 5~10년 전','국민연금공단 「내 연금 알아보기」에서 예상 연금액을 확인하세요','https://www.nps.or.kr'],
+   ['은퇴 5~10년 전','목표 노후자금까지 매달 얼마씩 더 모아야 하는지 계산해 보세요','c-goal'],
+   ['퇴직할 때','퇴직금·퇴직연금은 IRP로 옮기면 세금을 나중에 낼 수 있어요. 가입한 금융회사에서 확인하세요','https://100lifeplan.fss.or.kr'],
+   ['만 65세 이후','기초연금은 소득·재산 기준이 있어요. 복지로에서 대상인지 확인하세요','https://www.bokjiro.go.kr']],
+  calcs:['goal','compound','deposit'],ben:[]}];
+const LIFEBY=Object.fromEntries(LIFE.map(x=>[x.k,x]));
+function lifeIdx(){return `<h1 class="h1">인생 이벤트별 받을 돈</h1><p class="lsub">결혼, 출산, 이사, 퇴사, 은퇴 때 챙길 돈과 할 일을 순서대로 모았어요</p>
+ <div class="lgrid">${LIFE.map(x=>A('l-'+x.k,'lcard',`<span class="le">${x.e}</span><b>${x.t}</b><small>${x.d}</small>`)).join('')}</div>${foot}`}
+function lifePage(k){const x=LIFEBY[k];if(!x)return lifeIdx();
+ const lk=(u,t)=>!u?t:u.startsWith('c-')?A(u,'',t+' ›'):`<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>`;
+ const bens=x.ben.map(id=>BEN.find(b=>b.id==id)).filter(Boolean);
+ return `<div class="crumb">${A('life','','인생 이벤트')} › ${x.t}</div><h1 class="h1">${x.e} ${x.t} 할 때 받을 돈·할 일</h1><p class="lsub">${x.d}</p>
+ <ol class="ltl">${x.steps.map(([w,t,u])=>`<li><em>${w}</em><p>${t}</p>${u?`<div class="ll">${lk(u,u.startsWith('c-')?'계산하기':'공식 사이트')}</div>`:''}</li>`).join('')}</ol>
+ ${bens.length?`<h2 class="lh">받을 수 있는 돈</h2>${bens.map(benCard).join('')}`:''}
+ <h2 class="lh">바로 계산</h2><div class="lcalc">${x.calcs.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'gcard',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}</div>
+ <div class="fn bot"><p>조회·신청은 공식 사이트에서 해요. 받는돈은 개인정보를 받지 않아요.</p>${x.src?`<p>${x.src}</p>`:''}<p>제도는 자주 바뀌어요. 금액·조건은 공식 안내를 꼭 확인하세요.</p></div>
+ <nav class="lnav">${LIFE.filter(y=>y.k!=k).map(y=>A('l-'+y.k,'',`${y.e} ${y.t}`)).join('')}</nav>${foot}`}
 function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const sel=[...findPick],list=sel.length?BEN.filter(b=>b.tags.some(t=>findPick.has(t))):[];
  const chips=`<div class="fchips">${FINDT.map(([k,l])=>`<button type="button" class="${findPick.has(k)?'on':''}" onclick="findTg2('${k}')">${l}</button>`).join('')}</div>`;
@@ -782,7 +912,7 @@ const FINDT=[['worker','직장인'],['parttime','알바'],['freelance','프리�
 let findPick=new Set;
 function findTg(k){findPick.has(k)?findPick.delete(k):findPick.add(k);document.querySelectorAll('.fchips button').forEach(b=>b.classList.toggle('on',findPick.has(b.dataset.k)));const g=document.getElementById('fgo');if(g){g.href='/find/'+(findPick.size?'?t='+[...findPick].join(','):'');g.textContent=findPick.size?`${findPick.size}개 골랐어요 · 받을 돈 보기 ›`:'받을 돈 보기 ›'}}
 const CATS4=[['월급·일한 돈','연봉·알바·퇴직금·3.3%','calc','w'],['나라에서 받는 돈','지원금·수당·장려금','find','g'],['돌려받는 돈','연말정산·종합소득세 환급','c-tax-refund','r'],['당첨된 돈','로또·연금복권 실수령액','lotto','l']];
-const POPC=['salary','parttime','freelance','severance','weekly-rest'];
+const POPC=['salary','parttime','goal-100m','freelance','severance','weekly-rest'];
 function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts=allPosts().slice(0,3);
  return `<section class="h-hero"><h1>내가 받을 돈,<br><em>24시간</em> 다 찾아드려요</h1>
  <label class="hlab" for="hin">내 연봉 (세전)</label><div class="hbox"><input id="hin" inputmode="numeric" autocomplete="off" value="${(+heroA).toLocaleString()}" oninput="heroIn(this)" onfocus="this.select()"><span>만원</span></div>
@@ -790,6 +920,7 @@ function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts
  <div id="hout">${heroOut()}</div></section>
  <section class="hsec"><h2>1분 만에 받을 돈 찾기 <small>여러 개 골라도 돼요</small></h2><div class="fchips">${FINDT.map(([k,l])=>`<button type="button" data-k="${k}" class="${findPick.has(k)?'on':''}" onclick="findTg('${k}')">${l}</button>`).join('')}</div><a id="fgo" class="fgo" href="/find/">받을 돈 보기 ›</a></section>
  <section class="hsec"><div class="c4">${CATS4.map(([t,dsc,to,k])=>A(to,'c4i c4-'+k,`<b>${t}</b><small>${dsc}</small>`)).join('')}</div></section>
+ <section class="hsec"><h2>이럴 때 받을 돈 ${A('life','more2','전체 ›')}</h2><nav class="lnav">${LIFE.map(y=>A('l-'+y.k,'',`${y.e} ${y.t}`)).join('')}</nav></section>
  ${S?`<a class="season" href="${S.url}"${/^https?:/.test(S.url)?' target="_blank" rel="noopener"':''}><span class="stag">${S.tag}</span><b>${S.title}</b><small>${S.desc}</small></a>`:''}
  <section class="hsec"><h2>많이 쓰는 계산기 ${A('calc','more2','전체 ›')}</h2>${POPC.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}</section>
  ${(()=>{const t=todayK(),xs=supSorted(SUP).filter(x=>x.end&&x.end>=t).slice(0,3);return xs.length?`<section class="hsec"><h2>마감 임박 혜택 ${A('benefits','more2','전체 ›')}</h2>${xs.map(x=>A('benefits','hsup',`${ddBadge(x)}<b class="one">${x.name}</b><small class="one">${x.host}${x.amount?` · 최대 ${x.amount}`:''}</small>`).replace('href="/benefits/"',`href="/benefits/#${x.id}"`)).join('')}</section>`:''})()}
@@ -837,9 +968,11 @@ function relHtml(id){const c=calcs.find(x=>x.id==id);let r;try{r=c.run(CV[id])}c
 // 같은 카드 안에서 탭으로 오가는 계산기 묶음. 탭마다 주소는 그대로(/calc/{id}/)
 const SUITES=[{t:'급여 계산기',ids:['wage','salary','severance','unemployment','resign']},
  {t:'알바·근무 계산기',ids:['parttime','weekly-rest','overtime','minwage-check']},
- {t:'프리랜서·사업자 계산기',ids:['freelance','tax-refund','card-fee','labor-cost']}];
-const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비'};
-const suiteOf=id=>SUITES.find(g=>g.ids.includes(id)&&g.ids.every(k=>k=='wage'||calcs.some(c=>c.id==k)));
+ {t:'프리랜서·사업자 계산기',ids:['freelance','tax-refund','card-fee','labor-cost']},
+ {t:'금융 계산기',ids:['deposit','savings','goal','loan','prepay-fee','compound']}];
+const TABAL={'goal-50m':'goal','goal-100m':'goal'};
+const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비',deposit:'예금',savings:'적금',goal:'모으기',loan:'대출','prepay-fee':'중도상환수수료',compound:'복리'};
+const suiteOf=id=>(id=TABAL[id]||id,SUITES.find(g=>g.ids.includes(id)&&g.ids.every(k=>k=='wage'||calcs.some(c=>c.id==k))));
 function hintTg(b){const p=b.closest('.fr').nextElementSibling;if(p&&p.classList.contains('fh'))p.hidden=!p.hidden}
 function nFieldHtml(id,f){const v=CV[id][f.id],hint=f.hint?`<button type="button" class="qi" aria-label="설명 보기" onclick="hintTg(this)">?</button>`:'';
  const H=f.hint?`<p class="fh" hidden>${f.hint}</p>`:'';
@@ -847,7 +980,7 @@ function nFieldHtml(id,f){const v=CV[id][f.id],hint=f.hint?`<button type="button
  if(f.type=='select')return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(v)?'selected':''}>${o.label}</option>`).join('')}</select></div></div>${H}`;
  if(f.type=='date')return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><input type="date" id="f-${f.id}" value="${v||''}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')"></div></div>${H}`;
  const o=fieldHtml0(id,f);if(o!=null)return o;
- return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(v)}" onfocus="this.select()" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="u">${f.unit}</span>`:''}</div></div>${H}`}
+ return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(v)}" onfocus="this.select()" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="u">${typeof f.unit=='function'?f.unit(CV[id]):f.unit}</span>`:''}</div></div>${H}`}
 function nFieldsHtml(id,fs){let out='';for(let k=0;k<fs.length;k++){const f=fs[k];if(f.half){const g=fs[k+1]&&fs[k+1].half?fs[++k]:null;out+=`<div class="tpair">${nFieldHtml(id,f)}${g?nFieldHtml(id,g):''}</div>`}else out+=nFieldHtml(id,f)}return out}
 // 결과: 맨 위 요약 한 줄 + 작은 표, 안내 문장('')은 아래 회색 각주로
 function splitMain(m){const x=String(m).match(/^(.*?)\s*([−-]?\s?[\d,]+원.*)$/);return x&&x[1]?[x[1],x[2]]:['',String(m)]}
@@ -861,7 +994,7 @@ function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[
  const c=calcs.find(x=>x.id==id);if(!c)return calcList();CV[id]=CV[id]||{};c.fields.forEach(f=>{if(CV[id][f.id]==null)CV[id][f.id]=ex(f)});
  if(!CV[id]._q&&typeof location!='undefined'&&location.search){CV[id]._q=1;const q=new URLSearchParams(location.search);c.fields.forEach(f=>{const x=q.get(f.id);if(x!=null&&/^[\d.:]+$|^[a-z0-9]+$|^\d{4}-\d{2}-\d{2}$/i.test(x))CV[id][f.id]=x})}
  const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- const S=suiteOf(id),tabs=S?`<nav class="ntabs" aria-label="${S.t}">${S.ids.filter(k=>calcs.some(c=>c.id==k)).map(k=>A('c-'+k,k==id?'on':'',TABL[k]||k)).join('')}</nav>`:'';
+ const S=suiteOf(id),tabs=S?`<nav class="ntabs" aria-label="${S.t}">${S.ids.filter(k=>calcs.some(c=>c.id==k)).map(k=>A('c-'+k,k==(TABAL[id]||id)?'on':'',TABL[k]||k)).join('')}</nav>`:'';
  let body;
  if(c.dual){const R=resHtml(id),LB={contract:'<b class="hl">계약 금액</b> 기준',net:'<b class="hl">실제 수령액</b> 기준'},
   card=k=>`<section class="ccard"><div class="crow"><label class="ct" for="f-${k}">${LB[k]}</label><div class="inw"><input id="f-${k}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][k])}" onfocus="this.select()" oninput="nIn(this,'${id}','${k}')"><span class="un">원</span></div></div><div id="dres-${k}">${R[k]}</div></section>`;
@@ -892,7 +1025,7 @@ function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits')return 'find
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
 function view(){const v=view0();return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
