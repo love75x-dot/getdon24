@@ -1,0 +1,204 @@
+[
+ {
+  "id": "parent-pay",
+  "type": "monthly",
+  "tags": [
+   "parent"
+  ],
+  "name": "부모급여",
+  "amount": "0세 월 100만 원 · 1세 월 50만 원",
+  "who": "만 2세 미만 아이를 키우는 가정. 어린이집에 다니면 보육료를 뺀 차액만 현금으로 받아요",
+  "period": "매달 25일",
+  "apply": "출생신고 때 행정복지센터, 또는 복지로·정부24. 태어나고 60일 안에 신청하면 태어난 달부터 받아요",
+  "url": "https://www.korea.kr/news/policyFocusView.do?newsId=148957936&pkgId=49500831",
+  "asof": "2026-01-14",
+  "calc": "",
+  "note": ""
+ },
+ {
+  "id": "child-allowance",
+  "type": "monthly",
+  "tags": [
+   "parent"
+  ],
+  "name": "아동수당",
+  "amount": "월 10만 원 (지역에 따라 최대 13만 원)",
+  "who": "2026년 만 9세 미만 아이. 2027년부터 한 살씩 단계적으로 늘어나요",
+  "period": "매달 25일",
+  "apply": "출생신고 때 행복출산 원스톱, 복지로 앱, 행정복지센터",
+  "url": "https://www.korea.kr/news/customizedNewsView.do?newsId=148963801",
+  "asof": "2026-05-12",
+  "calc": "",
+  "note": ""
+ },
+ {
+  "id": "first-voucher",
+  "type": "once",
+  "tags": [
+   "parent"
+  ],
+  "name": "첫만남이용권",
+  "amount": "",
+  "who": "아이가 태어난 가정 (국민행복카드 바우처)",
+  "period": "한 번에, 태어나고 2년 안에 사용",
+  "apply": "행정복지센터, 복지로·정부24",
+  "url": "https://www.mohw.go.kr/menu.es?mid=a10711020100",
+  "asof": "2025-03-21",
+  "note": "2026년 금액은 공식 안내에서 확인하세요",
+  "calc": ""
+ },
+ {
+  "id": "parental-leave",
+  "type": "monthly",
+  "tags": [
+   "parent",
+   "worker"
+  ],
+  "name": "육아휴직급여",
+  "amount": "첫 3개월 월 최대 250만 원",
+  "who": "고용보험에 가입한 근로자로 육아휴직을 쓰는 사람",
+  "period": "1~3개월 통상임금 100%(상한 250만 원), 4~6개월 100%(상한 200만 원), 7개월부터 80%(상한 160만 원)",
+  "apply": "고용24 또는 고용센터",
+  "url": "https://m.work24.go.kr/cm/c/f/1100/selecSystInfo.do?systClId=SC00000251&systId=SI00000402",
+  "asof": "2025-09-15",
+  "calc": "",
+  "note": ""
+ },
+ {
+  "id": "unemployment",
+  "type": "monthly",
+  "tags": [
+   "jobless",
+   "worker",
+   "parttime"
+  ],
+  "name": "구직급여 (실업급여)",
+  "amount": "하루 최대 68,100원",
+  "who": "고용보험에 가입했다가 원하지 않게 일을 그만두고 구직 활동 중인 사람",
+  "period": "퇴직 전 평균임금의 60%, 120~270일 (나이·가입기간에 따라)",
+  "apply": "고용24·고용센터",
+  "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148956574",
+  "asof": "2025-12-16",
+  "calc": "",
+  "note": ""
+ },
+ {
+  "id": "kua",
+  "type": "monthly",
+  "tags": [
+   "jobless",
+   "youth"
+  ],
+  "name": "국민취업지원제도 구직촉진수당",
+  "amount": "월 60만 원, 최대 6개월",
+  "who": "15~69세 구직자, 가구 중위소득 60% 이하·재산 4억 원 이하(청년 5억 원 이하), 최근 2년 안에 100일 또는 800시간 이상 일한 경험",
+  "period": "부양가족 1명당 10만 원 더 (최대 40만 원)",
+  "apply": "고용24·고용센터",
+  "url": "https://www.work24.go.kr/ua/z/z/1300/selectEmssRqutIntro.do",
+  "asof": "2026-01-26",
+  "calc": "",
+  "note": ""
+ },
+ {
+  "id": "eitc",
+  "type": "once",
+  "tags": [
+   "worker",
+   "parttime",
+   "freelance",
+   "self"
+  ],
+  "name": "근로장려금·자녀장려금",
+  "amount": "최대 330만 원 (맞벌이 기준)",
+  "who": "가구 소득이 단독 2,200만 원, 홑벌이 3,200만 원, 맞벌이 4,400만 원 미만이고 재산 2억 4천만 원 미만",
+  "period": "근로장려금 단독 165만 · 홑벌이 285만 · 맞벌이 330만 원까지, 자녀장려금 자녀 1명당 50만~100만 원",
+  "apply": "홈택스·손택스. 정기 신청은 매년 5월 (2026년은 5월 1일~6월 1일)",
+  "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148963769",
+  "asof": "2026-04-30",
+  "calc": "",
+  "note": ""
+ },
+ {
+  "id": "youth-rent",
+  "type": "monthly",
+  "tags": [
+   "youth"
+  ],
+  "name": "청년월세 지원",
+  "amount": "월 최대 20만 원, 최대 24개월",
+  "who": "19~34세, 부모와 따로 사는 무주택 청년. 청년가구 중위소득 60% 이하, 원가구 100% 이하",
+  "period": "실제 월세 기준 (보증금·관리비 제외)",
+  "apply": "복지로 온라인",
+  "url": "https://m.bokjiro.go.kr/ssis-tem/cms/mob/customer/notice/1309500_1155.html",
+  "asof": "2026-03-20",
+  "note": "2026년 신청은 5월 29일에 끝났어요. 다음 모집 공고를 확인하세요",
+  "calc": ""
+ },
+ {
+  "id": "youth-savings",
+  "type": "once",
+  "tags": [
+   "youth"
+  ],
+  "name": "청년미래적금",
+  "amount": "정부가 넣은 돈의 6~12% 더",
+  "who": "19~34세. 개인소득 6,000만 원 이하(우대형 3,600만 원 이하 중소기업 재직자 등)와 가구 소득 조건",
+  "period": "월 최대 50만 원씩 3년, 이자 세금 없음",
+  "apply": "협약 은행 앱",
+  "url": "https://www.fsc.go.kr/no010101/87158",
+  "asof": "2026-06-22",
+  "note": "2026년 첫 가입 신청은 7월 3일에 끝났어요. 다음 가입 기간은 금융위원회 안내를 확인하세요",
+  "calc": ""
+ },
+ {
+  "id": "durunuri",
+  "type": "monthly",
+  "tags": [
+   "self",
+   "parttime"
+  ],
+  "name": "두루누리 사회보험료 지원",
+  "amount": "",
+  "who": "직원이 적은 작은 사업장의 사업주와 새로 가입한 근로자",
+  "period": "고용보험·국민연금 보험료 일부를 매달 빼 줘요",
+  "apply": "사업주가 4대보험 공단 또는 두루누리 사이트에서 신청",
+  "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148943218",
+  "asof": "2025-05-19",
+  "calc": "labor-cost",
+  "note": "2026년 지원 기준(직원 수·보수 기준·지원율)은 공식 안내에서 확인하세요"
+ },
+ {
+  "id": "yearend",
+  "type": "refund",
+  "tags": [
+   "worker",
+   "parttime"
+  ],
+  "name": "연말정산 환급",
+  "amount": "",
+  "who": "월급 받는 근로자",
+  "period": "보통 2월 월급과 함께 돌려받아요",
+  "apply": "홈택스 연말정산 간소화 서비스 (매년 1월 개통)",
+  "url": "https://www.hometax.go.kr",
+  "asof": "2026-01",
+  "calc": "salary",
+  "note": "2026년 귀속분 간소화 서비스 개통일은 아직 발표 전이에요"
+ },
+ {
+  "id": "income-tax",
+  "type": "refund",
+  "tags": [
+   "freelance",
+   "self"
+  ],
+  "name": "종합소득세 환급 (3.3% 프리랜서)",
+  "amount": "",
+  "who": "3.3%를 떼고 받은 프리랜서, 사업소득자",
+  "period": "매년 5월 신고하면 6월부터 환급 (2026년은 6월 5일부터)",
+  "apply": "홈택스·손택스, ARS 1544-9944. 신고 기간은 매년 5월 (2026년 5월 1일~6월 1일)",
+  "url": "https://www.korea.kr/news/policyNewsView.do?newsId=148964618",
+  "asof": "2026-05-20",
+  "calc": "tax-refund",
+  "note": ""
+ }
+]
