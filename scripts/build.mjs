@@ -171,6 +171,10 @@ const CALC_DESC = {
   'card-fee': '손님이 카드로 결제한 금액을 넣으면 카드 수수료를 빼고 사업자 통장에 들어오는 돈, 나중에 낼 부가세까지 계산해요.',
   compound: '처음 넣는 돈, 매달 넣는 돈, 연 이자율, 기간을 넣으면 복리로 불어난 금액을 계산해요. 월복리·연복리, 이자 세금 15.4%, 단리와의 차이, 연도별 잔액까지 보여 드려요.',
   parttime: '시급이나 일당, 출근 요일, 출퇴근·휴게시간을 넣으면 주급과 월급, 주휴수당을 받는지까지 계산해요. 연장·야간수당과 3.3%·4대보험 뗀 실수령액도 보여 드려요.',
+  unemployment: '퇴직 전 월평균 급여, 고용보험 가입 기간, 나이를 넣으면 실업급여 하루 금액과 받는 기간, 총액을 계산해요. 2026년 상한액 68,100원 기준이에요.',
+  wage: '시급, 일급, 주급, 월급, 연봉 중 아는 금액 하나와 근무시간만 넣으면 나머지를 한 번에 환산해요. 주 15시간 이상이면 주휴수당까지 포함해요.',
+  overtime: '통상시급과 연장·야간·휴일 근무시간을 넣으면 근로기준법 기준 가산수당을 계산해요. 5인 미만 사업장 여부도 반영해요.',
+  resign: '최근 3개월 급여, 근속기간, 남은 연차를 넣으면 퇴직금과 연차수당, 실업급여 예상액을 한 번에 더해 보여 드려요.',
   'split-14h': '주 15시간 1명 고용과 주 14시간 쪼개기 고용의 월 인건비를 비교해요. 주휴수당, 4대보험, 퇴직금 차이와 실제 시간당 비용까지 보여 드려요.',
   'lotto-tax': '로또 당첨금을 넣으면 세금을 뗀 실수령액을 계산해요. 3억까지 22%, 넘는 부분 33%를 단계별로 보여 드려요.',
   'pension-tax': '연금복권720+ 1등, 2등, 1등과 2등 동시 당첨까지 세금 22%를 뗀 매달 실수령액과 총액을 계산해요.',
@@ -186,6 +190,10 @@ const CALC_SEO = {
   'card-fee': '카드 수수료 계산기 - 카드 결제 입금액·부가세',
   compound: '복리 계산기 - 적금·투자 원금 이자 계산 (월복리·연복리)',
   parttime: '알바 월급 계산기 - 시급·일당 주급, 주휴수당, 실수령액',
+  unemployment: '실업급여 계산기 2026 - 하루 금액·받는 기간·총액',
+  wage: '시급 환산 계산기 2026 - 시급·일급·주급·월급·연봉 (주휴수당 포함)',
+  overtime: '연장·야간·휴일수당 계산기 - 5인 이상·미만 구분',
+  resign: '퇴사하면 받을 돈 계산기 - 퇴직금·연차수당·실업급여 합계',
   'split-14h': '쪼개기 고용 계산기 - 주 15시간 vs 14시간 인건비 비교',
   'lotto-tax': '로또 세금 계산기 - 당첨금 실수령액',
   'pension-tax': '연금복권 세금 계산기 - 연금복권720+ 실수령액',
@@ -207,6 +215,32 @@ const pension = JSON.parse(await readFile(join(ROOT, 'data/pension.json'), 'utf8
 const latestRound = Math.max(...lotto.map((d) => d.round));
 const places = await loadPlaces(latestRound);
 
+// 마감 임박 혜택: 직접 등록한 기업 이벤트(events.json)는 형식을 엄격히 검사하고, 자동 수집(gov.json)과 같은 모양으로 맞춘다
+const SUP_TAGS = ['소상공인', '직장인', '청년', '육아'];
+async function loadSupport() {
+  const ev = JSON.parse(await readFile(join(ROOT, 'data/support/events.json'), 'utf8'));
+  const gov = JSON.parse(await readFile(join(ROOT, 'data/support/gov.json'), 'utf8'));
+  const isDate = (x) => /^\d{4}-\d{2}-\d{2}$/.test(x || '') && !isNaN(new Date(x));
+  const isUrl = (x) => /^https?:\/\/\S+$/.test(x || '');
+  const errs = [], seen = new Set();
+  const events = ev.map((e, i) => {
+    const at = `events.json ${i + 1}번째 (${e.name || e.id || '이름 없음'})`;
+    if (!/^[a-z0-9][a-z0-9-]*$/.test(e.id || '')) errs.push(`${at}: id 는 영문 소문자·숫자·하이픈만`);
+    if (seen.has(e.id)) errs.push(`${at}: id 가 다른 항목과 같아요`); seen.add(e.id);
+    for (const k of ['name', 'host']) if (!e[k]) errs.push(`${at}: ${k} 가 비어 있어요`);
+    if (!isDate(e.deadline)) errs.push(`${at}: deadline 은 2026-11-22 형식`);
+    if (!isDate(e.checkedAt)) errs.push(`${at}: checkedAt 은 2026-11-12 형식`);
+    if (!isUrl(e.applyUrl)) errs.push(`${at}: applyUrl 은 https:// 로 시작하는 공식 링크`);
+    if (e.sourceUrl && !isUrl(e.sourceUrl)) errs.push(`${at}: sourceUrl 형식이 이상해요`);
+    const tags = (e.target || []).map((t) => (t === '육아 중' ? '육아' : t));
+    if (!tags.length || tags.some((t) => !SUP_TAGS.includes(t))) errs.push(`${at}: target 은 ${SUP_TAGS.join('/')} 중에서`);
+    return { id: e.id, kind: 'event', name: e.name, host: e.host, amount: e.maxAmount || '', tags, who: tags.join(' · '), cond: e.condition || '', start: e.start || '', end: e.deadline, url: e.applyUrl, src: e.sourceUrl || '', checked: e.checkedAt };
+  });
+  if (errs.length) throw new Error('기업 이벤트 등록 형식 오류:\n' + errs.join('\n'));
+  const govs = gov.map((g) => ({ id: g.id, kind: 'gov', name: g.name, host: g.host, amount: g.amount || '', tags: g.tags || [], who: g.target || '', cond: '', start: g.start || '', end: g.end || '', url: g.url, src: '', checked: g.checkedAt }));
+  return [...events, ...govs];
+}
+
 // 시즌 배너: config.json 의 seasons 중 오늘 날짜에 해당하는 것 하나
 function seasonNow() {
   return (config.seasons || []).find((x) => x.from <= TODAY && TODAY <= x.until) || null;
@@ -217,7 +251,9 @@ const DATA = {
   places,
   config: { email: config.email, siteUrl: SITE, season: seasonNow() },
   posts: posts.map(({ html, ...meta }) => meta),
+  support: await loadSupport(),
   benefits: JSON.parse(await readFile(join(ROOT, 'data/benefits.json'), 'utf8')),
+  wtax: JSON.parse(await readFile(join(ROOT, 'data/wage-tax-2026-03.json'), 'utf8')),
 };
 
 // 화면 함수 실행 준비
@@ -319,6 +355,9 @@ for (const d of draws) {
 // 연금복권
 await emit('pension', { title: `연금복권720+ ${P.round}회 당첨번호 ${P.group}조 ${P.number} · 실수령액 | ${site}`, desc: `${P.date} 추첨 연금복권720+ ${P.round}회 1등 ${P.group}조 ${P.number}, 보너스 ${P.bonus}. 1등 월 700만원 실수령액과 1등·2등 동시 당첨 계산기까지.` }, P.date);
 await emit('penall', { title: `연금복권720+ 전체 회차 당첨번호 | ${site}`, desc: `연금복권720+ 1회부터 ${P.round}회까지 1등 당첨번호와 보너스 번호를 모두 볼 수 있어요.` }, P.date);
+
+// 마감 임박 혜택
+await emit('benefits', { title: `마감 임박 혜택 - 정부 지원사업·기업 이벤트 | ${site}`, desc: '소상공인, 직장인, 청년, 육아 가정이 지금 신청할 수 있는 정부 지원사업과 은행·카드사 이벤트를 마감이 가까운 순서로 모았어요.' });
 
 // 받을 돈 찾기
 await emit('find', { title: `받을 돈 찾기 - 지원금·수당·환급금 한 번에 | ${site}`, desc: '직장인, 알바, 프리랜서, 육아 중, 구직·퇴사, 청년, 자영업 중 해당하는 걸 고르면 매달 받는 돈, 한 번에 받는 돈, 돌려받는 돈을 모아 보여 드려요.' });

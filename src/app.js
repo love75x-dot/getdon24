@@ -52,6 +52,23 @@ const MINWAGE={2026:10320,2027:10700};
     const depAdj = 1 - Math.min(Math.max((dependents||1)-1,0),4)*0.03;
     return g * rate * depAdj;
   }
+  // 국세청 근로소득 간이세액표(2026.3.1. 시행) 그대로 찾기. pay=비과세 뺀 월급(원), fam=공제대상가족(본인 포함), kids=8~20세 자녀 수
+  function ntsTax(pay, fam, kids){
+    const T=(typeof window!=='undefined'&&window.DATA&&window.DATA.wtax)||null;
+    if(!T) return estimateMonthlyIncomeTax(pay,fam);
+    fam=Math.max(1,Math.round(+fam||1)); kids=Math.max(0,Math.min(Math.round(+kids||0),fam-1));
+    const col=(f)=>{
+      const k=pay/1000;
+      if(k<T.rows[0][0]) return 0;
+      if(k<10000){ const r=T.rows.find(r=>k>=r[0]&&k<r[1]); return r?r[1+f]:0; }
+      const b=T.over.find(o=>k>o[0]&&(o[1]==null||k<=o[1]))||T.over[0];
+      if(k===10000) return T.at10000[f-1];
+      return Math.floor((T.at10000[f-1]+b[2]+(pay-b[0]*1000)*b[3]+b[4])/10)*10;
+    };
+    let t = fam<=11 ? col(fam) : col(11)-(col(10)-col(11))*(fam-11);
+    const kd = kids<=0?0 : kids===1?T.kids[0] : T.kids[1]+(kids-2)*T.kids[2];
+    return Math.max(0,t-kd);
+  }
   function pensionBase(monthlyGross){ return Math.min(Math.max(monthlyGross, RATES.floor), RATES.ceiling); }
 
   // ---- 종합소득세 누진세율표 (2026년 기준, 단순화) ----
@@ -128,7 +145,7 @@ const MINWAGE={2026:10320,2027:10700};
     ]
   };
   const LEGAL_BASIS = {
-    salary: '근로기준법 제43조(임금 지급), 국민연금법·국민건강보험법·고용보험법에 따라 4대보험료와 근로소득세가 원천공제됩니다. 소득세는 국세청 근로소득 간이세액표 기준 추정치입니다.',
+    salary: '근로기준법 제43조(임금 지급), 국민연금법·국민건강보험법·고용보험법에 따라 4대보험료와 근로소득세가 원천공제됩니다. 소득세는 국세청 근로소득 간이세액표(소득세법 시행령 별표2, 2026.3.1. 시행)를 그대로 적용합니다.',
     insurance: '국민연금법, 국민건강보험법(장기요양보험법 포함), 고용보험법에 따른 근로자 부담분 요율을 적용합니다. 매년 각 공단의 고시로 요율과 상하한액이 변경됩니다.',
     severance: '근로자퇴직급여 보장법 제8조에 따라 계속근로기간 1년에 대해 30일분의 평균임금을 퇴직금으로 지급해야 합니다. 평균임금 산정 기준은 근로기준법 시행령을 따릅니다.',
     'annual-leave': '근로기준법 제60조(연차 유급휴가)에 따라 발생한 연차 중 미사용분은 통상임금 또는 평균임금을 기준으로 수당으로 정산됩니다.',
@@ -148,16 +165,16 @@ const MINWAGE={2026:10320,2027:10700};
     return {g, it:t.it, lt:t.lt, net}; };
   const calcs = [
     { id:'salary', label:'연봉 실수령액', title:'연봉 실수령액 계산기', group:'employee',
-      fields:[{id:'annual',label:'연봉(세전, 세금·보험 떼기 전 총액)',unit:'만원',placeholder:'예: 4000'},{id:'nonTaxable',label:'비과세액(식대 등, 월)',unit:'만원',placeholder:'예: 20'},{id:'dependents',label:'부양가족 수(본인 포함)',unit:'명',placeholder:'예: 1'}],
+      fields:[{id:'annual',label:'연봉(세전, 세금·보험 떼기 전 총액)',unit:'만원',placeholder:'예: 4000'},{id:'nonTaxable',label:'비과세액(식대 등, 월)',unit:'만원',placeholder:'예: 20'},{id:'dependents',label:'부양가족 수(본인 포함)',unit:'명',placeholder:'예: 1'},{id:'kids',label:'8~20세 자녀 수',unit:'명',placeholder:'예: 0',hint:'부양가족 수에 들어간 자녀 중 8세 이상 20세 이하인 자녀예요. 연 소득이 100만원을 넘는 자녀는 빼요.'}],
       run(v){
         const annual=(+v.annual||0)*10000, monthlyGross=annual/12, nonTax=(+v.nonTaxable||0)*10000;
         const taxableMonthly=Math.max(monthlyGross-nonTax,0);
         const pBase=pensionBase(taxableMonthly), pension=pBase*(RATES.pension/100);
         const health=taxableMonthly*(RATES.health/100), ltc=health*(RATES.ltc/100), employment=taxableMonthly*(RATES.employment/100);
-        const incomeTax=estimateMonthlyIncomeTax(taxableMonthly,+v.dependents||1), localTax=incomeTax*0.1;
+        const incomeTax=ntsTax(taxableMonthly,+v.dependents||1,+v.kids||0), localTax=Math.floor(incomeTax*0.1/10)*10;
         const netMonthly=monthlyGross-(pension+health+ltc+employment+incomeTax+localTax);
         return { main: won(netMonthly)+' / 월',
-          sub:[['세전 연봉(입력값)',won(annual)],['세전 월급여(연봉÷12)',won(monthlyGross)],[`국민연금(${RATES.pension}%)`,won(pension)],[`건강보험(${RATES.health}%)`,won(health)],['장기요양보험',won(ltc)],[`고용보험(${RATES.employment}%)`,won(employment)],['소득세+지방세(추정)',won(incomeTax+localTax)],['월 실수령액',won(netMonthly)],['연 실수령액(세후, 월×12 근사치)',won(netMonthly*12)]],
+          sub:[['세전 연봉(입력값)',won(annual)],['세전 월급여(연봉÷12)',won(monthlyGross)],[`국민연금(${RATES.pension}%)`,won(pension)],[`건강보험(${RATES.health}%)`,won(health)],['장기요양보험',won(ltc)],[`고용보험(${RATES.employment}%)`,won(employment)],['소득세(국세청 간이세액표)',won(incomeTax)],['지방소득세(소득세의 10%)',won(localTax)],['월 실수령액',won(netMonthly)],['연 실수령액(세후, 월×12 근사치)',won(netMonthly*12)]],
           related: RELATED.salary };
       }},
     { id:'salary-compare', label:'연봉 비교', title:'연봉 비교 계산기', group:'employee',
@@ -175,7 +192,7 @@ const MINWAGE={2026:10320,2027:10700};
           const taxableMonthly=Math.max(monthlyGross-nonTax,0);
           const pBase=pensionBase(taxableMonthly), pension=pBase*(RATES.pension/100);
           const health=taxableMonthly*(RATES.health/100), ltc=health*(RATES.ltc/100), employment=taxableMonthly*(RATES.employment/100);
-          const incomeTax=estimateMonthlyIncomeTax(taxableMonthly,+v.dependents||1), localTax=incomeTax*0.1;
+          const incomeTax=ntsTax(taxableMonthly,+v.dependents||1,0), localTax=Math.floor(incomeTax*0.1/10)*10;
           const netMonthly=monthlyGross-(pension+health+ltc+employment+incomeTax+localTax);
           return { monthlyGross, netMonthly };
         }
@@ -203,21 +220,34 @@ const MINWAGE={2026:10320,2027:10700};
           related: RELATED.insurance };
       }},
     { id:'severance', label:'퇴직금', title:'퇴직금 계산기', group:'employee',
-      disclaimerExtra:'계산식: 1일 평균임금 = 최근 3개월간 지급된 임금총액 ÷ 그 3개월의 실제 달력일수(보통 89~92일) · 퇴직금 = 1일 평균임금 × 30일 × (재직기간 ÷ 365). 퇴사 직전 3개월에 어떤 달이 포함되는지에 따라 총일수(28~31일씩 합산)가 달라져서 회사마다 결과가 조금씩 다르게 느껴질 수 있어요. 정확한 일수는 급여명세서의 근무기간으로 확인하세요.',
+      disclaimerExtra:'1년 이상 일하고 주 15시간 이상 근무했을 때 받아요. 평균임금이 통상임금보다 적으면 통상임금으로 계산해요.',
       fields:[
-        {id:'recent3',label:'최근 3개월 총급여(세전, 상여금 제외)',unit:'만원',placeholder:'예: 900'},
-        {id:'recentDays',label:'최근 3개월 실제 달력일수',unit:'일',placeholder:'예: 90',hint:'정확히 모르면 90일로 두어도 큰 차이는 없어요. 급여명세서에 적힌 근무기간의 실제 날짜 수(89~92일)를 넣으면 더 정확해요.'},
-        {id:'years',label:'근속연수',unit:'년',placeholder:'예: 3'},
-        {id:'months',label:'근속개월(나머지 개월 수)',unit:'개월',placeholder:'예: 11',hint:'예: 3년 11개월 근무했다면 근속연수 3, 근속개월 11로 나눠 입력하세요.'}
+        {id:'start',type:'date',label:'입사일',def:'2022-03-02'},
+        {id:'end',type:'date',label:'퇴직일',def:'2026-11-01',hint:'퇴직일은 마지막 근무일의 다음 날이에요.'},
+        {id:'mode',type:'seg',label:'평균임금',options:[{value:'calc',label:'평균임금 계산'},{value:'direct',label:'평균임금 직접 입력'}]},
+        {id:'pay3',when:'calc',label:'퇴직 전 3개월 급여 총액',unit:'원',placeholder:'예: 9000000',hint:'기본급과 매달 받는 수당, 연장수당을 모두 더한 세전 금액이에요.'},
+        {id:'bonus',when:'calc',label:'1년 상여금 총액',unit:'원',placeholder:'예: 0',hint:'퇴직 전 1년 동안 받은 상여금이에요. 3/12만큼 더해요.'},
+        {id:'leave',when:'calc',label:'1년 연차수당',unit:'원',placeholder:'예: 0',hint:'퇴직 전 1년 동안 받은 연차수당이에요. 3/12만큼 더해요.'},
+        {id:'daily',when:'direct',label:'1일 평균임금',unit:'원',placeholder:'예: 100000'}
       ],
       run(v){
-        const total3=(+v.recent3||0)*10000, days3=+v.recentDays||90, years=+v.years||0, months=+v.months||0;
-        const avgDaily=total3/days3, servicePeriodYears=years+months/12, severance=avgDaily*30*servicePeriodYears;
-        return { main: won(severance), sub:[
-          ['1일 평균임금(총급여÷총일수)',won(avgDaily)],
-          ['근속기간',`${years}년 ${months}개월`],
-          ['재직기간(년 환산)',servicePeriodYears.toFixed(2)+'년']
-        ], related: RELATED.severance };
+        if(v.recent3!=null&&!v.start){ // 예전 방식 (퇴사 합계 계산기에서 사용)
+          const total3=(+v.recent3||0)*10000, days3_=+v.recentDays||90, years=+v.years||0, months=+v.months||0;
+          const avgDaily=total3/days3_, yrs=years+months/12;
+          return { main: won(avgDaily*30*yrs), sub:[['1일 평균임금',won(avgDaily)],['근속기간',`${years}년 ${months}개월`]], related: RELATED.severance };}
+        const toD=x=>{const m=String(x||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?Date.UTC(+m[1],+m[2]-1,+m[3]):null};
+        const a=toD(v.start),b=toD(v.end);if(a==null||b==null||b<=a)return{main:'입사일과 퇴직일을 확인해 주세요',sub:[],related:[]};
+        const svc=Math.round((b-a)/864e5),D=days3(v.end);
+        const parts=v.mode==='direct'?null:{pay:+v.pay3||0,bon:(+v.bonus||0)*3/12,lv:(+v.leave||0)*3/12};
+        const daily=parts?(parts.pay+parts.bon+parts.lv)/D:(+v.daily||0);
+        if(!daily)return{main:'급여를 넣어 주세요',sub:[],related:[]};
+        const y=Math.floor(svc/365),mo=Math.floor((svc%365)/30.4);
+        const rows=[['근속기간',`${svc.toLocaleString()}일 (약 ${y}년 ${mo}개월)`]];
+        if(parts){rows.push(['3개월 급여',won(parts.pay)]);if(parts.bon)rows.push(['상여금 × 3/12',won(parts.bon)]);if(parts.lv)rows.push(['연차수당 × 3/12',won(parts.lv)]);rows.push([`1일 평균임금 (÷ ${D}일)`,won(daily)])}
+        else rows.push(['1일 평균임금',won(daily)]);
+        if(svc<365)return{main:'퇴직금 0원 (1년 미만)',sub:rows,related:RELATED.severance};
+        const sev=daily*30*svc/365;rows.push(['계산',`${won(daily)} × 30일 × ${svc}일 ÷ 365`]);
+        return { main:`퇴직금 ${won(sev)}`, sub:rows, related: RELATED.severance };
       }},
     { id:'annual-leave', label:'연차수당', title:'연차수당 계산기', group:'employee',
       disclaimerExtra:'통상시급을 정확히 모른다면, 급여명세서의 세전 월급여(기본급+각종 수당 합계, 상여금·비정기수당 제외)를 209로 나눈 값이 근사치예요. 209는 주 40시간 근무 기준 월 평균 소정근로시간(주휴시간 포함)이며, 회사 취업규칙에 따라 실제 통상시급 산정 기준은 다를 수 있어요.',
@@ -452,7 +482,7 @@ const PAGES={about:['소개',`<p>받는돈(getdon24.com)은 세금과 공제를 
 contact:['문의',`<p>잘못된 계산이나 설명, 추가했으면 하는 계산기, 제휴·기타 문의는 메일로 보내 주세요.</p><p><b style="user-select:all">${CFG.email||''}</b></p><p class="note">메일 주소를 길게 눌러 복사할 수 있어요.</p><h3>정정 요청은 이렇게 보내 주세요</h3><ul><li>문제가 있는 페이지 주소</li><li>어느 부분이 어떻게 다른지, 알고 계신 근거(공식 안내 페이지 등)</li></ul><p>확인한 결과 잘못이 맞으면 계산기나 글을 고치고 확인한 날짜를 남겨요. 모든 문의에 답장을 약속하지는 못하지만 내용은 꼼꼼히 읽어요.</p><h3>세금·노무 상담은 하지 않아요</h3><p>개인별 세금 신고, 노무 분쟁은 국세청 국세상담센터(126), 고용노동부 1350 상담센터처럼 공식 상담 창구나 전문가에게 문의해 주세요.</p>`],
 privacy:['개인정보처리방침',`<p>받는돈(getdon24.com, 이하 "사이트")은 회원가입이 없고, 이름·연락처 같은 개인정보를 직접 받지 않아요. 아래는 2026년 10월 24일 현재 사이트에서 실제로 일어나는 일이에요.</p><h3>입력한 숫자</h3><p>계산기에 넣은 연봉, 시급 같은 숫자는 이용자의 브라우저 안에서만 계산돼요. 서버로 보내거나 저장하지 않아요.</p><h3>자동으로 처리되는 정보</h3><p>사이트는 Cloudflare Pages로 제공돼요. 페이지를 불러올 때 Cloudflare 서버가 접속 IP 주소, 브라우저 종류 같은 일반적인 접속 기록을 처리할 수 있어요. 운영자는 이 기록으로 개인을 식별하려 하지 않아요. 화면 글꼴은 jsDelivr(CDN)에서 불러오기 때문에 이때도 접속 정보가 jsDelivr로 전달될 수 있어요.</p><h3>쿠키</h3><p>사이트는 스스로 쿠키를 만들지 않아요. 현재는 광고나 방문 분석 도구도 쓰지 않아요.</p><h3>문의 메일</h3><p>문의 주소(${CFG.email||''})로 온 메일은 Cloudflare 이메일 전달 기능을 거쳐 운영자의 메일함으로 전달돼요. 보내 주신 이름, 메일 주소, 내용은 문의에 답하고 정정하는 데에만 쓰고, 처리에 필요한 동안만 보관해요.</p><h3>앞으로 광고·분석 도구를 쓰게 되면</h3><p>Google 애드센스나 방문 분석 도구를 도입하면 이 방침을 먼저 고치고 알려요. Google을 포함한 제3자 광고 사업자는 쿠키로 이용자의 이전 방문 기록을 바탕으로 광고를 보여 줄 수 있어요. 맞춤 광고는 <a href="https://adssettings.google.com" target="_blank" rel="noopener">Google 광고 설정</a>에서 끌 수 있고, Google이 광고 파트너 사이트의 정보를 쓰는 방법은 <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google 안내</a>에서 볼 수 있어요. 동의가 필요한 지역의 이용자에게는 동의 절차를 먼저 적용해요.</p><h3>이용자의 권리</h3><p>사이트가 가진 개인정보(문의 메일 등)의 열람·삭제를 원하면 문의 메일로 요청해 주세요.</p><h3>아동</h3><p>사이트는 만 14세 미만 아동을 대상으로 하지 않아요.</p><h3>시행일</h3><p>2026년 10월 24일</p>`],
 terms:['이용약관·면책',`<p>이 약관은 받는돈(getdon24.com, 이하 "사이트") 이용에 적용돼요. 사이트를 이용하면 아래 내용에 동의한 것으로 봐요.</p><h3>서비스</h3><p>사이트는 계산기와 정보글을 무료로 제공해요. 회원가입이나 결제는 없어요.</p><h3>계산 결과는 참고용이에요</h3><p>계산기와 글의 숫자는 공개된 요율·공식으로 계산한 추정치예요. 회사의 급여 규정, 공제 항목, 개인 사정, 법령 개정에 따라 실제 금액은 달라져요. 세금 신고나 계약처럼 중요한 결정은 국세청, 4대보험 공단, 고용노동부의 공식 안내나 전문가의 확인을 거쳐 주세요.</p><h3>책임의 한계</h3><p>운영자는 정확한 정보를 위해 노력하지만 모든 내용이 항상 최신이거나 정확하다고 보증하지 않아요. 사이트 정보를 따라 내린 결정의 결과에 대해서는 법이 허용하는 범위에서 책임지지 않아요.</p><h3>복권 정보</h3><p>사이트는 복권을 팔거나 당첨금을 지급하지 않아요. 당첨 번호와 당첨금은 동행복권 공식 발표가 기준이에요. 복권은 만 19세 이상만 살 수 있고, 도박 문제는 1336(24시간)에서 상담할 수 있어요.</p><h3>저작권</h3><p>사이트의 글과 화면의 저작권은 운영자에게 있어요. 출처를 밝힌 짧은 인용은 괜찮지만, 글 전체를 그대로 옮겨 게시하는 것은 허락 없이 할 수 없어요.</p><h3>외부 링크</h3><p>사이트에는 공식 기관 등 외부 사이트로 가는 링크가 있어요. 외부 사이트의 내용은 운영자가 관리하지 않아요.</p><h3>정정과 약관 변경</h3><p>잘못된 내용은 <a href="/contact/">문의</a>로 알려 주세요. 약관을 바꾸면 이 페이지에 날짜와 함께 반영해요.</p><h3>시행일</h3><p>2026년 10월 24일</p>`],
-method:['계산 기준과 출처',`<p>받는돈 계산기가 쓰는 요율과 공식이에요. 2026년 10월 24일 기준으로 정리했고, 값이 바뀌면 계산기와 이 페이지를 함께 고쳐요.</p><h3>4대보험 근로자 부담 (2026년)</h3><div class="kv"><span>국민연금</span><b>${RATES.pension}% (노사 합계 9.5%)</b><span>건강보험</span><b>${RATES.health}% (노사 합계 7.19%)</b><span>장기요양보험</span><b>건강보험료의 ${RATES.ltc}% (노사 절반씩)</b><span>고용보험</span><b>${RATES.employment}% (실업급여분)</b></div><p class="note" style="margin-top:8px">출처: 국민연금공단, 국민건강보험공단, 고용노동부 안내를 정리한 자료로 확인했어요. 국민연금은 기준소득월액 상한·하한이 있어 월급이 아주 높거나 낮으면 달라져요.</p><h3>연봉 실수령액</h3><p>월급 = 연봉 ÷ 12에서 비과세액(식대 등)을 뺀 금액에 위 요율을 곱해 보험료를 구해요. 소득세는 국세청 근로소득 간이세액표를 그대로 쓰지 않고, 월급 구간별 비율과 부양가족 수로 단순하게 추정해요. 그래서 실제 급여명세서와 몇 만 원 차이가 날 수 있어요.</p><h3>3.3% 계산</h3><p>사업소득 원천징수는 소득세 3%(소득세법 제129조)와 그 10%인 지방소득세 0.3%(지방세법 제103조의13)를 합친 3.3%예요. 계산기는 두 세금 모두 10원 미만을 버리고, 소득세가 1,000원 미만이면 떼지 않는 소액부징수를 반영해요. 다만 지급 유형에 따라 소액부징수 적용이 다를 수 있다는 설명이 있어, 아주 적은 금액은 지급처에 확인해 주세요.</p><h3>일용직 근로소득세</h3><p>하루 급여에서 15만원을 빼고, 남은 금액에 6%를 곱한 뒤 55%를 세액공제하고, 지방소득세 10%를 더해요.</p><h3>종합소득세 환급 예측</h3><p>원천징수로 낸 3.3%와, 업종별 경비율·기본공제·누진세율표로 추정한 세액을 비교해요. 경비율은 예시값이라 홈택스의 본인 업종 경비율과 다를 수 있어요.</p><h3>최저임금과 주휴수당</h3><p>2026년 적용 최저임금은 시간급 10,320원이에요(고용노동부 고시, 2026년 1월 1일~12월 31일 적용). 주 40시간 근무(월 209시간, 주휴 포함)로 환산하면 월 2,156,880원이에요. 주휴수당은 주 소정근로시간이 15시간 이상일 때 하루 평균 근무시간(최대 8시간) 분의 시급을 더해 계산해요. 2027년 적용 금액은 해가 바뀌는 시점에 맞춰 반영할 계획이에요.</p><h3>로또·연금복권 세금</h3><p>복권 당첨금은 200만원 이하이면 세금이 없고, 3억원까지는 소득세 20%+지방소득세 2%=22%, 3억원을 넘는 부분은 33%예요. 연금복권은 매달 받는 금액에서 22%를 떼요.</p><h3>공식 자료 바로가기</h3><ul><li><a href="https://www.law.go.kr" target="_blank" rel="noopener">국가법령정보센터</a></li><li><a href="https://www.hometax.go.kr" target="_blank" rel="noopener">국세청 홈택스</a></li><li><a href="https://www.nps.or.kr" target="_blank" rel="noopener">국민연금공단</a></li><li><a href="https://www.nhis.or.kr" target="_blank" rel="noopener">국민건강보험공단</a></li><li><a href="https://www.moel.go.kr" target="_blank" rel="noopener">고용노동부</a></li><li><a href="https://www.minimumwage.go.kr" target="_blank" rel="noopener">최저임금위원회</a></li><li><a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener">동행복권</a></li></ul><h3>한계</h3><p>이 계산기들은 일반적인 경우를 가정한 추정치예요. 회사별 공제 항목, 개인별 공제·감면, 법 개정은 반영되지 않을 수 있어요. 틀린 부분을 발견하면 <a href="/contact/">문의</a>로 알려 주세요.</p>`]};
+method:['계산 기준과 출처',`<p>받는돈 계산기가 쓰는 요율과 공식이에요. 2026년 10월 24일 기준으로 정리했고, 값이 바뀌면 계산기와 이 페이지를 함께 고쳐요.</p><h3>4대보험 근로자 부담 (2026년)</h3><div class="kv"><span>국민연금</span><b>${RATES.pension}% (노사 합계 9.5%)</b><span>건강보험</span><b>${RATES.health}% (노사 합계 7.19%)</b><span>장기요양보험</span><b>건강보험료의 ${RATES.ltc}% (노사 절반씩)</b><span>고용보험</span><b>${RATES.employment}% (실업급여분)</b></div><p class="note" style="margin-top:8px">출처: 국민연금공단, 국민건강보험공단, 고용노동부 안내를 정리한 자료로 확인했어요. 국민연금은 기준소득월액 상한·하한이 있어 월급이 아주 높거나 낮으면 달라져요.</p><h3>연봉 실수령액</h3><p>월급 = 연봉 ÷ 12에서 비과세액(식대 등)을 뺀 금액에 위 요율을 곱해 보험료를 구해요. 소득세는 국세청 홈택스에서 받은 근로소득 간이세액표(2026년 3월 1일 시행판)를 그대로 찾아 써요. 월급 1,000만원이 넘으면 표에 적힌 계산식을 쓰고, 8~20세 자녀 수만큼 정해진 금액(1명 20,830원, 2명 45,830원, 3명부터 1명당 33,330원 추가)을 빼요. 회사가 80%·120% 원천징수를 고른 경우는 달라질 수 있어요.</p><h3>3.3% 계산</h3><p>사업소득 원천징수는 소득세 3%(소득세법 제129조)와 그 10%인 지방소득세 0.3%(지방세법 제103조의13)를 합친 3.3%예요. 계산기는 두 세금 모두 10원 미만을 버리고, 소득세가 1,000원 미만이면 떼지 않는 소액부징수를 반영해요. 다만 지급 유형에 따라 소액부징수 적용이 다를 수 있다는 설명이 있어, 아주 적은 금액은 지급처에 확인해 주세요.</p><h3>일용직 근로소득세</h3><p>하루 급여에서 15만원을 빼고, 남은 금액에 6%를 곱한 뒤 55%를 세액공제하고, 지방소득세 10%를 더해요.</p><h3>종합소득세 환급 예측</h3><p>원천징수로 낸 3.3%와, 업종별 경비율·기본공제·누진세율표로 추정한 세액을 비교해요. 경비율은 예시값이라 홈택스의 본인 업종 경비율과 다를 수 있어요.</p><h3>최저임금과 주휴수당</h3><p>2026년 적용 최저임금은 시간급 10,320원이에요(고용노동부 고시, 2026년 1월 1일~12월 31일 적용). 주 40시간 근무(월 209시간, 주휴 포함)로 환산하면 월 2,156,880원이에요. 주휴수당은 주 소정근로시간이 15시간 이상일 때 하루 평균 근무시간(최대 8시간) 분의 시급을 더해 계산해요. 2027년 적용 금액은 해가 바뀌는 시점에 맞춰 반영할 계획이에요.</p><h3>로또·연금복권 세금</h3><p>복권 당첨금은 200만원 이하이면 세금이 없고, 3억원까지는 소득세 20%+지방소득세 2%=22%, 3억원을 넘는 부분은 33%예요. 연금복권은 매달 받는 금액에서 22%를 떼요.</p><h3>공식 자료 바로가기</h3><ul><li><a href="https://www.law.go.kr" target="_blank" rel="noopener">국가법령정보센터</a></li><li><a href="https://www.hometax.go.kr" target="_blank" rel="noopener">국세청 홈택스</a></li><li><a href="https://www.nps.or.kr" target="_blank" rel="noopener">국민연금공단</a></li><li><a href="https://www.nhis.or.kr" target="_blank" rel="noopener">국민건강보험공단</a></li><li><a href="https://www.moel.go.kr" target="_blank" rel="noopener">고용노동부</a></li><li><a href="https://www.minimumwage.go.kr" target="_blank" rel="noopener">최저임금위원회</a></li><li><a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener">동행복권</a></li></ul><h3>한계</h3><p>이 계산기들은 일반적인 경우를 가정한 추정치예요. 회사별 공제 항목, 개인별 공제·감면, 법 개정은 반영되지 않을 수 있어요. 틀린 부분을 발견하면 <a href="/contact/">문의</a>로 알려 주세요.</p>`]};
 
 let allN=30,penN=30;
 function allDraws(){return `<div class="crumb">${A('lotto','','로또')} › 전체 회차</div><h1 class="h1">로또 전체 회차 당첨번호</h1><p class="note">1회부터 ${DRAWS.length}회까지</p>${DRAWS.slice(0,allN).map(d=>A('draw'+d.r,'gcard',`<div><b>${d.r}회 <small>${ymd(d.date)}</small></b><div class="balls" style="justify-content:flex-start;margin:6px 0 0;gap:3px">${d.n.map(n=>ball(n,'sm')).join('')}<span class="plus">+</span>${ball(d.b,'sm')}</div></div><span>›</span>`)).join('')}${allN<DRAWS.length?`<button class="btn ghost" style="width:100%;margin-top:10px" onclick="allN+=50;render()">50회 더 보기</button>`:''}${foot}`}
@@ -472,6 +502,113 @@ calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수�
   return{main:won(dep)+' 통장 입금',sub:[['결제 금액',won(a)],[`카드 수수료 (${rate}%)`,'− '+won(fee)],['통장에 들어오는 돈',won(dep)],
    ['나중에 낼 부가세 (결제액의 1/11)','− '+won(vat)],[+v.biz?'카드매출 세액공제 (법인은 없음)':'카드매출 세액공제 (1.3%)','+ '+won(credit)],['세금까지 빼고 실제로 남는 돈',won(keep)],
    ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:RELATED['card-fee']}}});
+// 관련 계산기 (계산기 화면 아래에 링크로 보여 줌)
+const CALC_SRC={salary:()=>'소득세: 국세청 근로소득 간이세액표(2026.3.1. 시행) · 4대보험 2026년 요율','salary-compare':()=>'소득세: 국세청 간이세액표(2026.3.1. 시행)',unemployment:()=>`${UB.year}년 기준 · 고용노동부, 고용보험법`,overtime:()=>'근로기준법 제56조 기준',resign:()=>`실업급여 ${UB.year}년 기준 · 고용노동부`,'minwage-check':()=>`${RATES.minimumWageYear}년 최저시급 기준 · 고용노동부 고시`};
+const CALC_REL={unemployment:['resign','severance','annual-leave'],overtime:['parttime','weekly-rest','minwage-check'],resign:['unemployment','severance','annual-leave'],severance:['resign','unemployment'],'annual-leave':['resign','overtime'],parttime:['overtime','weekly-rest','minwage-check'],'weekly-rest':['parttime','overtime'],'minwage-check':['parttime','overtime']};
+// ---------- 1단계: 일하다 받는 돈 ----------
+// 실업급여 기준 (출처·기준일 확인한 값만). 해가 바뀌면 새 연도 값을 확인해서 추가한다.
+//  - 지급률 60%, 소정급여일수 표: 고용노동부 FAQ (2019.10.1. 이후 이직자 기준)
+//  - 상한액 하루 68,100원: 고용노동부 2025-12-16 발표 (2026년)
+//  - 하한액: 고용보험법 제46조 — 최저시급 × 80% × 1일 소정근로시간(8시간). 2026년 최저시급 10,320원으로 계산한 값
+//    (공식 발표 금액은 아직 확인 못 함 → docs/benefits-todo.md)
+const UB={year:2026,rate:0.6,cap:68100,minWage:10320,src:'고용노동부 (상한액 2025-12-16 발표, 받는 기간 표는 고용노동부 FAQ)'};
+UB.floor=Math.floor(UB.minWage*0.8*8);
+const UB_DAYS={u50:[120,150,180,210,240],o50:[120,180,210,240,270]};
+const UB_SPAN=['1년 미만','1년~3년 미만','3년~5년 미만','5년~10년 미만','10년 이상'];
+function ubCalc(dailyAvg,spanIdx,old){const raw=dailyAvg*UB.rate,day=Math.min(Math.max(raw,UB.floor),UB.cap),days=(old?UB_DAYS.o50:UB_DAYS.u50)[spanIdx]||120;
+ return{raw,day,days,total:day*days,capped:raw>UB.cap,floored:raw<UB.floor}}
+const yrIdx=y=>y<1?0:y<3?1:y<5?2:y<10?3:4;
+const SRC_LINE=(t)=>`<p class="srcline">${t}</p>`;
+
+// 평균임금: 퇴직 전 3개월 임금 총액 ÷ 그 기간 날수 (근로기준법 제2조). 상여금·연차수당은 지난 1년치 × 3/12
+function days3(last){const m=String(last||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return 91;const e=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]));const s=new Date(e);s.setUTCMonth(s.getUTCMonth()-3);return Math.round((e-s)/864e5)}
+function avgWage(v){if(v.mode!=='item'){const D=days3(v.last),tot=(+v.monthly||0)*3;return{D,base:tot,fix:0,meal:0,mealOut:0,vary:0,bon:0,lv:0,tot,daily:tot/D,simple:1}}const D=days3(v.last),base=(+v.base||0)*3,fix=(+v.fixed||0)*3,meal=v.mealIn==='no'?0:(+v.meal||0)*3,vary=+v.vary||0,bon=(+v.bonus||0)*3/12,lv=(+v.leave||0)*3/12;
+ const tot=base+fix+meal+vary+bon+lv;return{D,base,fix,meal,mealOut:v.mealIn==='no'?(+v.meal||0)*3:0,vary,bon,lv,tot,daily:tot/D}}
+calcs.push({id:'unemployment',label:'실업급여 계산기',title:'실업급여 계산기',group:'employee',
+ disclaimerExtra:'회사 사정으로 그만둔 경우에 받아요. 실제 금액은 회사가 내는 이직확인서의 평균임금으로 고용센터가 정해요.',
+ fields:[{id:'mode',type:'seg',label:'입력 방식',options:[{value:'simple',label:'간단히'},{value:'item',label:'항목별로 자세히'}]},
+  {id:'monthly',when:'simple',label:'퇴직 전 3개월 월평균 급여',unit:'원',placeholder:'예: 3000000',hint:'세전 금액이에요. 식대·상여금 처리까지 맞추려면 "항목별로 자세히"를 고르세요.'},
+  {id:'base',when:'item',label:'월 기본급 (세전)',unit:'원',placeholder:'예: 2500000'},
+  {id:'fixed',when:'item',label:'고정 수당 (월)',hint:'직책·자격·근속수당처럼 매달 같은 금액으로 받는 수당이에요.',unit:'원',placeholder:'예: 200000'},
+  {id:'meal',when:'item',label:'월 식대',unit:'원',placeholder:'예: 200000'},
+  {id:'mealIn',when:'item',type:'select',label:'식대 평균임금 포함',hint:'모두에게 매달 같은 금액을 주는 식대는 원칙적으로 포함돼요. 실비 정산·현물 제공이거나 이직확인서에서 빠졌다면 "빼기"를 고르세요.',options:[{value:'yes',label:'넣기'},{value:'no',label:'빼기'}]},
+  {id:'vary',when:'item',label:'3개월 변동 수당 합계',unit:'원',placeholder:'예: 0',hint:'연장·야간수당처럼 달마다 다른 수당은 3개월치를 더해서 넣어요.'},
+  {id:'bonus',when:'item',label:'1년 상여금 총액',unit:'원',placeholder:'예: 0',hint:'3/12만큼 평균임금에 더해요.'},
+  {id:'leave',when:'item',label:'1년 연차수당',unit:'원',placeholder:'예: 0',hint:'퇴직 전 1년 동안 받은 연차수당이에요. 퇴사하면서 새로 받는 연차수당은 넣지 않아요.'},
+  {id:'last',type:'date',label:'마지막 근무일',def:''},
+  {id:'hours',type:'select',label:'하루 근로시간',hint:'하루 소정근로시간이에요. 하한액이 이 시간에 맞춰 줄어요.',options:[8,7,6,5,4,3].map(h=>({value:String(h),label:h===8?'8시간 (보통 전일제)':h+'시간'}))},
+  {id:'span',type:'select',label:'고용보험 가입 기간',hint:'여러 회사에서 가입한 기간을 모두 합쳐요.',options:UB_SPAN.map((l,i)=>({value:String(i),label:l}))},
+  {id:'age',type:'select',label:'퇴직 시 만나이',options:[{value:'u50',label:'50세 미만'},{value:'o50',label:'50세 이상·장애인'}]}],
+ run(v){if(v.mealIn==='0')v.mealIn='yes';const a=avgWage(v),span=+v.span||0,old=v.age==='o50',hrs=(+v.hours>0?+v.hours:8);
+  if(!a.tot)return{main:'급여 항목을 넣어 주세요',sub:[],related:[]};
+  const floor=Math.floor(UB.minWage*0.8*hrs),raw=a.daily*UB.rate,day=Math.min(Math.max(raw,floor),UB.cap),days=(old?UB_DAYS.o50:UB_DAYS.u50)[span]||120;
+  const rows=[['평균임금 (3개월)',null],[a.simple?'월평균 급여 × 3':'기본급 × 3',won(a.base)]];
+  if(a.fix)rows.push(['고정 수당 × 3',won(a.fix)]);if(a.meal)rows.push(['식대 × 3',won(a.meal)]);if(a.mealOut)rows.push(['식대 (뺐어요)','0원']);
+  if(a.vary)rows.push(['연장·야간 등 수당',won(a.vary)]);if(a.bon)rows.push(['상여금 × 3/12',won(a.bon)]);if(a.lv)rows.push(['연차수당 × 3/12',won(a.lv)]);
+  if(!a.simple)rows.push(['3개월 합계',won(a.tot)]);rows.push([`하루 평균임금 (÷ ${a.D}일)`,won(a.daily)],
+   ['실업급여',null],['그 60%',won(raw)],[raw>UB.cap?'하루 받는 돈 (상한 적용)':raw<floor?`하루 받는 돈 (하한 적용, ${hrs}시간 기준)`:'하루 받는 돈',won(day)],
+   ['받는 기간',`${days}일 (약 ${Math.round(days/30*10)/10}개월)`],['한 달(30일)에',won(day*30)]);
+  if(!v.last)rows.push(['마지막 근무일을 넣으면 3개월 날수가 정확해져요 (지금은 91일).','']);
+  return{main:`실업급여 총 ${won(day*days)}`,sub:rows,related:[]}}});
+CALC_FAQ['unemployment']=[{q:'스스로 그만두면 못 받나요?',a:'원칙적으로는 못 받아요. 다만 임금 체불, 회사 이전으로 통근이 어려워진 경우 등 법에서 정한 사유가 있으면 받을 수 있어요. 받을 수 있는지는 고용센터에서 정해요.'},{q:'식대는 평균임금에 들어가나요?',a:'회사가 모든 직원에게 매달 같은 금액을 주는 식대는 일한 대가로 보고 원칙적으로 포함돼요. 실제 쓴 만큼 정산하거나 밥으로 주는 경우는 빠져요. 회사가 낸 이직확인서에 식대가 빠져 있다면 계산기에서 "빼기"를 골라 맞춰 보세요.'},{q:'상여금과 연차수당은 어떻게 넣나요?',a:'퇴직 전 1년 동안 받은 금액의 3/12을 3개월 임금에 더해요. 퇴사하면서 처음 생긴 미사용 연차수당은 넣지 않아요.'},{q:'받는 기간은 어떻게 정해지나요?',a:'퇴직할 때 나이(50세 이상·장애인 여부)와 고용보험에 가입한 기간을 합쳐 120일에서 270일 사이로 정해져요.'},{q:'언제, 어디서 신청하나요?',a:'퇴사 후 고용24(work24.go.kr)에서 구직 신청과 수급자격 교육을 마치고 가까운 고용센터에 신청해요. 퇴사 다음 날부터 12개월이 지나면 남은 기간이 있어도 받을 수 없으니 빨리 신청하세요.'}];
+LEGAL_BASIS['unemployment']='평균임금은 근로기준법 제2조(퇴직 전 3개월 임금 총액 ÷ 그 기간 날수)로 계산하고, 상여금·연차수당은 지난 1년치의 3/12을 더해요. 고용보험법 제45조(평균임금의 60%), 제46조(상한·하한), 제50조와 별표1(소정급여일수)을 기준으로 해요. 상한액 하루 68,100원은 고용노동부 2025년 12월 16일 발표(2026년 적용), 하한액은 2026년 최저시급 10,320원 × 80% × 하루 소정근로시간으로 계산했어요.';
+
+calcs.push({id:'overtime',label:'연장·야간·휴일수당 계산기',title:'연장·야간·휴일수당 계산기',group:'employee',
+ disclaimerExtra:'야간 시간은 연장·휴일과 겹쳐도 따로 넣어요. 겹치면 가산이 함께 붙어요.',
+ fields:[{id:'wage',label:'통상시급',unit:'원',placeholder:'예: '+RATES.minimumWage,hint:'월급제라면 기본급과 고정수당 합계 ÷ 209'},
+  {id:'ot',label:'연장근로 시간 (8시간·주 40시간 초과분)',unit:'시간',placeholder:'예: 10'},
+  {id:'night',label:'야간근로 시간 (밤 10시~아침 6시)',unit:'시간',placeholder:'예: 4'},
+  {id:'hol',label:'휴일근로 시간 (하루 기준)',unit:'시간',placeholder:'예: 0'},
+  {id:'size',type:'select',label:'사업장 직원 수',options:[{value:'5up',label:'5명 이상'},{value:'u5',label:'5명 미만 (가산 없음)'}]}],
+ run(v){if(v.size==='0')v.size='5up';const w=+v.wage||0,ot=+v.ot||0,nt=+v.night||0,hl=+v.hol||0,big=v.size!=='u5';if(!w)return{main:'통상시급을 넣어 주세요',sub:[],related:[]};
+  const h8=Math.min(hl,8),hx=Math.max(hl-8,0);
+  const base=(ot+hl)*w,pOt=big?ot*w*0.5:0,pNt=big?nt*w*0.5:0,pH=big?h8*w*0.5+hx*w*1.0:0,tot=base+pOt+pNt+pH;
+  const rows=[['기본 시급분',won(base)]];
+  if(big){if(ot)rows.push([`연장 가산 ${ot}시간`,won(pOt)]);if(nt)rows.push([`야간 가산 ${nt}시간`,won(pNt)]);if(h8)rows.push([`휴일 가산 ${h8}시간 (0.5배)`,won(h8*w*0.5)]);if(hx)rows.push([`휴일 8시간 초과 ${hx}시간 (1배)`,won(hx*w)])}
+  else rows.push(['5명 미만 사업장은 연장·야간·휴일 가산(0.5배)이 의무가 아니에요.','']);
+  return{main:`수당 합계 ${won(tot)}`,sub:rows,related:RELATED['weekly-rest']||[]}}});
+CALC_FAQ['overtime']=[{q:'연장과 야간이 겹치면 어떻게 되나요?',a:'둘 다 붙어요. 예를 들어 밤 11시에 연장근로를 하면 시급 × 1배(기본) + 0.5배(연장) + 0.5배(야간) = 2배를 받아요.'},{q:'휴일에 8시간 넘게 일하면요?',a:'8시간까지는 시급의 1.5배, 8시간을 넘긴 부분은 2배예요.'},{q:'5명 미만 가게는요?',a:'근로기준법의 연장·야간·휴일 가산 규정이 적용되지 않아서 일한 시간만큼 시급(1배)만 받아도 법 위반은 아니에요. 회사 규정이나 근로계약에 가산이 있으면 그에 따라요.'}];
+LEGAL_BASIS['overtime']='근로기준법 제56조: 연장근로는 통상임금의 50% 이상, 야간근로(오후 10시~오전 6시)는 50% 이상, 휴일근로는 8시간 이내 50%·8시간 초과 100%를 더해 줘야 해요. 상시 5명 미만 사업장에는 이 조항이 적용되지 않아요(근로기준법 시행령 별표1).';
+
+calcs.push({id:'resign',label:'퇴사하면 받을 돈',title:'퇴사하면 받을 돈 계산기',group:'employee',
+ disclaimerExtra:'퇴직금은 1년 이상·주 15시간 이상 일했을 때 받아요. 실업급여는 이 회사 근속기간만 가입 기간으로 계산했어요.',
+ fields:[{id:'recent3',label:'최근 3개월 총급여 (세전, 상여금 제외)',unit:'만원',placeholder:'예: 900'},
+  {id:'years',label:'근속연수',unit:'년',placeholder:'예: 3'},{id:'months',label:'근속개월 (나머지 개월 수)',unit:'개월',placeholder:'예: 6'},
+  {id:'unusedDays',label:'남은 연차',unit:'일',placeholder:'예: 5'},
+  {id:'age',type:'select',label:'퇴직할 때 나이',options:[{value:'u50',label:'50세 미만'},{value:'o50',label:'50세 이상 또는 장애인'}]},
+  {id:'ub',type:'select',label:'실업급여',options:[{value:'yes',label:'포함 (회사 사정으로 그만둠)'},{value:'no',label:'빼고 보기 (스스로 그만둠)'}]}],
+ run(v){if(v.ub==='0')v.ub='yes';const sv=calcs.find(c=>c.id=='severance'),al=calcs.find(c=>c.id=='annual-leave');
+  const num=x=>parseInt(String(x).replace(/[^\d]/g,''))||0,yrs=(+v.years||0)+(+v.months||0)/12;
+  if(!(+v.recent3))return{main:'최근 3개월 급여를 넣어 주세요',sub:[],related:[]};
+  // 기존 계산기 코드를 그대로 불러온다 (결과가 항상 같게)
+  const sev=yrs>=1?num(sv.run({recent3:v.recent3,recentDays:'90',years:v.years,months:v.months}).main):0;
+  const monthly=(+v.recent3)*10000/3,hourly=Math.round(monthly/209);
+  const leave=num(al.run({hourlyWage:String(hourly),unusedDays:v.unusedDays||'0'}).main);
+  const u=v.ub!=='no'?ubCalc(monthly*12/365,yrIdx(yrs),v.age==='o50'):null;
+  const tot=sev+leave+(u?u.total:0);
+  return{main:`합계 ${won(tot)}`,sub:[['퇴직금',yrs>=1?won(sev):'0원 (1년 미만)'],[`연차수당 ${+v.unusedDays||0}일`,won(leave)],
+   ...(u?[[`실업급여 ${u.days}일`,won(u.total)]]:[['실업급여','제외']]),
+   [`통상시급은 월급 ÷ 209 (약 ${won(hourly)})로 어림했어요.`,'']],related:RELATED.severance||[]}}});
+CALC_FAQ['resign']=[{q:'퇴직금은 언제 받나요?',a:'퇴사한 날부터 14일 안에 받는 게 원칙이에요. 회사와 합의하면 늦출 수 있어요.'},{q:'남은 연차는 꼭 돈으로 받나요?',a:'퇴사로 쓰지 못한 연차는 수당으로 정산받는 게 원칙이에요. 연차수당 계산기에서 정확한 통상시급으로 다시 계산해 볼 수 있어요.'},{q:'세금은 빠졌나요?',a:'아니요. 세금을 떼기 전 금액이에요. 퇴직금에는 퇴직소득세, 연차수당에는 근로소득세가 붙을 수 있어요.'}];
+LEGAL_BASIS['resign']='퇴직금은 근로자퇴직급여 보장법 제8조, 연차수당은 근로기준법 제60조, 실업급여는 고용보험법 제45조·제46조·제50조를 기준으로 기존 퇴직금·연차수당·실업급여 계산기와 같은 방식으로 계산해요.';
+
+// 시급 ↔ 일급·주급·월급·연봉 환산 (주휴수당 포함). 월 시간 = (주 근무시간 + 주휴시간) × 365 ÷ 7 ÷ 12, 반올림 (주 40시간이면 209시간)
+const WFROM=[['h','시급'],['d','일급'],['w','주급'],['m','월급'],['y','연봉']];
+calcs.push({id:'wage',label:'시급 환산 계산기',title:'시급 환산 계산기',group:'employee',
+ fields:[{id:'from',type:'select',label:'내가 아는 금액',options:WFROM.map(([v,l])=>({value:v,label:l}))},
+  {id:'amt',label:'금액',unit:'원',placeholder:'예: '+RATES.minimumWage},
+  {id:'dh',label:'하루 근무시간',unit:'시간',placeholder:'예: 8'},
+  {id:'wd',label:'일주일 근무일',unit:'일',placeholder:'예: 5'}],
+ run(v){const from=(v.from&&v.from!='0')?v.from:'h',a=+v.amt||0,dh=+v.dh||0,wd=Math.min(+v.wd||0,7);if(!a||!dh||!wd)return{main:'금액과 근무시간을 넣어 주세요',sub:[],related:[]};
+  const wh=dh*wd,ju=wh>=15?Math.min(wh,40)/40*8:0,mh=Math.round((wh+ju)*365/7/12);
+  const h=from=='h'?a:from=='d'?a/dh:from=='w'?a/(wh+ju):from=='m'?a/mh:a/12/mh;
+  const min=RATES.minimumWage,rows=[['시급',won(h)],['일급 ('+dh+'시간)',won(h*dh)],['주급 (주휴 포함)',won(h*(wh+ju))],['월급 ('+mh+'시간)',won(h*mh)],['연봉',won(h*mh*12)],
+   [ju?`주 ${wh}시간이라 주휴수당 ${Math.round(ju*10)/10}시간분이 포함돼요.`:`주 ${wh}시간이라 주휴수당이 없어요 (15시간 미만).`,''],
+   [h+0.5<min?`⚠️ 시급이 ${RATES.minimumWageYear}년 최저시급 ${won(min)}보다 적어요.`:`${RATES.minimumWageYear}년 최저시급은 ${won(min)}이에요.`,'']];
+  const tgt=from=='m'?['연봉',h*mh*12]:from=='h'?['월급',h*mh]:['시급',h];
+  return{main:`${tgt[0]} ${won(tgt[1])}`,sub:rows,related:[]}}});
+CALC_FAQ['wage']=[{q:'월 209시간은 어디서 나왔나요?',a:'주 40시간에 주휴시간 8시간을 더한 48시간에, 한 달 평균 주 수(365 ÷ 7 ÷ 12 ≈ 4.345주)를 곱한 값이에요. 48 × 4.345 ≈ 209시간.'},{q:'주휴수당은 언제 포함되나요?',a:'일주일에 일하기로 한 시간이 15시간 이상일 때 포함돼요. 주 40시간이면 8시간분, 그보다 짧으면 근무시간에 비례해서 줄어요.'}];
+LEGAL_BASIS['wage']='주휴수당은 근로기준법 제55조, 주 15시간 미만 예외는 제18조 제3항을 따라요. 최저시급은 고용노동부 고시(2026년 10,320원) 기준이에요.';
 // 알바 월급 계산기: 출퇴근·휴게시간·요일로 주급·월급, 주휴수당 성립 여부
 const tmin=t=>{const m=String(t||'').match(/^(\d{1,2}):(\d{2})$/);return m?(+m[1])*60+(+m[2]):null};
 function shiftMinutes(st,en,bs,be){let a=tmin(st),b=tmin(en);if(a==null||b==null)return null;if(b<=a)b+=1440;
@@ -492,7 +629,7 @@ function partTime(v){const mode=v.mode||'hour',days=String(v.days||'').split('')
  const week=base+ot+nt+ju,month=week*365/7/12,sameBrk=per.every(x=>x.brk===per[0].brk)?per[0].brk:null;
  const dedType=v.ded||'none';let ded=0,dedRows=[];
  if(dedType==='33'){const it=Math.floor(month*0.03/10)*10,lt=Math.floor(it*0.1/10)*10;ded=it+lt;dedRows=[['3.3% (소득세 3% + 지방세 0.3%)','− '+won(ded)]]}
- if(dedType==='ins'){const pen=pensionBase(month)*RATES.pension/100,hea=month*RATES.health/100,ltc=hea*RATES.ltc/100,emp=month*RATES.employment/100,itx=estimateMonthlyIncomeTax(month,1),ltx=itx*0.1;
+ if(dedType==='ins'){const pen=pensionBase(month)*RATES.pension/100,hea=month*RATES.health/100,ltc=hea*RATES.ltc/100,emp=month*RATES.employment/100,itx=ntsTax(month,1,0),ltx=Math.floor(itx*0.1/10)*10;
   ded=pen+hea+ltc+emp+itx+ltx;dedRows=[['4대보험 + 소득세 (근로자 부담)','− '+won(ded)]]}
  return{n,dh,wh,per,custom:v.custom==='1',brk:sameBrk,wage,base,otH,ot,ntH,nt,juOk,ju,week,month,ded,dedRows,net:month-ded,big}}
 const DAYN='월화수목금토일';
@@ -506,8 +643,8 @@ calcs.push({id:'parttime',label:'알바 월급 계산기',title:'알바 월급 �
   {id:'start',type:'time',label:'출근',def:'11:00',half:1},{id:'end',type:'time',label:'퇴근',def:'21:00',half:1},
   {id:'bstart',type:'time',label:'휴게 시작',def:'15:30',half:1},{id:'bend',type:'time',label:'휴게 끝',def:'17:00',half:1},
   {id:'custom',type:'perday',label:'요일마다 시간이 달라요',def:'0'},
-  {id:'size',type:'select',label:'가게 직원 수',options:[{value:'5up',label:'5명 이상 (연장·야간수당 1.5배)'},{value:'u5',label:'5명 미만 (가산수당 없음)'}]},
-  {id:'ded',type:'select',label:'떼는 돈',options:[{value:'none',label:'안 떼고 그대로 받아요 (세전)'},{value:'33',label:'3.3% 떼고 받아요'},{value:'ins',label:'4대보험 가입했어요'}]}],
+  {id:'size',type:'select',label:'가게 직원 수',options:[{value:'5up',label:'5명 이상'},{value:'u5',label:'5명 미만'}],hint:'5명 이상 가게만 연장·야간수당(1.5배)이 의무예요.'},
+  {id:'ded',type:'select',label:'떼는 돈',options:[{value:'none',label:'안 뗌 (세전)'},{value:'33',label:'3.3%'},{value:'ins',label:'4대보험'}]}],
  run(v){if(v.size==='0')v.size='5up';if(v.ded==='0')v.ded='none';
   const r=partTime(v);if(!r)return{main:'출근 요일과 근무시간을 확인해 주세요',sub:[],related:[]};
   const h=x=>(Math.round(x*10)/10)+'시간',min=RATES.minimumWage,rows=[];
@@ -579,6 +716,35 @@ CALC_FAQ['pension-tax']=[{q:'1등이면 2등도 같이 받나요?',a:'같은 번
 LEGAL_BASIS['pension-tax']='연금복권 당첨금도 기타소득으로 분리과세돼요. 매달 지급액에 소득세 20%와 지방소득세 2%를 합친 22%를 원천징수해요.';
 const ALLC=()=>calcs.concat(LCALC),VIS=()=>ALLC().filter(c=>!c.hidden);
 function openCalc(id){go('c-'+id)}
+// ---------- 마감 임박 혜택 ----------
+const SUP=(DATA.support||[]);
+const todayK=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+const dday=e=>{if(!e)return null;return Math.round((new Date(e)-new Date(todayK()))/864e5)};
+// 마감 임박순, 마감일 없는 것은 그 뒤, 종료는 맨 아래(최근 종료부터)
+function supSorted(list){const t=todayK();const live=list.filter(x=>!x.end||x.end>=t),done=list.filter(x=>x.end&&x.end<t);
+ return [...live.sort((a,b)=>(a.end||'9999').localeCompare(b.end||'9999')),...done.sort((a,b)=>b.end.localeCompare(a.end))]}
+function ddBadge(x){const d=dday(x.end);if(d==null)return '<span class="dd dd-n">상시·별도 공지</span>';if(d<0)return '<span class="dd dd-x">종료</span>';if(d==0)return '<span class="dd dd-h">오늘 마감</span>';return `<span class="dd${d<=7?' dd-h':''}">D-${d}</span>`}
+function supCard(x){const d=dday(x.end),done=d!=null&&d<0;
+ return `<article class="sup${done?' done':''}" id="${x.id}"><div class="sh">${ddBadge(x)}<span class="sk">${x.kind=='event'?'기업 이벤트':'정부 지원'}</span>${x.host?`<span class="shost">${x.host}</span>`:''}</div>
+ <h3>${x.name}</h3>${x.amount?`<p class="samt">최대 ${x.amount}</p>`:''}
+ ${x.who?`<p><em>대상</em>${x.who}</p>`:''}${x.cond?`<p><em>조건</em>${x.cond}</p>`:''}${x.end?`<p><em>마감</em>${ymd(x.end)}${x.start?` (접수 ${ymd(x.start)}부터)`:''}</p>`:''}
+ ${done?'':`<a class="sapply" href="${x.url}" target="_blank" rel="noopener">공식 페이지에서 신청 ↗</a>`}
+ <small class="asof">정보 확인일 ${ymd(x.checked)} · 최종 조건은 공식 페이지에서 확인하세요${x.src?` · <a href="${x.src}" target="_blank" rel="noopener">출처</a>`:''}${x.kind=='gov'?' · 출처 기업마당':''}</small></article>`}
+let supT='전체',supK='전체';
+function benefitsPage(){const l=supSorted(SUP.filter(x=>(supT=='전체'||x.tags.includes(supT))&&(supK=='전체'||(supK=='정부 지원'?x.kind=='gov':x.kind=='event'))));
+ const chip=(v,cur,set)=>`<button class="${v==cur?'on':''}" onclick="${set}='${v}';render()">${v}</button>`;
+ const live=l.filter(x=>dday(x.end)==null||dday(x.end)>=0).length;
+ return `<h1 class="h1">마감 임박 혜택</h1><p class="note">정부 지원사업과 기업 이벤트를 마감이 가까운 순서로 모았어요</p>
+ <div class="chips">${['전체','소상공인','직장인','청년','육아'].map(v=>chip(v,supT,'supT')).join('')}</div>
+ <div class="chips">${['전체','정부 지원','기업 이벤트'].map(v=>chip(v,supK,'supK')).join('')}</div>
+ <p class="note">신청 가능 ${live}개${l.length>live?` · 종료 ${l.length-live}개`:''}</p>
+ ${l.length?l.map(supCard).join(''):SUP.length?`<p class="note" style="margin:20px 0">지금 조건에 맞는 혜택이 없어요. 다른 대상을 골라 보세요.</p>`:`<p class="note" style="margin:20px 0">혜택 정보를 모으고 있어요. 곧 정부 지원사업과 기업 이벤트가 여기에 올라와요.</p>`}
+ <p class="note" style="margin-top:14px">금액과 조건은 공고·이벤트 원문에 있는 내용만 옮겼어요. 비어 있는 칸은 원문에서 확인하세요.</p>${foot}`}
+// 받을 돈 찾기 칩 → 혜택 대상
+const FIND2SUP={self:'소상공인',worker:'직장인',youth:'청년',parent:'육아'};
+function supFor(keys){const tags=new Set(keys.map(k=>FIND2SUP[k]).filter(Boolean));const t=todayK();
+ return supSorted(SUP.filter(x=>x.tags.some(g=>tags.has(g))&&(!x.end||x.end>=t)))}
+
 // ---------- 받을 돈 찾기 ----------
 // 제도 정보는 data/benefits.json (공식 출처·기준일 확인한 값만). tags 는 어떤 조건을 고른 사람에게 보여 줄지.
 const BEN=(DATA.benefits||[]);
@@ -598,6 +764,7 @@ function findPage(){if(!findInit){findInit=1;findPick=findSel()}
   :list.length?BTYPE.map(([k,l])=>{const xs=list.filter(b=>b.type==k);return xs.length?`<h2>${l} <small>${xs.length}개</small></h2>${xs.map(benCard).join('')}`:''}).join('')
   :`<p class="note" style="margin-top:14px">고른 조건에 맞는 항목을 아직 준비하지 못했어요.</p>`;
  return `<h1 class="h1">받을 돈 찾기</h1><p class="note">나에게 해당하는 걸 고르세요 · 여러 개 가능</p>${chips}${body}
+ ${sel.length&&supFor(sel).length?`<h2>지금 신청할 수 있는 혜택 <small>마감 임박순</small></h2>${supFor(sel).slice(0,5).map(supCard).join('')}${A('benefits','btn ghost allbtn','마감 임박 혜택 전체 보기 ›')}`:''}
  ${sel.length?`<div class="shr"><button type="button" class="btn" onclick="findShare()">카카오톡·문자로 공유</button><button type="button" class="btn ghost" onclick="findCopy(this)">링크 복사</button></div><input id="shurl" hidden readonly aria-label="공유 주소" style="width:100%;margin-top:8px">`:''}
  <p class="note" style="margin-top:16px">금액과 조건은 해마다 바뀌어요. 여기 정보는 각 항목의 기준일 기준이고, 실제로 받을 수 있는지는 공식 안내에서 확인하세요.</p>${foot}`}
 function findUrl(){return (DATA.config&&DATA.config.siteUrl||'')+'/find/'+(findPick.size?'?t='+[...findPick].join(','):'')}
@@ -625,6 +792,7 @@ function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts
  <section class="hsec"><div class="c4">${CATS4.map(([t,dsc,to,k])=>A(to,'c4i c4-'+k,`<b>${t}</b><small>${dsc}</small>`)).join('')}</div></section>
  ${S?`<a class="season" href="${S.url}"${/^https?:/.test(S.url)?' target="_blank" rel="noopener"':''}><span class="stag">${S.tag}</span><b>${S.title}</b><small>${S.desc}</small></a>`:''}
  <section class="hsec"><h2>많이 쓰는 계산기 ${A('calc','more2','전체 ›')}</h2>${POPC.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}</section>
+ ${(()=>{const t=todayK(),xs=supSorted(SUP).filter(x=>x.end&&x.end>=t).slice(0,3);return xs.length?`<section class="hsec"><h2>마감 임박 혜택 ${A('benefits','more2','전체 ›')}</h2>${xs.map(x=>A('benefits','hsup',`${ddBadge(x)}<b class="one">${x.name}</b><small class="one">${x.host}${x.amount?` · 최대 ${x.amount}`:''}</small>`).replace('href="/benefits/"',`href="/benefits/#${x.id}"`)).join('')}</section>`:''})()}
  ${d?`<section class="hsec"><h2>로또 ${d.r}회 <small>${ymd(d.date)}</small></h2>${A('lotto','hlot',`${balls(d,'sm')}<span>1등 ${d.win}명 · 1인 ${d.per}원 ›</span>`)}</section>`:''}
  <section class="hsec"><h2>최신 글 ${A('guide','more2',`전체 ${allPosts().length}개 ›`)}</h2>${posts.map(postRow).join('')}</section>${foot}`}
 
@@ -640,7 +808,7 @@ const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 �
  'labor-cost':'사업주가 내는 4대보험까지 더한 실제 인건비예요','minwage-check':'월급이나 시급이 최저임금을 지키는지 바로 확인해요',
  'daily-worker-tax':'일당과 근무일수로 일용직 세금과 실제 지급액을 계산해요','card-fee':'카드 결제액에서 수수료와 부가세를 뺀 남는 돈이에요',
  'split-14h':'주 15시간 1명과 14시간 여러 명의 인건비를 비교해요',
- parttime:'시급·일당으로 월급과 주휴수당을 계산해요',compound:'이자에 이자가 붙으면 얼마가 되는지 계산해요','lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
+ unemployment:'하루 금액과 받는 기간을 계산해요',overtime:'연장·야간·휴일에 일한 만큼 더 받는 돈을 계산해요',resign:'퇴직금, 남은 연차수당, 실업급여를 한 번에 더해 봐요',parttime:'시급·일당으로 월급과 주휴수당을 계산해요',compound:'이자에 이자가 붙으면 얼마가 되는지 계산해요','lotto-tax':'당첨금에서 세금을 뗀 실수령액을 계산해요','pension-tax':'연금복권720+ 당첨금에서 세금을 뗀 실수령액이에요'};
 // 천 단위 쉼표: CV 에는 쉼표 없는 숫자만 저장하고 화면에만 쉼표를 붙인다
 const fmtN=x=>{const [i,...d]=String(x).replace(/[^\d.]/g,'').split('.');return i.replace(/^0+(?=[0-9])/,'').replace(/\B(?=(\d{3})+(?!\d))/g,',')+(d.length?'.'+d.join(''):'')};
 function nIn(el,id,fid){const raw=el.value.replace(/[^\d.]/g,''),left=el.value.slice(0,el.selectionStart).replace(/[^\d.]/g,'').length,f=fmtN(raw);el.value=f;
@@ -651,7 +819,7 @@ function perdayHtml(id,f){const v=CV[id],on=v.custom==='1',days=String(v.days||'
  const tin=(d,k,lab)=>{const key={start:'s',end:'e',bstart:'bs',bend:'be'}[k]+d;return `<div class="tcell"><label class="fl2" for="f-${key}">${lab}</label><input type="time" id="f-${key}" value="${dayT(v,d,k)||''}" onchange="CV['${id}']['${key}']=this.value;runC('${id}')"></div>`};
  return `<button type="button" class="ptg${on?' on':''}" aria-pressed="${on}" onclick="CV['${id}'].custom=CV['${id}'].custom==='1'?'0':'1';render()"><span class="ck">${on?'✓':''}</span>${f.label}</button>`
   +(on?`<p class="note">위 공통 시간이 먼저 들어가 있어요. 다른 요일만 고치세요.</p>`+days.map(d=>`<div class="pday"><b>${DAYN[d-1]}</b><div class="tpair">${tin(d,'start','출근')}${tin(d,'end','퇴근')}</div><div class="tpair">${tin(d,'bstart','휴게 시작')}${tin(d,'bend','휴게 끝')}</div></div>`).join(''):'')}
-const fieldHtml0=(id,f)=>f.type=='perday'?perdayHtml(id,f):f.type=='days'?`<label class="fl2">${f.label}</label><div class="dayp">${[...DAYN].map((n,k)=>`<button type="button" class="${String(CV[id][f.id]).includes(String(k+1))?'on':''}" onclick="dayTg('${id}','${f.id}','${k+1}')">${n}</button>`).join('')}</div>`
+const fieldHtml0=(id,f)=>f.type=='date'?`<label class="fl2" for="f-${f.id}">${f.label}</label><input type="date" class="din" id="f-${f.id}" value="${CV[id][f.id]||''}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">`:f.type=='perday'?perdayHtml(id,f):f.type=='days'?`<label class="fl2">${f.label}</label><div class="dayp">${[...DAYN].map((n,k)=>`<button type="button" class="${String(CV[id][f.id]).includes(String(k+1))?'on':''}" onclick="dayTg('${id}','${f.id}','${k+1}')">${n}</button>`).join('')}</div>`
  :f.type=='time'?`<div class="tcell"><label class="fl2" for="f-${f.id}">${f.label}</label><input type="time" id="f-${f.id}" value="${CV[id][f.id]}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')"></div>`:null;
 // half 칸(시간 입력)은 두 개씩 한 줄에
 function fieldsHtml(id,fs){let out='';for(let k=0;k<fs.length;k++){const f=fs[k];if(f.half){const g=fs[k+1]&&fs[k+1].half?fs[++k]:null;out+=`<div class="tpair">${fieldHtml(id,f)}${g?fieldHtml(id,g):''}</div>`}else out+=fieldHtml(id,f)}return out}
@@ -665,21 +833,50 @@ function resHtml(id){const c=calcs.find(x=>x.id==id),v=CV[id];
  return (r.sub||[]).map(([a,b])=>b===null?`<b class="rh">${a}</b>`:b===''?`<p class="note">${a}</p>`:rwH(a,b)).join('')+(c.disclaimerExtra?`<p class="note">${c.disclaimerExtra}</p>`:'')+`<div class="rbig${/^⚠️/.test(r.main)?' warn':''}"><b>${r.main}</b></div>`}
 function relHtml(id){const c=calcs.find(x=>x.id==id);let r;try{r=c.run(CV[id])}catch(e){return ''}
  const l=(r.related||[]).filter(s=>ARTICLES[s]);return l.length?`<p class="note" style="margin-top:14px">관련 글</p>`+l.map(s=>A('b-'+s,'rl one',`${ARTICLES[s].title} ›`)).join(''):''}
+// ---------- 계산기 화면 (새 디자인: 한 줄 입력 · 탭 묶음 · 작은 결과표) ----------
+// 같은 카드 안에서 탭으로 오가는 계산기 묶음. 탭마다 주소는 그대로(/calc/{id}/)
+const SUITES=[{t:'급여 계산기',ids:['wage','salary','severance','unemployment','resign']},
+ {t:'알바·근무 계산기',ids:['parttime','weekly-rest','overtime','minwage-check']},
+ {t:'프리랜서·사업자 계산기',ids:['freelance','tax-refund','card-fee','labor-cost']}];
+const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비'};
+const suiteOf=id=>SUITES.find(g=>g.ids.includes(id)&&g.ids.every(k=>k=='wage'||calcs.some(c=>c.id==k)));
+function hintTg(b){const p=b.closest('.fr').nextElementSibling;if(p&&p.classList.contains('fh'))p.hidden=!p.hidden}
+function nFieldHtml(id,f){const v=CV[id][f.id],hint=f.hint?`<button type="button" class="qi" aria-label="설명 보기" onclick="hintTg(this)">?</button>`:'';
+ const H=f.hint?`<p class="fh" hidden>${f.hint}</p>`:'';
+ if(f.type=='seg')return `<div class="fseg" role="radiogroup" aria-label="${f.label}">${f.options.map(o=>`<button type="button" role="radio" aria-checked="${v==o.value}" class="${v==o.value?'on':''}" onclick="CV['${id}']['${f.id}']='${o.value}';render()">${o.label}</button>`).join('')}</div>`;
+ if(f.type=='select')return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><select id="f-${f.id}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')">${f.options.map(o=>`<option value="${o.value}" ${String(o.value)==String(v)?'selected':''}>${o.label}</option>`).join('')}</select></div></div>${H}`;
+ if(f.type=='date')return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><input type="date" id="f-${f.id}" value="${v||''}" onchange="CV['${id}']['${f.id}']=this.value;runC('${id}')"></div></div>${H}`;
+ const o=fieldHtml0(id,f);if(o!=null)return o;
+ return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(v)}" onfocus="this.select()" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="u">${f.unit}</span>`:''}</div></div>${H}`}
+function nFieldsHtml(id,fs){let out='';for(let k=0;k<fs.length;k++){const f=fs[k];if(f.half){const g=fs[k+1]&&fs[k+1].half?fs[++k]:null;out+=`<div class="tpair">${nFieldHtml(id,f)}${g?nFieldHtml(id,g):''}</div>`}else out+=nFieldHtml(id,f)}return out}
+// 결과: 맨 위 요약 한 줄 + 작은 표, 안내 문장('')은 아래 회색 각주로
+function splitMain(m){const x=String(m).match(/^(.*?)\s*([−-]?\s?[\d,]+원.*)$/);return x&&x[1]?[x[1],x[2]]:['',String(m)]}
+function nResHtml(id){const c=calcs.find(x=>x.id==id);let r;try{r=c.run(CV[id])}catch(e){return '<p class="fn">숫자를 확인해 주세요.</p>'}
+ const [ml,mv]=splitMain(r.main),warn=/^⚠️/.test(r.main),notes=[];
+ const rows=(r.sub||[]).map(([a,b])=>b===null?`<tr class="sec"><th colspan="2">${a}</th></tr>`:b===''?(notes.push(a),''):`<tr><th>${a}</th><td>${b}</td></tr>`).join('');
+ return `<div class="ncm${warn?' warn':''}">${ml?`<span>${ml}</span>`:''}<b>${mv}</b></div>${rows?`<table class="nct2">${rows}</table>`:''}${notes.length?`<div class="fn">${notes.map(n=>`<p>${n}</p>`).join('')}</div>`:''}`}
+function resetC(id){const c=calcs.find(x=>x.id==id);CV[id]={_q:1};c.fields.forEach(f=>{CV[id][f.id]=f.type=='seg'?f.options[0].value:f.def!=null?f.def:f.type=='select'?'0':''});render()}
 function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- return `<div class="crumb">${A('calc','','계산기')} › 복권</div><h1 class="h1">${L.title}</h1><div class="panel">${id=='lotto-tax'?taxPanel():penCalc()}</div><details class="dt"><summary>법적 근거·이용 안내</summary><p>${LEGAL_BASIS[id]}</p></details><h2>자주 묻는 질문</h2><div>${faq}</div>${foot}`}
+ return `<div class="calc"><div class="crumb">${A('calc','','계산기')} › 복권</div><section class="nc nlot"><div class="nch"><h1>복권 세금 계산기</h1></div><nav class="ntabs" aria-label="복권 세금 계산기">${LCALC.map(x=>A('c-'+x.id,x.id==id?'on':'',x.id=='lotto-tax'?'로또':'연금복권')).join('')}</nav><p class="nsub">${L.title}</p>${id=='lotto-tax'?taxPanel():penCalc()}<div class="fn bot"><p>${id=='lotto-tax'?'3억원까지 22%, 넘는 부분 33% (소득세 + 지방소득세) · 200만원 이하 비과세':'연금형은 매달 받는 금액에서 22%를 떼요 · 1등 20년, 2등·보너스 10년'}</p></div></section><details class="info"><summary>자주 묻는 질문 · 법적 근거</summary>${faq}<h3>법적 근거</h3><p>${LEGAL_BASIS[id]}</p></details></div>${foot}`}
  const c=calcs.find(x=>x.id==id);if(!c)return calcList();CV[id]=CV[id]||{};c.fields.forEach(f=>{if(CV[id][f.id]==null)CV[id][f.id]=ex(f)});
- if(!CV[id]._q&&typeof location!='undefined'&&location.search){CV[id]._q=1;const q=new URLSearchParams(location.search);c.fields.forEach(f=>{const x=q.get(f.id);if(x!=null&&/^[\d.:]+$|^[a-z0-9]+$/i.test(x))CV[id][f.id]=x})}
+ if(!CV[id]._q&&typeof location!='undefined'&&location.search){CV[id]._q=1;const q=new URLSearchParams(location.search);c.fields.forEach(f=>{const x=q.get(f.id);if(x!=null&&/^[\d.:]+$|^[a-z0-9]+$|^\d{4}-\d{2}-\d{2}$/i.test(x))CV[id][f.id]=x})}
  const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- const head=`<div class="crumb">${A('calc','','계산기')} › ${GL[c.group]}</div><header class="chead"><h1>${c.title}</h1><p>${LEAD[id]||'숫자만 넣으면 바로 계산돼요'}</p></header>`;
+ const S=suiteOf(id),tabs=S?`<nav class="ntabs" aria-label="${S.t}">${S.ids.filter(k=>calcs.some(c=>c.id==k)).map(k=>A('c-'+k,k==id?'on':'',TABL[k]||k)).join('')}</nav>`:'';
  let body;
  if(c.dual){const R=resHtml(id),LB={contract:'<b class="hl">계약 금액</b> 기준',net:'<b class="hl">실제 수령액</b> 기준'},
   card=k=>`<section class="ccard"><div class="crow"><label class="ct" for="f-${k}">${LB[k]}</label><div class="inw"><input id="f-${k}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][k])}" onfocus="this.select()" oninput="nIn(this,'${id}','${k}')"><span class="un">원</span></div></div><div id="dres-${k}">${R[k]}</div></section>`;
   body=`<div class="dual">${['contract','net'].map(card).join('')}</div>`}
- else body=`<section class="ccard">${fieldsHtml(id,c.fields.filter(f=>!f.when||f.when==CV[id].mode))}<div id="cres">${resHtml(id)}</div></section>`;
- const info=`<details class="info"><summary>자세히 알아보기</summary><div id="crel">${relHtml(id)}</div>${LEGAL_BASIS[id]?`<h3>법적 근거·이용 안내</h3><p>${LEGAL_BASIS[id]}</p>`:''}${faq?`<h3>자주 묻는 질문</h3>${faq}`:''}</details>`;
- return `<div class="calc">${head}${body}${info}</div>${foot}`}
+ else body=`<div class="nf">${nFieldsHtml(id,c.fields.filter(f=>!f.when||f.when==CV[id].mode))}</div><div class="ncr" id="cres">${nResHtml(id)}</div>`;
+ const rel=(CALC_REL[id]||[]).map(k=>ALLC().find(c=>c.id==k)).filter(Boolean);
+ const fn=[CALC_SRC[id]&&CALC_SRC[id](),c.disclaimerExtra].filter(Boolean);
+ return `<div class="calc"><div class="crumb">${A('calc','','계산기')} › ${GL[c.group]}</div>
+ <section class="nc"><div class="nch"><h1>${S?S.t:c.title}</h1><button type="button" class="nrst" onclick="resetC('${id}')">↻ 초기화</button></div>${tabs}
+ ${S?`<p class="nsub">${c.title}</p>`:''}${body}
+ ${fn.length?`<div class="fn bot">${fn.map(t=>`<p>${t}</p>`).join('')}</div>`:''}
+ ${rel.length?`<div class="nrel"><span>관련</span>${rel.map(c=>A('c-'+c.id,'',c.label)).join('<i>·</i>')}</div>`:''}</section>
+ <details class="info"><summary>자주 묻는 질문 · 법적 근거</summary><div id="crel">${relHtml(id)}</div>${faq?faq:''}${LEGAL_BASIS[id]?`<h3>법적 근거</h3><p>${LEGAL_BASIS[id]}</p>`:''}</details></div>${foot}`}
 function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>{const e=document.getElementById(i);if(e)e.innerHTML=h};
- if(c.dual){const R=resHtml(id);set('dres-contract',R.contract);set('dres-net',R.net)}else set('cres',resHtml(id));set('crel',relHtml(id))}
+ if(c.dual){const R=resHtml(id);set('dres-contract',R.contract);set('dres-net',R.net)}else set('cres',nResHtml(id));set('crel',relHtml(id))}
 const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);
@@ -691,11 +888,11 @@ function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
 function view(){const v=view0();return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
