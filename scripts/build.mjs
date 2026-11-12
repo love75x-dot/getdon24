@@ -33,7 +33,9 @@ function parsePost(slug, text) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta.date)) throw new Error(`${slug}.md: date 는 2026-10-24 형식이어야 해요`);
   const html = mdToHtml(m[2]);
   const chars = html.replace(/<[^>]+>/g, '').length;
-  return { slug, title: meta.title, cat: meta.category, date: meta.date, excerpt: meta.excerpt, calc: meta.calc || '', min: Math.max(1, Math.round(chars / 500)), html };
+  // 게시판 분류는 3개(급여·세금·복권)로 묶는다. 글 파일의 category 는 그대로 두고 화면에서만 묶음
+  const CAT3 = { 세금정보: '세금', 복권정보: '복권' };
+  return { slug, title: meta.title, cat: CAT3[meta.category] || '급여', catRaw: meta.category, date: meta.date, excerpt: meta.excerpt, calc: meta.calc || '', min: Math.max(1, Math.round(chars / 500)), html };
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 function inline(s) {
@@ -118,11 +120,11 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${url}"><meta property="og:image" content="${SITE}/og-image.png"><meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#1e2a5a">
+<meta name="theme-color" content="#0B7A5A">
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="받는돈"><meta name="mobile-web-app-capable" content="yes">
 ${verify}
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <link rel="stylesheet" href="/assets/style.css?v=${assets.css}">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 ${ads}${ga}
@@ -205,12 +207,17 @@ const pension = JSON.parse(await readFile(join(ROOT, 'data/pension.json'), 'utf8
 const latestRound = Math.max(...lotto.map((d) => d.round));
 const places = await loadPlaces(latestRound);
 
+// 시즌 배너: config.json 의 seasons 중 오늘 날짜에 해당하는 것 하나
+function seasonNow() {
+  return (config.seasons || []).find((x) => x.from <= TODAY && TODAY <= x.until) || null;
+}
 const DATA = {
   draws: lotto.map((d) => [d.round, d.date, d.numbers, d.bonus, d.ranks[0][0], d.ranks[0][1], ...(d.firstMethods || [null, null, null]), d.sales]),
   pension: pension.map((p) => [p.round, p.date, p.group, p.number, p.bonus]),
   places,
-  config: { email: config.email, siteUrl: SITE },
+  config: { email: config.email, siteUrl: SITE, season: seasonNow() },
   posts: posts.map(({ html, ...meta }) => meta),
+  benefits: JSON.parse(await readFile(join(ROOT, 'data/benefits.json'), 'utf8')),
 };
 
 // 화면 함수 실행 준비
@@ -313,6 +320,9 @@ for (const d of draws) {
 await emit('pension', { title: `연금복권720+ ${P.round}회 당첨번호 ${P.group}조 ${P.number} · 실수령액 | ${site}`, desc: `${P.date} 추첨 연금복권720+ ${P.round}회 1등 ${P.group}조 ${P.number}, 보너스 ${P.bonus}. 1등 월 700만원 실수령액과 1등·2등 동시 당첨 계산기까지.` }, P.date);
 await emit('penall', { title: `연금복권720+ 전체 회차 당첨번호 | ${site}`, desc: `연금복권720+ 1회부터 ${P.round}회까지 1등 당첨번호와 보너스 번호를 모두 볼 수 있어요.` }, P.date);
 
+// 받을 돈 찾기
+await emit('find', { title: `받을 돈 찾기 - 지원금·수당·환급금 한 번에 | ${site}`, desc: '직장인, 알바, 프리랜서, 육아 중, 구직·퇴사, 청년, 자영업 중 해당하는 걸 고르면 매달 받는 돈, 한 번에 받는 돈, 돌려받는 돈을 모아 보여 드려요.' });
+
 // 게시판
 await emit('guide', { title: `정보 게시판 | ${site}`, desc: '급여, 세금, 4대보험, 프리랜서, 복권 당첨금까지 돈과 관련된 정보글을 모았어요.' }, posts[0]?.date);
 for (const p of posts) {
@@ -342,7 +352,8 @@ await writeFile(join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: $
 if (config.adsenseClient) await writeFile(join(DIST, 'ads.txt'), `google.com, ${config.adsenseClient.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
 // 옛 주소는 합쳐진 계산기로 301 이동
 await writeFile(join(DIST, '_redirects'), '/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
-await writeFile(join(DIST, '_headers'), `/assets/*\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  Cache-Control: public, max-age=86400\n`);
+// 페이지(HTML)는 늘 최신본을 확인하고, 버전이 붙은 /assets/ 만 오래 저장 (예전 회차가 보이던 문제 방지)
+await writeFile(join(DIST, '_headers'), `/*\n  Cache-Control: public, max-age=0, must-revalidate\n/assets/*\n  ! Cache-Control\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  ! Cache-Control\n  Cache-Control: public, max-age=86400\n`);
 await writeFile(join(DIST, 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>받는돈 정보 게시판</title><link>${SITE}/blog/</link><description>급여·세금·복권 정보글</description>\n${posts.slice(0, 30).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}${pathOf('b-' + p.slug)}</link><guid>${SITE}${pathOf('b-' + p.slug)}</guid><pubDate>${new Date(p.date + 'T09:00:00+09:00').toUTCString()}</pubDate><description>${esc(p.excerpt)}</description></item>`).join('\n')}\n</channel></rss>\n`);
 
 console.log(`완료 (${TODAY} 기준): 페이지 ${pages.length}개 · 계산기 ${calcs.length} · 로또 ${draws.length}회 · 연금복권 ${pen.length}회 · 글 ${posts.length}개`);

@@ -5,5 +5,15 @@
   "adsenseClient": "",
   "ga4": "",
   "googleVerification": "",
-  "naverVerification": ""
+  "naverVerification": "",
+  "seasons": [
+    {
+      "from": "2026-11-01",
+      "until": "2027-02-28",
+      "tag": "지금 시즌",
+      "title": "연말정산 미리보기",
+      "desc": "13월의 월급, 얼마 돌려받을지 미리 확인해요",
+      "url": "https://www.hometax.go.kr"
+    }
+  ]
 }
