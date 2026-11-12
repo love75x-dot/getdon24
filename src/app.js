@@ -812,7 +812,7 @@ let supT='전체',supK='전체';
 function benefitsPage(){const l=supSorted(SUP.filter(x=>(supT=='전체'||x.tags.includes(supT))&&(supK=='전체'||(supK=='정부 지원'?x.kind=='gov':x.kind=='event'))));
  const chip=(v,cur,set)=>`<button class="${v==cur?'on':''}" onclick="${set}='${v}';render()">${v}</button>`;
  const live=l.filter(x=>dday(x.end)==null||dday(x.end)>=0).length;
- return `<h1 class="h1">마감 임박 혜택</h1><p class="note">정부 지원사업과 기업 이벤트를 마감이 가까운 순서로 모았어요</p>
+ return `<h1 class="h1">마감 임박 혜택</h1><p class="note">정부 지원사업과 기업 이벤트를 마감이 가까운 순서로 모았어요 · ${A('deadlines','','세금 신고·신청 마감 달력 ›')}</p>
  <div class="chips">${['전체','소상공인','직장인','청년','육아'].map(v=>chip(v,supT,'supT')).join('')}</div>
  <div class="chips">${['전체','정부 지원','기업 이벤트'].map(v=>chip(v,supK,'supK')).join('')}</div>
  <p class="note">신청 가능 ${live}개${l.length>live?` · 종료 ${l.length-live}개`:''}</p>
@@ -887,6 +887,23 @@ function lifePage(k){const x=LIFEBY[k];if(!x)return lifeIdx();
  <h2 class="lh">바로 계산</h2><div class="lcalc">${x.calcs.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'gcard',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}</div>
  <div class="fn bot"><p>조회·신청은 공식 사이트에서 해요. 받는돈은 개인정보를 받지 않아요.</p>${x.src?`<p>${x.src}</p>`:''}<p>제도는 자주 바뀌어요. 금액·조건은 공식 안내를 꼭 확인하세요.</p></div>
  <nav class="lnav">${LIFE.filter(y=>y.k!=k).map(y=>A('l-'+y.k,'',`${y.e} ${y.t}`)).join('')}</nav>${foot}`}
+// ── 신고·신청 마감 달력 (/deadlines/) ──
+const DL=(DATA.deadlines||[]).filter(x=>x.end>=todayK());let dlT='전체';
+const gcal=x=>{const d=s=>s.replace(/-/g,''),n=new Date(+new Date(x.end+'T00:00:00Z')+864e5).toISOString().slice(0,10);return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('[마감] '+x.name)+'&dates='+d(x.end)+'/'+d(n)+'&details='+encodeURIComponent(x.who+'\n'+x.url+'\n받는돈 getdon24.com/deadlines/')}
+function icsOne(k){const x=DL.find(y=>y.key==k);if(!x)return;const d=s=>s.replace(/-/g,''),n=new Date(+new Date(x.end+'T00:00:00Z')+864e5).toISOString().slice(0,10);
+ const t=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//getdon24//KO','BEGIN:VEVENT','UID:'+x.key+'@getdon24.com','DTSTAMP:'+d(todayK())+'T000000Z','DTSTART;VALUE=DATE:'+d(x.end),'DTEND;VALUE=DATE:'+d(n),'SUMMARY:[마감] '+x.name,'DESCRIPTION:'+x.who+'\\n'+x.url,'URL:'+x.url,'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+x.name+' 마감 3일 전','TRIGGER:-P3D','END:VALARM','END:VEVENT','END:VCALENDAR',''].join('\r\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/calendar'}));a.download='getdon24-'+x.id+'.ics';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function dlCard(x){const d=dday(x.end),open=x.start<=todayK();
+ return `<article class="dlc"><div class="dlh"><span class="dd ${d<=7?'hot':''}">${d==0?'오늘 마감':'D-'+d}</span><span class="dls">${open?'접수 중':ymd(x.start)+'부터'}</span></div>
+ <h3>${x.name}</h3><p>${x.who}</p><p class="dlw">${ymd(x.start)} ~ <b>${ymd(x.end)}</b>${x.moved?' <small>(주말이라 다음 월요일)</small>':''}</p>
+ <div class="dlb"><a href="${x.url}" target="_blank" rel="noopener">공식 사이트 ↗</a><button type="button" onclick="icsOne('${x.key}')">📅 캘린더에 넣기</button><a href="${gcal(x)}" target="_blank" rel="noopener">구글 캘린더</a>${x.calc?A('c-'+x.calc,'','계산 ›'):''}</div>
+ <small class="asof">근거 ${x.law}</small></article>`}
+function deadlinesPage(){const tags=['전체',...new Set(DL.flatMap(x=>x.tags||[]))],L=DL.filter(x=>dlT=='전체'||(x.tags||[]).includes(dlT));
+ return `<h1 class="h1">신고·신청 마감 달력</h1><p class="lsub">해마다 돌아오는 세금 신고·장려금 신청·납부 마감일이에요</p>
+ <a class="dlsub" href="/deadlines.ics">🔔 전체 일정 한 번에 받기 <small>휴대폰 캘린더에 넣으면 마감 3일 전에 알려 줘요</small></a>
+ <div class="chips dlchips">${tags.map(t=>`<button class="${t==dlT?'on':''}" onclick="dlT='${t}';render()">${t}</button>`).join('')}</div>
+ ${L.map(dlCard).join('')||'<p class="note">해당하는 마감이 없어요.</p>'}
+ <div class="fn bot"><p>법에 정해진 기한만 모았어요. 마감일이 주말이면 다음 월요일로 표시했고, 공휴일·대체공휴일이면 그다음 평일까지 늘어나요.</p><p>고지서를 받는 세금은 고지서의 날짜가 우선이에요. 받는돈은 이름·연락처 같은 개인정보를 받지 않아요.</p></div>${foot}`}
 function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const sel=[...findPick],list=sel.length?BEN.filter(b=>b.tags.some(t=>findPick.has(t))):[];
  const chips=`<div class="fchips">${FINDT.map(([k,l])=>`<button type="button" class="${findPick.has(k)?'on':''}" onclick="findTg2('${k}')">${l}</button>`).join('')}</div>`;
@@ -924,6 +941,7 @@ function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts
  ${S?`<a class="season" href="${S.url}"${/^https?:/.test(S.url)?' target="_blank" rel="noopener"':''}><span class="stag">${S.tag}</span><b>${S.title}</b><small>${S.desc}</small></a>`:''}
  <section class="hsec"><h2>많이 쓰는 계산기</h2>${POPC.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}</section>
  ${(()=>{const t=todayK(),xs=supSorted(SUP).filter(x=>x.end&&x.end>=t).slice(0,3);return xs.length?`<section class="hsec"><h2>마감 임박 혜택 ${A('benefits','more2','전체 ›')}</h2>${xs.map(x=>A('benefits','hsup',`${ddBadge(x)}<b class="one">${x.name}</b><small class="one">${x.host}${x.amount?` · 최대 ${x.amount}`:''}</small>`).replace('href="/benefits/"',`href="/benefits/#${x.id}"`)).join('')}</section>`:''})()}
+ ${DL.length?`<section class="hsec"><h2>다가오는 신고·신청 마감 ${A('deadlines','more2','전체 ›')}</h2>${DL.slice(0,3).map(x=>A('deadlines','hsup',`<span class="dd">D-${dday(x.end)}</span><b class="one">${x.name}</b><small class="one">${ymd(x.end)}까지</small>`)).join('')}</section>`:''}
  ${d?`<section class="hsec"><h2>로또 ${d.r}회 <small>${ymd(d.date)}</small></h2>${A('lotto','hlot',`${balls(d,'sm')}<span>1등 ${d.win}명 · 1인 ${d.per}원 ›</span>`)}</section>`:''}
  <section class="hsec"><h2>최신 글 ${A('guide','more2',`전체 ${allPosts().length}개 ›`)}</h2>${posts.map(postRow).join('')}</section>${foot}`}
 
@@ -1027,11 +1045,11 @@ function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
 function view(){const v=view0();return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}

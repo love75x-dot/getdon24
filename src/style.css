@@ -301,3 +301,11 @@ h2 .more2,h2 a.more2{font-size:13px;font-weight:500;color:var(--mute);text-decor
 .nsubg{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .nsubg a{font-size:13px;padding:6px 12px;border-radius:10px;background:var(--soft);color:var(--mute);text-decoration:none}
 .nsubg a.on{background:color-mix(in srgb,var(--navy) 14%,var(--card));color:var(--navy);font-weight:700}
+/* /deadlines/ */
+.dlsub{display:block;padding:14px;border-radius:14px;background:color-mix(in srgb,var(--navy) 12%,var(--card));color:var(--navy);font-weight:700;text-decoration:none;margin:0 0 12px}
+.dlsub small{display:block;font-weight:400;color:var(--mute);font-size:12.5px;margin-top:2px}
+.dlchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}.dlchips button{font:inherit;font-size:13px;padding:5px 11px;border:1px solid var(--line);border-radius:99px;background:var(--card);color:var(--fg);cursor:pointer}.dlchips button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.dlc{border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0;background:var(--card)}
+.dlh{display:flex;gap:8px;align-items:center}.dlh .dd{font-size:12.5px;font-weight:900;padding:2px 8px;border-radius:8px;background:var(--soft);color:var(--fg)}.dlh .dd.hot{background:var(--red);color:#fff}.dls{font-size:12.5px;color:var(--mute)}
+.dlc h3{font-size:16px;margin:8px 0 4px}.dlc p{margin:2px 0;font-size:14px;color:var(--mute)}.dlc .dlw{color:var(--fg)}.dlw small{color:var(--mute)}
+.dlb{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 6px}.dlb a,.dlb button{font:inherit;font-size:13px;padding:6px 10px;border-radius:10px;background:var(--soft);color:var(--fg);border:0;text-decoration:none;cursor:pointer}

@@ -255,6 +255,27 @@ async function loadSupport() {
 function seasonNow() {
   return (config.seasons || []).find((x) => x.from <= TODAY && TODAY <= x.until) || null;
 }
+// 매년 같은 날짜의 신고·납부 기한을 올해·내년 날짜로 펼친다. 마감일이 토·일이면 다음 월요일 (국세기본법 제5조).
+// 공휴일은 반영하지 않아요 (화면에 안내).
+function expandDeadlines(list) {
+  const y = +TODAY.slice(0, 4), out = [];
+  for (const yr of [y - 1, y, y + 1]) for (const d of list) {
+    let end = new Date(`${yr}-${d.end}T00:00:00Z`), moved = false;
+    while ([0, 6].includes(end.getUTCDay())) { end = new Date(+end + 864e5); moved = true; }
+    const e = end.toISOString().slice(0, 10);
+    if (e < TODAY) continue;
+    out.push({ ...d, key: `${d.id}-${yr}`, start: `${yr}-${d.start}`, end: e, moved });
+  }
+  return out.sort((a, b) => a.end.localeCompare(b.end)).slice(0, 24);
+}
+function icsEsc(t) { return String(t).replace(/[\\,;]/g, (m) => '\\' + m).replace(/\n/g, '\\n'); }
+function icsOf(items) {
+  const d = (s) => s.replace(/-/g, ''), next = (s) => new Date(+new Date(s + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10);
+  const ev = items.map((x) => ['BEGIN:VEVENT', `UID:${x.key}@getdon24.com`, `DTSTAMP:${d(TODAY)}T000000Z`, `DTSTART;VALUE=DATE:${d(x.end)}`, `DTEND;VALUE=DATE:${d(next(x.end))}`,
+    `SUMMARY:${icsEsc('[마감] ' + x.name)}`, `DESCRIPTION:${icsEsc(`${x.who}\n접수 ${x.start} ~ ${x.end}\n${x.url}\n근거: ${x.law}\n받는돈 getdon24.com/deadlines/`)}`, `URL:${x.url}`,
+    'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEsc(x.name + ' 마감 3일 전')}`, 'TRIGGER:-P3D', 'END:VALARM', 'END:VEVENT'].join('\r\n'));
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//getdon24//deadlines//KO', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:받는돈 신고·신청 마감', 'X-WR-TIMEZONE:Asia/Seoul', ...ev, 'END:VCALENDAR', ''].join('\r\n');
+}
 const DATA = {
   draws: lotto.map((d) => [d.round, d.date, d.numbers, d.bonus, d.ranks[0][0], d.ranks[0][1], ...(d.firstMethods || [null, null, null]), d.sales]),
   pension: pension.map((p) => [p.round, p.date, p.group, p.number, p.bonus]),
@@ -263,6 +284,7 @@ const DATA = {
   posts: posts.map(({ html, ...meta }) => meta),
   support: await loadSupport(),
   benefits: JSON.parse(await readFile(join(ROOT, 'data/benefits.json'), 'utf8')),
+  deadlines: expandDeadlines(JSON.parse(await readFile(join(ROOT, 'data/deadlines.json'), 'utf8'))),
   wtax: JSON.parse(await readFile(join(ROOT, 'data/wage-tax-2026-03.json'), 'utf8')),
 };
 
@@ -377,6 +399,10 @@ const LIFE_SEO = { marriage: ['결혼할 때 받을 돈·할 일 - 결혼세액�
 await emit('life', { title: `인생 이벤트별 받을 돈 - 결혼·출산·이사·퇴사·은퇴 | ${site}`, desc: '결혼, 출산, 이사, 퇴사, 은퇴 때 받을 수 있는 돈과 해야 할 일을 시기별로 모았어요.' });
 for (const [k, [t, d]] of Object.entries(LIFE_SEO)) await emit(`l-${k}`, { title: `${t} | ${site}`, desc: d });
 
+// 신고·신청 마감 달력 + 캘린더 구독 파일
+await emit('deadlines', { title: `신고·신청 마감 달력 - 종합소득세·부가세·근로장려금 | ${site}`, desc: '종합소득세, 부가가치세, 근로장려금, 자동차세, 재산세처럼 해마다 돌아오는 신고·신청·납부 마감일을 D-day 순서로 모았어요. 휴대폰 캘린더에 넣으면 3일 전에 알려 줘요.' });
+await writeFile(join(DIST, 'deadlines.ics'), icsOf(DATA.deadlines));
+
 // 받을 돈 찾기
 await emit('find', { title: `받을 돈 찾기 - 지원금·수당·환급금 한 번에 | ${site}`, desc: '직장인, 알바, 프리랜서, 육아 중, 구직·퇴사, 청년, 자영업 중 해당하는 걸 고르면 매달 받는 돈, 한 번에 받는 돈, 돌려받는 돈을 모아 보여 드려요.' });
 
@@ -410,7 +436,7 @@ if (config.adsenseClient) await writeFile(join(DIST, 'ads.txt'), `google.com, ${
 // 옛 주소는 합쳐진 계산기로 301 이동
 await writeFile(join(DIST, '_redirects'), '/calc/ /calc/salary/ 301\n/calc /calc/salary/ 301\n/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
 // 페이지(HTML)는 늘 최신본을 확인하고, 버전이 붙은 /assets/ 만 오래 저장 (예전 회차가 보이던 문제 방지)
-await writeFile(join(DIST, '_headers'), `/*\n  Cache-Control: public, max-age=0, must-revalidate\n/assets/*\n  ! Cache-Control\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  ! Cache-Control\n  Cache-Control: public, max-age=86400\n`);
+await writeFile(join(DIST, '_headers'), `/*\n  Cache-Control: public, max-age=0, must-revalidate\n/deadlines.ics\n  Content-Type: text/calendar; charset=utf-8\n/assets/*\n  ! Cache-Control\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  ! Cache-Control\n  Cache-Control: public, max-age=86400\n`);
 await writeFile(join(DIST, 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>받는돈 정보 게시판</title><link>${SITE}/blog/</link><description>급여·세금·복권 정보글</description>\n${posts.slice(0, 30).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}${pathOf('b-' + p.slug)}</link><guid>${SITE}${pathOf('b-' + p.slug)}</guid><pubDate>${new Date(p.date + 'T09:00:00+09:00').toUTCString()}</pubDate><description>${esc(p.excerpt)}</description></item>`).join('\n')}\n</channel></rss>\n`);
 
 console.log(`완료 (${TODAY} 기준): 페이지 ${pages.length}개 · 계산기 ${calcs.length} · 로또 ${draws.length}회 · 연금복권 ${pen.length}회 · 글 ${posts.length}개`);

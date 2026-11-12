@@ -1,0 +1,14 @@
+[
+ {"id":"vat-2","name":"부가가치세 확정신고 (지난해 7~12월분)","who":"개인 일반과세자·간이과세자","start":"01-01","end":"01-25","url":"https://www.hometax.go.kr","law":"부가가치세법 제49조·제67조","tags":["사업자"]},
+ {"id":"eitc-h2","name":"반기 근로장려금 신청 (지난해 하반기 소득)","who":"근로소득만 있는 근로장려금 대상자","start":"03-01","end":"03-15","url":"https://www.hometax.go.kr","law":"조세특례제한법 제100조의7","tags":["직장인"]},
+ {"id":"income-tax","name":"종합소득세 신고·납부","who":"프리랜서(3.3%), 사업자, 연말정산 못 한 퇴사자 등","start":"05-01","end":"05-31","url":"https://www.hometax.go.kr","law":"소득세법 제70조","tags":["프리랜서","사업자","퇴사"],"calc":"tax-refund"},
+ {"id":"eitc","name":"근로·자녀장려금 정기 신청","who":"소득·재산 기준에 맞는 근로자·사업자 가구","start":"05-01","end":"05-31","url":"https://www.hometax.go.kr","law":"조세특례제한법 제100조의7","tags":["직장인","프리랜서","육아"]},
+ {"id":"car-1","name":"자동차세 납부 (1기분)","who":"자동차 소유자","start":"06-16","end":"06-30","url":"https://www.wetax.go.kr","law":"지방세법 제128조","tags":["생활"]},
+ {"id":"vat-1","name":"부가가치세 확정신고 (1~6월분)","who":"개인 일반과세자","start":"07-01","end":"07-25","url":"https://www.hometax.go.kr","law":"부가가치세법 제49조","tags":["사업자"]},
+ {"id":"prop-1","name":"재산세 납부 (주택 1/2·건축물)","who":"주택·건축물 소유자","start":"07-16","end":"07-31","url":"https://www.wetax.go.kr","law":"지방세법 제115조","tags":["생활"]},
+ {"id":"eitc-h1","name":"반기 근로장려금 신청 (올해 상반기 소득)","who":"근로소득만 있는 근로장려금 대상자","start":"09-01","end":"09-15","url":"https://www.hometax.go.kr","law":"조세특례제한법 제100조의7","tags":["직장인"]},
+ {"id":"prop-2","name":"재산세 납부 (주택 1/2·토지)","who":"주택·토지 소유자","start":"09-16","end":"09-30","url":"https://www.wetax.go.kr","law":"지방세법 제115조","tags":["생활"]},
+ {"id":"prepaid","name":"종합소득세 중간예납 납부","who":"고지서를 받은 사업소득자","start":"11-01","end":"11-30","url":"https://www.hometax.go.kr","law":"소득세법 제65조","tags":["사업자","프리랜서"]},
+ {"id":"cpt","name":"종합부동산세 납부","who":"고지서를 받은 주택·토지 소유자","start":"12-01","end":"12-15","url":"https://www.hometax.go.kr","law":"종합부동산세법 제16조","tags":["생활"]},
+ {"id":"car-2","name":"자동차세 납부 (2기분)","who":"자동차 소유자","start":"12-16","end":"12-31","url":"https://www.wetax.go.kr","law":"지방세법 제128조","tags":["생활"]}
+]
