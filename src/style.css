@@ -223,8 +223,8 @@ h2 .more2,h2 a.more2{font-size:13px;font-weight:500;color:var(--mute);text-decor
 .nch{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .nch h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.2px;color:var(--fg)}
 .nrst{border:1px solid var(--line);background:var(--card);color:var(--mute);border-radius:8px;padding:6px 10px;font:500 13px var(--body);cursor:pointer;flex:none}
-.ntabs{display:flex;gap:18px;overflow-x:auto;margin:12px -16px 0;padding:0 16px;border-bottom:1px solid var(--line);scrollbar-width:none}
-.ntabs a{flex:none;padding:8px 0 10px;font-size:15px;color:var(--mute);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.ntabs{display:flex;flex-wrap:wrap;column-gap:13px;row-gap:0;margin:12px -16px 0;padding:0 16px;border-bottom:1px solid var(--line)}
+.ntabs a{flex:none;padding:7px 0 8px;font-size:14.5px;color:var(--mute);text-decoration:none;border-bottom:2px solid transparent;margin-bottom:-1px}
 .ntabs a.on{color:var(--fg);font-weight:700;border-color:var(--fg)}
 .nsub{margin:12px 0 0;font-size:13px;color:var(--mute)}
 .nf{margin-top:6px}
@@ -293,3 +293,11 @@ h2 .more2,h2 a.more2{font-size:13px;font-weight:500;color:var(--mute);text-decor
 .lh{font-size:17px;font-weight:900;margin:20px 0 8px}
 .lnav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
 .lnav a{padding:7px 12px;border:1px solid var(--line);border-radius:99px;font-size:13.5px;color:inherit;text-decoration:none}
+.gnav{display:flex;align-items:center;gap:4px;margin:14px 0 10px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}.gnav::-webkit-scrollbar{display:none}
+.gnav span{font-size:12.5px;color:var(--mute);margin-right:0}.gnav span::after{content:' ›'}
+.gnav a{flex:none;padding:5px 8px;border:1px solid var(--line);border-radius:99px;font-size:13.5px;color:var(--fg);text-decoration:none;background:var(--card)}
+.gnav a.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+.nmore{margin-top:8px}
+.nsubg{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.nsubg a{font-size:13px;padding:6px 12px;border-radius:10px;background:var(--soft);color:var(--mute);text-decoration:none}
+.nsubg a.on{background:color-mix(in srgb,var(--navy) 14%,var(--card));color:var(--navy);font-weight:700}

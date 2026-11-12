@@ -143,7 +143,7 @@ ${ads}${ga}
 // app.js 와 같은 주소 규칙
 function pathOf(t) {
   if (t === 'home') return '/';
-  if (t === 'calc') return '/calc/';
+  if (t === 'calc') return '/calc/salary/';
   if (t.startsWith('c-')) return `/calc/${t.slice(2)}/`;
   if (t === 'lotto') return '/lotto/';
   if (t === 'all') return '/lotto/all/';
@@ -340,7 +340,6 @@ await emit('home', {
 // 계산기
 const calcs = JSON.parse(call('JSON.stringify(ALLC().map(c=>({id:c.id,title:c.title,label:c.label,hidden:!!c.hidden})))'));
 const faqs = JSON.parse(call('JSON.stringify(CALC_FAQ)'));
-await emit('calc', { title: `실수령액 계산기 모음 ${calcs.filter((c) => !c.hidden).length}종 | ${site}`, desc: `연봉, 4대보험, 퇴직금, 주휴수당, 3.3% 계산·역산, 카드 수수료, 로또 세금까지 ${calcs.filter((c) => !c.hidden).length}가지 계산기를 한곳에 모았어요.` });
 for (const c of calcs) {
   const faq = faqs[c.id] || [];
   await emit(`c-${c.id}`, {
@@ -409,7 +408,7 @@ await writeFile(join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"
 await writeFile(join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 if (config.adsenseClient) await writeFile(join(DIST, 'ads.txt'), `google.com, ${config.adsenseClient.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
 // 옛 주소는 합쳐진 계산기로 301 이동
-await writeFile(join(DIST, '_redirects'), '/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
+await writeFile(join(DIST, '_redirects'), '/calc/ /calc/salary/ 301\n/calc /calc/salary/ 301\n/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
 // 페이지(HTML)는 늘 최신본을 확인하고, 버전이 붙은 /assets/ 만 오래 저장 (예전 회차가 보이던 문제 방지)
 await writeFile(join(DIST, '_headers'), `/*\n  Cache-Control: public, max-age=0, must-revalidate\n/assets/*\n  ! Cache-Control\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  ! Cache-Control\n  Cache-Control: public, max-age=86400\n`);
 await writeFile(join(DIST, 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>받는돈 정보 게시판</title><link>${SITE}/blog/</link><description>급여·세금·복권 정보글</description>\n${posts.slice(0, 30).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}${pathOf('b-' + p.slug)}</link><guid>${SITE}${pathOf('b-' + p.slug)}</guid><pubDate>${new Date(p.date + 'T09:00:00+09:00').toUTCString()}</pubDate><description>${esc(p.excerpt)}</description></item>`).join('\n')}\n</channel></rss>\n`);
