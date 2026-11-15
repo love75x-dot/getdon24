@@ -285,6 +285,7 @@ const DATA = {
   support: await loadSupport(),
   benefits: JSON.parse(await readFile(join(ROOT, 'data/benefits.json'), 'utf8')),
   deadlines: expandDeadlines(JSON.parse(await readFile(join(ROOT, 'data/deadlines.json'), 'utf8'))),
+  hidden: JSON.parse(await readFile(join(ROOT, 'data/hidden.json'), 'utf8')),
   wtax: JSON.parse(await readFile(join(ROOT, 'data/wage-tax-2026-03.json'), 'utf8')),
 };
 
@@ -398,6 +399,9 @@ const LIFE_SEO = { marriage: ['결혼할 때 받을 돈·할 일 - 결혼세액�
   retire: ['은퇴 준비 체크리스트 - 국민연금·IRP·노후자금', '국민연금 예상액 확인, 노후자금 모으기 계산, 퇴직금 IRP, 기초연금까지 은퇴 전에 확인할 것을 모았어요.'] };
 await emit('life', { title: `인생 이벤트별 받을 돈 - 결혼·출산·이사·퇴사·은퇴 | ${site}`, desc: '결혼, 출산, 이사, 퇴사, 은퇴 때 받을 수 있는 돈과 해야 할 일을 시기별로 모았어요.' });
 for (const [k, [t, d]] of Object.entries(LIFE_SEO)) await emit(`l-${k}`, { title: `${t} | ${site}`, desc: d });
+
+// 숨은 돈 찾기
+await emit('hidden', { title: `숨은 돈 찾기 - 휴면예금·미환급금·카드포인트 조회 한 번에 | ${site}`, desc: '휴면예금, 잠자는 보험금, 카드포인트, 미수령 주식, 통신 미환급액, 미환급 공과금까지 숨은 돈을 찾는 공식 조회 사이트를 한곳에 모았어요.' });
 
 // 신고·신청 마감 달력 + 캘린더 구독 파일
 await emit('deadlines', { title: `신고·신청 마감 달력 - 종합소득세·부가세·근로장려금 | ${site}`, desc: '종합소득세, 부가가치세, 근로장려금, 자동차세, 재산세처럼 해마다 돌아오는 신고·신청·납부 마감일을 D-day 순서로 모았어요. 휴대폰 캘린더에 넣으면 3일 전에 알려 줘요.' });

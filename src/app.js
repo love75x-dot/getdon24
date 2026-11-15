@@ -867,19 +867,19 @@ const LIFE=[
    ['퇴사 후 바로','실업급여는 고용24에서 구직 등록 후 신청해요. 퇴사 다음 날부터 12개월 안에 다 받아야 해서 늦으면 손해예요','https://www.work24.go.kr'],
    ['실업급여가 안 되면','국민취업지원제도를 확인하세요','https://www.work24.go.kr'],
    ['건강보험','지역가입자로 바뀌어 보험료가 오를 수 있어요. 임의계속가입을 신청할 수 있는지 건강보험공단에서 확인하세요','https://www.nhis.or.kr'],
-   ['다음 해 5월','중간에 퇴사해서 연말정산을 못 했다면 5월 종합소득세 신고 때 정산해요','https://www.hometax.go.kr']],
+   ['다음 해 5월','중간에 퇴사해서 연말정산을 못 했다면 5월 종합소득세 신고 때 정산해요','https://www.hometax.go.kr'],['정리하면서','회사 다니며 만든 계좌·보험·카드 포인트에 잊은 돈이 없는지 확인하세요','hidden']],
   calcs:['resign','severance','unemployment'],ben:['unemployment','kua']},
  {k:'retire',e:'🌿',t:'은퇴',d:'연금과 모아 둔 돈 점검',
   steps:[['은퇴 5~10년 전','국민연금공단 「내 연금 알아보기」에서 예상 연금액을 확인하세요','https://www.nps.or.kr'],
    ['은퇴 5~10년 전','목표 노후자금까지 매달 얼마씩 더 모아야 하는지 계산해 보세요','c-goal'],
-   ['퇴직할 때','퇴직금·퇴직연금은 IRP로 옮기면 세금을 나중에 낼 수 있어요. 가입한 금융회사에서 확인하세요','https://100lifeplan.fss.or.kr'],
+   ['퇴직할 때','퇴직금·퇴직연금은 IRP로 옮기면 세금을 나중에 낼 수 있어요. 가입한 금융회사에서 확인하세요',''],['은퇴 전 한 번','오래된 예금·보험·주식 중 잊은 돈이 없는지 한 번에 확인하세요','hidden'],
    ['만 65세 이후','기초연금은 소득·재산 기준이 있어요. 복지로에서 대상인지 확인하세요','https://www.bokjiro.go.kr']],
   calcs:['goal','compound','deposit'],ben:[]}];
 const LIFEBY=Object.fromEntries(LIFE.map(x=>[x.k,x]));
 function lifeIdx(){return `<h1 class="h1">인생 이벤트별 받을 돈</h1><p class="lsub">결혼, 출산, 이사, 퇴사, 은퇴 때 챙길 돈과 할 일을 순서대로 모았어요</p>
  <div class="lgrid">${LIFE.map(x=>A('l-'+x.k,'lcard',`<span class="le">${x.e}</span><b>${x.t}</b><small>${x.d}</small>`)).join('')}</div>${foot}`}
 function lifePage(k){const x=LIFEBY[k];if(!x)return lifeIdx();
- const lk=(u,t)=>!u?t:u.startsWith('c-')?A(u,'',t+' ›'):`<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>`;
+ const lk=(u,t)=>!u?t:u=='hidden'?A('hidden','','숨은 돈 찾기 ›'):u.startsWith('c-')?A(u,'',t+' ›'):`<a href="${u}" target="_blank" rel="noopener">${t} ↗</a>`;
  const bens=x.ben.map(id=>BEN.find(b=>b.id==id)).filter(Boolean);
  return `<div class="crumb">${A('life','','인생 이벤트')} › ${x.t}</div><h1 class="h1">${x.e} ${x.t} 할 때 받을 돈·할 일</h1><p class="lsub">${x.d}</p>
  <ol class="ltl">${x.steps.map(([w,t,u])=>`<li><em>${w}</em><p>${t}</p>${u?`<div class="ll">${lk(u,u.startsWith('c-')?'계산하기':'공식 사이트')}</div>`:''}</li>`).join('')}</ol>
@@ -904,6 +904,16 @@ function deadlinesPage(){const tags=['전체',...new Set(DL.flatMap(x=>x.tags||[
  <div class="chips dlchips">${tags.map(t=>`<button class="${t==dlT?'on':''}" onclick="dlT='${t}';render()">${t}</button>`).join('')}</div>
  ${L.map(dlCard).join('')||'<p class="note">해당하는 마감이 없어요.</p>'}
  <div class="fn bot"><p>법에 정해진 기한만 모았어요. 마감일이 주말이면 다음 월요일로 표시했고, 공휴일·대체공휴일이면 그다음 평일까지 늘어나요.</p><p>고지서를 받는 세금은 고지서의 날짜가 우선이에요. 받는돈은 이름·연락처 같은 개인정보를 받지 않아요.</p></div>${foot}`}
+// ── 숨은 돈 찾기 (/hidden/) : 공식 조회 사이트로 연결만. 체크 표시는 이 브라우저에만 저장 ──
+const HID=DATA.hidden||{groups:[]};let hidDone=null;
+function hidLoad(){if(hidDone)return hidDone;hidDone=new Set;try{JSON.parse(localStorage.getItem('gd-hidden')||'[]').forEach(k=>hidDone.add(k))}catch(e){}return hidDone}
+function hidTg(k){const d=hidLoad();d.has(k)?d.delete(k):d.add(k);try{localStorage.setItem('gd-hidden',JSON.stringify([...d]))}catch(e){}render()}
+function hiddenPage(){const d=typeof window!='undefined'&&window.__PRERENDER?new Set:hidLoad(),all=HID.groups.flatMap(g=>g.items),n=all.filter(x=>d.has(x.id)).length;
+ return `<h1 class="h1">숨은 돈 찾기</h1><p class="lsub">잊고 있던 예금·보험금·포인트·환급금을 공식 사이트에서 찾아보세요</p>
+ <div class="hidp"><b>${n} / ${all.length}</b> 확인했어요<div class="hidbar"><i style="width:${Math.round(n/all.length*100)}%"></i></div><small>체크 표시는 이 휴대폰(브라우저)에만 남아요</small></div>
+ ${HID.groups.map(g=>`<h2 class="lh">${g.t}</h2>${g.items.map(x=>`<article class="hidc${d.has(x.id)?' ok':''}"><div class="hidt"><b>${x.name}</b><small>${x.host}</small></div><p>${x.what}</p>
+  <div class="dlb"><a href="${x.url}" target="_blank" rel="noopener">조회하러 가기 ↗</a><button type="button" onclick="hidTg('${x.id}')" aria-pressed="${d.has(x.id)}">${d.has(x.id)?'✓ 확인했어요':'확인했어요'}</button><span class="hneed">${x.need}</span></div></article>`).join('')}`).join('')}
+ <div class="fn bot"><p>받는돈은 조회를 대신하지 않고, 이름·주민번호·계좌 같은 개인정보를 받지 않아요. 조회는 각 기관 사이트에서 직접 해요.</p><p>문자·카톡으로 온 "숨은 돈 찾아 드려요" 링크는 누르지 말고, 위 공식 사이트로 직접 들어가세요.</p><p>사이트 주소는 금융감독원 파인 「업권별 계좌 조회」 안내로 ${ymd(HID.checked)}에 확인했어요.</p></div>${foot}`}
 function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const sel=[...findPick],list=sel.length?BEN.filter(b=>b.tags.some(t=>findPick.has(t))):[];
  const chips=`<div class="fchips">${FINDT.map(([k,l])=>`<button type="button" class="${findPick.has(k)?'on':''}" onclick="findTg2('${k}')">${l}</button>`).join('')}</div>`;
@@ -928,7 +938,7 @@ function heroSet(v){heroA=String(v);const e=document.getElementById('hin');if(e)
 const FINDT=[['worker','직장인'],['parttime','알바'],['freelance','프리랜서·N잡'],['parent','육아 중'],['jobless','구직·퇴사'],['youth','청년'],['self','자영업']];
 let findPick=new Set;
 function findTg(k){findPick.has(k)?findPick.delete(k):findPick.add(k);document.querySelectorAll('.fchips button').forEach(b=>b.classList.toggle('on',findPick.has(b.dataset.k)));const g=document.getElementById('fgo');if(g){g.href='/find/'+(findPick.size?'?t='+[...findPick].join(','):'');g.textContent=findPick.size?`${findPick.size}개 골랐어요 · 받을 돈 보기 ›`:'받을 돈 보기 ›'}}
-const CATS4=[['월급·일한 돈','연봉·알바·퇴직금·3.3%','calc','w'],['나라에서 받는 돈','지원금·수당·장려금','find','g'],['돌려받는 돈','연말정산·종합소득세 환급','c-tax-refund','r'],['당첨된 돈','로또·연금복권 실수령액','lotto','l']];
+const CATS4=[['월급·일한 돈','연봉·알바·퇴직금·3.3%','calc','w'],['나라에서 받는 돈','지원금·수당·장려금','find','g'],['숨은 돈','휴면예금·보험금·포인트·환급금','hidden','r'],['당첨된 돈','로또·연금복권 실수령액','lotto','l']];
 const POPC=['salary','parttime','goal-100m','freelance','severance','weekly-rest'];
 function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts=allPosts().slice(0,3);
  return `<section class="h-hero"><h1>내가 받을 돈,<br><em>24시간</em> 다 찾아드려요</h1>
@@ -1045,11 +1055,11 @@ function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
 function view(){const v=view0();return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}

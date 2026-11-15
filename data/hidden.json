@@ -1,0 +1,23 @@
+{"checked":"2026-11-13","src":"https://fine.fss.or.kr/fine/main/contents.do?menuNo=900032",
+"groups":[
+ {"t":"한 번에 확인","items":[
+  {"id":"payinfo","name":"내 계좌 한눈에","host":"금융결제원","what":"오래 안 쓴 예·적금, 신탁, 투자자 예탁금, 휴면예금, 보험금을 한 번에 조회해요","url":"https://payinfo.or.kr/","need":"본인인증"}]},
+ {"t":"은행·예금","items":[
+  {"id":"kinfa","name":"휴면예금 찾아줌","host":"서민금융진흥원","what":"은행·보험사가 넘긴 휴면예금·휴면보험금을 찾고 바로 지급 신청해요","url":"https://sleepmoney.kinfa.or.kr/index.jsp","need":"본인인증"},
+  {"id":"kfb","name":"휴면예금 통합조회","host":"은행연합회","what":"은행에 남아 있는 휴면예금을 조회해요","url":"https://sleepmoney.or.kr/jsp/cm/cdo0001.jsp","need":"본인인증"},
+  {"id":"fsb","name":"저축은행 휴면예금 조회","host":"저축은행중앙회","what":"저축은행에 남은 휴면예금을 조회해요","url":"https://sleepmoney.fsb.or.kr/UifFine0300.act","need":"본인인증"},
+  {"id":"kfcc","name":"새마을금고 휴면예금 조회","host":"새마을금고중앙회","what":"새마을금고 휴면예금을 조회해요","url":"https://ibs.kfcc.co.kr/","need":"본인인증"},
+  {"id":"kdic","name":"파산 금융회사 미수령금","host":"예금보험공사","what":"문 닫은 금융회사에 남은 예금·보험금 중 못 받은 돈을 조회해요","url":"https://fins.kdic.or.kr/","need":"본인인증"}]},
+ {"t":"보험","items":[
+  {"id":"insure","name":"내보험 찾아줌","host":"생명보험협회·손해보험협회","what":"받지 않은 보험금, 만기·휴면 보험금, 가입한 보험을 조회해요","url":"https://cont.insure.or.kr/cont_web/intro.do","need":"본인인증"},
+  {"id":"kidi","name":"자동차보험 과납보험료 조회","host":"보험개발원","what":"자동차보험료를 더 낸 돈이 있는지 조회해요","url":"https://aipis.kidi.or.kr:1443/","need":"본인인증"},
+  {"id":"kfcci","name":"새마을금고 휴면공제금 조회","host":"새마을금고","what":"새마을금고 공제(보험)에서 못 받은 돈을 조회해요","url":"https://insure.kfcc.co.kr/","need":"본인인증"}]},
+ {"t":"카드·증권","items":[
+  {"id":"card","name":"카드포인트 통합조회","host":"여신금융협회","what":"여러 카드사 포인트를 한 번에 보고, 1포인트=1원으로 계좌에 넣을 수 있어요","url":"https://www.cardpoint.or.kr/","need":"본인인증"},
+  {"id":"ksd","name":"미수령 주식 찾기","host":"한국예탁결제원","what":"잊고 있던 주식이나 받지 않은 배당금을 조회해요","url":"https://ksd.or.kr/ko/e-service/untransferred-shares-check/untransferred-shares-check","need":"본인인증"},
+  {"id":"kofia","name":"휴면성 증권계좌 조회","host":"금융투자협회","what":"오래 안 쓴 증권계좌에 남은 돈을 확인해요","url":"http://www.kofia.or.kr/brd/m_153/list.do","need":"안내 페이지"}]},
+ {"t":"세금·공과금·통신","items":[
+  {"id":"gov24","name":"미환급 공과금 조회","host":"정부24","what":"돌려받지 못한 세금·공과금이 있는지 조회해요","url":"https://www.gov.kr/mw/AA210LifeSvcInfo.do?MCODE=11020","need":"본인인증"},
+  {"id":"hometax","name":"국세 환급금 조회","host":"국세청 홈택스","what":"종합소득세·연말정산 등에서 받지 않은 국세 환급금을 조회해요","url":"https://www.hometax.go.kr","need":"로그인"},
+  {"id":"smartchoice","name":"통신 미환급액 조회","host":"한국통신사업자연합회 (스마트초이스)","what":"휴대폰·인터넷 해지 후 못 받은 요금(과납금, 보증금 등)을 조회해요","url":"https://www.smartchoice.or.kr/smc/service/refund.do","need":"본인인증"}]}
+]}
