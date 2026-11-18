@@ -69,7 +69,10 @@ const MINWAGE={2026:10320,2027:10700};
     const kd = kids<=0?0 : kids===1?T.kids[0] : T.kids[1]+(kids-2)*T.kids[2];
     return Math.max(0,t-kd);
   }
-  function pensionBase(monthlyGross){ return Math.min(Math.max(monthlyGross, RATES.floor), RATES.ceiling); }
+  function pensionBase(monthlyGross){ return Math.min(Math.max(Math.floor(monthlyGross/1000)*1000, RATES.floor), RATES.ceiling); }
+  // 근로자 부담 4대보험. 국민연금은 기준소득월액 천원 미만을 버리고, 보험료는 모두 10원 미만을 버린다 (급여명세서와 같은 방식).
+  const f10=x=>Math.floor(x/10+1e-9)*10;
+  function insOf(m){m=Math.floor(m+1e-6);const pension=f10(pensionBase(m)*RATES.pension/100),health=f10(m*RATES.health/100),ltc=f10(health*RATES.ltc/100),employment=f10(m*RATES.employment/100);return{pension,health,ltc,employment,total:pension+health+ltc+employment}}
 
   // ---- 종합소득세 누진세율표 (2026년 기준, 단순화) ----
   const TAX_BRACKETS = [
@@ -165,16 +168,15 @@ const MINWAGE={2026:10320,2027:10700};
     return {g, it:t.it, lt:t.lt, net}; };
   const calcs = [
     { id:'salary', label:'연봉 실수령액', title:'연봉 실수령액 계산기', group:'employee',
-      fields:[{id:'annual',label:'연봉(세전, 세금·보험 떼기 전 총액)',unit:'만원',placeholder:'예: 4000'},{id:'nonTaxable',label:'비과세액(식대 등, 월)',unit:'만원',placeholder:'예: 20'},{id:'dependents',label:'부양가족 수(본인 포함)',unit:'명',placeholder:'예: 1'},{id:'kids',label:'8~20세 자녀 수',unit:'명',placeholder:'예: 0',hint:'부양가족 수에 들어간 자녀 중 8세 이상 20세 이하인 자녀예요. 연 소득이 100만원을 넘는 자녀는 빼요.'}],
+      fields:[{id:'annual',label:'연봉 (세전)',unit:'만원',placeholder:'예: 4000'},{id:'nonTaxable',label:'비과세액 (월)',hint:'식대 등 세금을 떼지 않는 수당이에요. 식대는 월 20만원까지 비과세예요.',unit:'만원',placeholder:'예: 20'},{id:'dependents',label:'부양가족 (본인 포함)',unit:'명',placeholder:'예: 1'},{id:'kids',label:'8~20세 자녀',unit:'명',placeholder:'예: 0',hint:'부양가족 수에 들어간 자녀 중 8세 이상 20세 이하인 자녀예요. 연 소득이 100만원을 넘는 자녀는 빼요.'}],
       run(v){
         const annual=(+v.annual||0)*10000, monthlyGross=annual/12, nonTax=(+v.nonTaxable||0)*10000;
         const taxableMonthly=Math.max(monthlyGross-nonTax,0);
-        const pBase=pensionBase(taxableMonthly), pension=pBase*(RATES.pension/100);
-        const health=taxableMonthly*(RATES.health/100), ltc=health*(RATES.ltc/100), employment=taxableMonthly*(RATES.employment/100);
+        const {pension,health,ltc,employment}=insOf(taxableMonthly);
         const incomeTax=ntsTax(taxableMonthly,+v.dependents||1,+v.kids||0), localTax=Math.floor(incomeTax*0.1/10)*10;
         const netMonthly=monthlyGross-(pension+health+ltc+employment+incomeTax+localTax);
         return { main: won(netMonthly)+' / 월',
-          sub:[['세전 연봉(입력값)',won(annual)],['세전 월급여(연봉÷12)',won(monthlyGross)],[`국민연금(${RATES.pension}%)`,won(pension)],[`건강보험(${RATES.health}%)`,won(health)],['장기요양보험',won(ltc)],[`고용보험(${RATES.employment}%)`,won(employment)],['소득세(국세청 간이세액표)',won(incomeTax)],['지방소득세(소득세의 10%)',won(localTax)],['월 실수령액',won(netMonthly)],['연 실수령액(세후, 월×12 근사치)',won(netMonthly*12)]],
+          sub:[['월 세전 급여',won(monthlyGross)],['국민연금',won(pension)],['건강보험',won(health)],['장기요양',won(ltc)],['고용보험',won(employment)],['소득세',won(incomeTax)],['지방소득세',won(localTax)],['월 실수령액',won(netMonthly)],['연 실수령액',won(netMonthly*12)]],
           related: RELATED.salary };
       }},
     { id:'salary-compare', label:'연봉 비교', title:'연봉 비교 계산기', group:'employee',
@@ -190,8 +192,7 @@ const MINWAGE={2026:10320,2027:10700};
         function netOf(annualVal, nonTaxVal){
           const annual=(+annualVal||0)*10000, monthlyGross=annual/12, nonTax=(+nonTaxVal||0)*10000;
           const taxableMonthly=Math.max(monthlyGross-nonTax,0);
-          const pBase=pensionBase(taxableMonthly), pension=pBase*(RATES.pension/100);
-          const health=taxableMonthly*(RATES.health/100), ltc=health*(RATES.ltc/100), employment=taxableMonthly*(RATES.employment/100);
+          const {pension,health,ltc,employment}=insOf(taxableMonthly);
           const incomeTax=ntsTax(taxableMonthly,+v.dependents||1,0), localTax=Math.floor(incomeTax*0.1/10)*10;
           const netMonthly=monthlyGross-(pension+health+ltc+employment+incomeTax+localTax);
           return { monthlyGross, netMonthly };
@@ -213,8 +214,7 @@ const MINWAGE={2026:10320,2027:10700};
     { id:'insurance', label:'4대보험 계산기', title:'4대보험 계산기', group:'employee',
       fields:[{id:'monthly',label:'월 급여(세전)',unit:'만원',placeholder:'예: 300'}],
       run(v){
-        const m=(+v.monthly||0)*10000, pBase=pensionBase(m), pension=pBase*(RATES.pension/100);
-        const health=m*(RATES.health/100), ltc=health*(RATES.ltc/100), employment=m*(RATES.employment/100);
+        const m=(+v.monthly||0)*10000, {pension,health,ltc,employment}=insOf(m);
         return { main: won(pension+health+ltc+employment)+' / 월 공제',
           sub:[['국민연금',won(pension)],['건강보험',won(health)],['장기요양보험',won(ltc)],['고용보험',won(employment)]],
           related: RELATED.insurance };
@@ -310,8 +310,7 @@ const MINWAGE={2026:10320,2027:10700};
       ],
       run(v){
         const wage=(+v.monthlyWage||0)*10000, emp=Math.max(+v.employees||1,1);
-        const pBase=pensionBase(wage), pensionEmployer=pBase*(RATES.pension/100);
-        const health=wage*(RATES.health/100), ltc=health*(RATES.ltc/100);
+        const I=insOf(wage), pensionEmployer=I.pension, health=I.health, ltc=I.ltc;
         const employmentEmployer=wage*((RATES.employment+0.25)/100);
         const industrialAccident=wage*(1.0/100);
         const totalPerEmployee = wage+pensionEmployer+health+ltc+employmentEmployer+industrialAccident;
@@ -503,7 +502,7 @@ calcs.push({id:'card-fee',label:'카드 수수료 계산기',title:'카드 수�
    ['나중에 낼 부가세 (결제액의 1/11)','− '+won(vat)],[+v.biz?'카드매출 세액공제 (법인은 없음)':'카드매출 세액공제 (1.3%)','+ '+won(credit)],['세금까지 빼고 실제로 남는 돈',won(keep)],
    ['통장에 들어온 돈 중 부가세는 1월·7월 신고 때 내야 해요. 미리 따로 떼어 두면 편해요.','']],related:RELATED['card-fee']}}});
 // 관련 계산기 (계산기 화면 아래에 링크로 보여 줌)
-const CALC_SRC={salary:()=>'소득세: 국세청 근로소득 간이세액표(2026.3.1. 시행) · 4대보험 2026년 요율','salary-compare':()=>'소득세: 국세청 간이세액표(2026.3.1. 시행)',unemployment:()=>`${UB.year}년 기준 · 고용노동부, 고용보험법`,overtime:()=>'근로기준법 제56조 기준',resign:()=>`실업급여 ${UB.year}년 기준 · 고용노동부`,'minwage-check':()=>`${RATES.minimumWageYear}년 최저시급 기준 · 고용노동부 고시`};
+const CALC_SRC={salary:()=>'2026년 요율 기준이에요. 국민연금 4.75%, 건강보험 3.595%, 장기요양 건강보험료의 13.14%, 고용보험 0.9%이고, 소득세는 국세청 근로소득 간이세액표(2026.3.1. 시행)를 그대로 써요. 회사 사정에 따라 실제 금액과 조금 다를 수 있어요.','salary-compare':()=>'소득세: 국세청 간이세액표(2026.3.1. 시행)',unemployment:()=>`${UB.year}년 기준 · 고용노동부, 고용보험법`,overtime:()=>'근로기준법 제56조 기준',resign:()=>`실업급여 ${UB.year}년 기준 · 고용노동부`,'minwage-check':()=>`${RATES.minimumWageYear}년 최저시급 기준 · 고용노동부 고시`};
 const CALC_REL={salary:['goal-100m','goal-50m','savings'],deposit:['savings','goal','compound'],savings:['deposit','goal-50m','goal-100m'],goal:['goal-50m','goal-100m','savings'],'goal-50m':['goal-100m','savings','salary'],'goal-100m':['goal-50m','savings','salary'],loan:['prepay-fee','goal'],'prepay-fee':['loan'],compound:['goal','deposit'],unemployment:['resign','severance','annual-leave'],overtime:['parttime','weekly-rest','minwage-check'],resign:['unemployment','severance','annual-leave'],severance:['resign','unemployment'],'annual-leave':['resign','overtime'],parttime:['overtime','weekly-rest','minwage-check'],'weekly-rest':['parttime','overtime'],'minwage-check':['parttime','overtime']};
 // ---------- 1단계: 일하다 받는 돈 ----------
 // 실업급여 기준 (출처·기준일 확인한 값만). 해가 바뀌면 새 연도 값을 확인해서 추가한다.
@@ -629,7 +628,7 @@ function partTime(v){const mode=v.mode||'hour',days=String(v.days||'').split('')
  const week=base+ot+nt+ju,month=week*365/7/12,sameBrk=per.every(x=>x.brk===per[0].brk)?per[0].brk:null;
  const dedType=v.ded||'none';let ded=0,dedRows=[];
  if(dedType==='33'){const it=Math.floor(month*0.03/10)*10,lt=Math.floor(it*0.1/10)*10;ded=it+lt;dedRows=[['3.3% (소득세 3% + 지방세 0.3%)','− '+won(ded)]]}
- if(dedType==='ins'){const pen=pensionBase(month)*RATES.pension/100,hea=month*RATES.health/100,ltc=hea*RATES.ltc/100,emp=month*RATES.employment/100,itx=ntsTax(month,1,0),ltx=Math.floor(itx*0.1/10)*10;
+ if(dedType==='ins'){const I=insOf(month),pen=I.pension,hea=I.health,ltc=I.ltc,emp=I.employment,itx=ntsTax(month,1,0),ltx=Math.floor(itx*0.1/10)*10;
   ded=pen+hea+ltc+emp+itx+ltx;dedRows=[['4대보험 + 소득세 (근로자 부담)','− '+won(ded)]]}
  return{n,dh,wh,per,custom:v.custom==='1',brk:sameBrk,wage,base,otH,ot,ntH,nt,juOk,ju,week,month,ded,dedRows,net:month-ded,big}}
 const DAYN='월화수목금토일';
@@ -700,6 +699,41 @@ const RM={id:'how',type:'seg',label:'이자 방식',options:[{value:'s',label:'�
 const TX={id:'tax',type:'seg',label:'이자 세금',options:[{value:'normal',label:'일반과세 15.4%'},{value:'free',label:'비과세'}]};
 function depInt(P,r,n,how){return how=='c'?P*(Math.pow(1+r/12,n)-1):P*r*n/12}
 function savInt(M,r,n,how){const i=r/12;if(!i)return 0;return how=='c'?M*((1+i)*(Math.pow(1+i,n)-1)/i-n):M*i*n*(n+1)/2}
+// ── 생활 계산 도구 (법·단위로 고정된 기준만) ──
+const nf=(x,d=2)=>{const r=Math.round(x*10**d)/10**d;return r.toLocaleString('ko-KR',{maximumFractionDigits:d})};
+calcs.push({id:'percent',label:'퍼센트 계산기',title:'퍼센트 계산기',group:'money',
+ fields:[{id:'mode',type:'seg',label:'계산',options:[{value:'of',label:'A의 B%'},{value:'ratio',label:'A는 B의 몇 %'},{value:'chg',label:'A→B 변화율'},{value:'add',label:'A를 B% 올리기'}]},
+  {id:'a',label:'A',placeholder:'예: 50000'},{id:'b',label:'B',placeholder:'예: 20'}],
+ run(v){const a=+v.a||0,b=+v.b||0,m=v.mode||'of';
+  if(m=='of')return{main:`${nf(a)}의 ${nf(b)}%는 ${nf(a*b/100)}`,sub:[['계산식',`${nf(a)} × ${nf(b)} ÷ 100`],['결과',nf(a*b/100)]]};
+  if(m=='ratio'){if(!b)return{main:'B에 0이 아닌 수를 넣어 주세요',sub:[]};return{main:`${nf(a)}는 ${nf(b)}의 ${nf(a/b*100)}%`,sub:[['계산식',`${nf(a)} ÷ ${nf(b)} × 100`],['결과',nf(a/b*100)+'%']]}}
+  if(m=='chg'){if(!a)return{main:'A에 0이 아닌 수를 넣어 주세요',sub:[]};const r=(b-a)/a*100;return{main:`${nf(a)} → ${nf(b)}, ${r>=0?nf(r)+'% 올랐어요':nf(-r)+'% 내렸어요'}`,sub:[['차이',nf(b-a)],['변화율',(r>=0?'+':'')+nf(r)+'%'],['계산식',`(${nf(b)} − ${nf(a)}) ÷ ${nf(a)} × 100`]]}}
+  return{main:`${nf(a)}에서 ${nf(b)}% 올리면 ${nf(a*(1+b/100))}`,sub:[[`${nf(b)}% 올리면`,nf(a*(1+b/100))],[`${nf(b)}% 내리면`,nf(a*(1-b/100))],['늘거나 주는 양',nf(a*b/100)]]}}});
+CALC_FAQ['percent']=[{q:'변화율과 %p는 뭐가 달라요?',a:'금리가 3%에서 4%가 되면 1%p(퍼센트포인트) 올랐다고 해요. 변화율로는 (4−3)÷3×100 = 약 33.3% 오른 거예요.'},{q:'20% 할인 후 다시 20% 올리면 원래 가격인가요?',a:'아니에요. 10,000원을 20% 내리면 8,000원, 다시 20% 올리면 9,600원이에요. 기준 금액이 달라져서 그래요.'}];
+LEGAL_BASIS['percent']='퍼센트(%)는 100을 기준으로 한 비율이에요. 결과는 소수 둘째 자리에서 반올림해 보여 줘요.';
+calcs.push({id:'vat',label:'부가세 계산기',title:'부가세 계산기',group:'employer',
+ fields:[{id:'mode',type:'seg',label:'넣는 금액',options:[{value:'sup',label:'공급가액 넣기'},{value:'tot',label:'합계 넣기'}]},{id:'amt',label:'금액',unit:'원',placeholder:'예: 1100000'}],
+ run(v){const a=Math.round(+v.amt||0);if(!a)return{main:'금액을 넣어 주세요',sub:[]};
+  if(v.mode=='tot'){const sup=Math.round(a/1.1),tax=a-sup;return{main:`공급가액 ${won(sup)}, 부가세 ${won(tax)}`,sub:[['합계 (입력값)',won(a)],['공급가액',won(sup)],['부가세 10%',won(tax)]]}}
+  const tax=Math.floor(a*0.1);return{main:`합계 ${won(a+tax)}`,sub:[['공급가액 (입력값)',won(a)],['부가세 10%',won(tax)],['합계',won(a+tax)]]}}});
+CALC_FAQ['vat']=[{q:'합계에서 부가세는 어떻게 빼요?',a:'합계를 1.1로 나누면 공급가액이고, 합계에서 공급가액을 뺀 금액이 부가세예요. 110만원이면 공급가액 100만원, 부가세 10만원이에요.'},{q:'원 단위가 1원씩 달라요.',a:'1원 미만을 반올림할지 버릴지는 세금계산서를 발행하는 곳마다 달라서 1원 차이가 날 수 있어요.'}];
+LEGAL_BASIS['vat']='부가가치세 세율은 10%예요 (부가가치세법 제30조). 간이과세자는 업종별 부가가치율을 곱해 실제 내는 세금이 더 적어요.';
+calcs.push({id:'pyeong',label:'평수 계산기',title:'평수 계산기',group:'money',
+ fields:[{id:'mode',type:'seg',label:'바꾸기',options:[{value:'m2',label:'㎡ → 평'},{value:'py',label:'평 → ㎡'}]},{id:'x',label:'넓이',unit:v=>v.mode=='py'?'평':'㎡',placeholder:'예: 84'}],
+ run(v){const x=+v.x||0,P=400/121;if(!x)return{main:'넓이를 넣어 주세요',sub:[]};
+  if(v.mode=='py')return{main:`${nf(x)}평은 ${nf(x*P)}㎡`,sub:[['평',nf(x)+'평'],['제곱미터',nf(x*P)+'㎡'],['1평',`${nf(P,4)}㎡`]]};
+  return{main:`${nf(x)}㎡는 ${nf(x/P)}평`,sub:[['제곱미터',nf(x)+'㎡'],['평',nf(x/P)+'평'],['1평',`${nf(P,4)}㎡`]]}}});
+CALC_FAQ['pyeong']=[{q:'84㎡는 몇 평인가요?',a:'전용 84㎡는 약 25.41평이에요. 흔히 말하는 "34평"은 공용 면적을 더한 공급면적 기준이라 숫자가 달라요.'},{q:'1평은 몇 ㎡예요?',a:'1평은 400/121㎡, 약 3.3058㎡예요.'}];
+LEGAL_BASIS['pyeong']='1평 = 400/121㎡(약 3.3058㎡)로 계산해요. 공식 문서와 거래에서는 법정 단위인 ㎡를 써요 (계량에 관한 법률).';
+function ageAt(b,t){const [by,bm,bd]=b.split('-').map(Number),[ty,tm,td]=t.split('-').map(Number);return ty-by-((tm<bm||(tm==bm&&td<bd))?1:0)}
+calcs.push({id:'age',label:'만 나이 계산기',title:'만 나이 계산기',group:'money',
+ fields:[{id:'birth',type:'date',label:'생년월일',def:'1995-06-15'},{id:'base',type:'date',label:'기준일',def:'today'}],
+ run(v){const b=v.birth,t=v.base||todayK();if(!b)return{main:'생년월일을 골라 주세요',sub:[]};if(b>t)return{main:'기준일이 생일보다 앞이에요',sub:[]};
+  const a=ageAt(b,t),[ty]=t.split('-').map(Number),by=+b.slice(0,4);let nb=`${ty}-${b.slice(5)}`;if(nb<=t)nb=`${ty+1}-${b.slice(5)}`;
+  const left=Math.round((new Date(nb)-new Date(t))/864e5);
+  return{main:`만 ${a}세`,sub:[['만 나이',`${a}세`],['연 나이 (올해 − 태어난 해)',`${ty-by}세`],['다음 생일까지',left==0?'오늘이 생일이에요':`${left}일`],['태어난 지',`${Math.round((new Date(t)-new Date(b))/864e5).toLocaleString('ko-KR')}일째`]]}}});
+CALC_FAQ['age']=[{q:'만 나이는 어떻게 세요?',a:'태어난 날을 0살로 보고, 생일이 지날 때마다 한 살씩 더해요. 올해 생일이 아직 안 지났으면 (올해 − 태어난 해 − 1)살이에요.'},{q:'청년 정책 나이도 만 나이인가요?',a:'2023년 6월 28일부터 법과 행정에서는 따로 정하지 않으면 만 나이를 써요. 다만 병역·청소년 보호처럼 연 나이를 쓰는 법도 있어서 정책 공고의 기준을 확인하세요.'}];
+LEGAL_BASIS['age']='행정기본법 제7조의2와 민법 제158조에 따라, 법령·계약·공문서의 나이는 따로 정하지 않으면 만 나이로 계산해요 (2023년 6월 28일 시행).';
 calcs.push({id:'deposit',label:'예금 이자 계산기',title:'예금 이자 계산기',group:'money',
  disclaimerExtra:'만기에 이자를 한 번에 받는다고 보고 계산했어요. 실제 이자는 은행의 일수 계산 방식에 따라 몇 원~몇백 원 다를 수 있어요.',
  fields:[{id:'p',label:'예치금액',unit:'원',placeholder:'예: 10000000'},PU,NF('예금기간'),{id:'rate',label:'연 이자율',unit:'%',placeholder:'예: 3'},RM,TX],
@@ -727,7 +761,7 @@ function goalRun(v){const G=(+v.goal||0)*10000,P=(+v.have||0)*10000,r=(+v.rate||
  const M=goalNeed(G,P,r,n,how,tax),g=goalNet(P,M,r,n,how,tax);
  return{main:`매달 ${won(M)}씩`,sub:[['목표',won(G)],['기간',`${+v.y}년 (${n}개월)`],['넣은 돈 합계',won(g.paid)],['붙는 이자 (세후)',won(g.I-g.T)],['만기에 모인 돈',won(g.net)],['하루로 치면',`${won(Math.ceil(M*12/365/100)*100)}`],['기간별로 보면',null],...cmp]}}
 const goalF=(def)=>[{id:'mode',type:'seg',label:'알고 싶은 것',options:[{value:'month',label:'매달 얼마?'},{value:'time',label:'몇 년 걸려?'}]},
- {id:'goal',label:'목표 금액',unit:'만원',placeholder:'예: 10000',def},{id:'have',label:'지금 모아 둔 돈',unit:'만원',placeholder:'예: 0'},
+ {id:'goal',label:'목표 금액',unit:'만원',placeholder:'예: 10000',def:def||undefined},{id:'have',label:'지금 모아 둔 돈',unit:'만원',placeholder:'예: 0'},
  {id:'y',label:'모을 기간',unit:'년',placeholder:'예: 5',when:'month',def:'5'},{id:'m',label:'매달 모을 돈',unit:'원',placeholder:'예: 1000000',when:'time'},
  {id:'rate',label:'연 이자율',unit:'%',placeholder:'예: 3.5',def:'3.5'},RM,TX];
 const GOALD='지금 모아 둔 돈은 예금처럼, 매달 모으는 돈은 적금처럼 같은 이자율로 계산했어요. 실제 상품은 기간·한도가 있어 이자율이 바뀔 수 있어요. 매달 금액은 천 원 단위로 올렸어요.';
@@ -736,7 +770,7 @@ calcs.push({id:'goal-50m',label:'5천만원 모으기',title:'5천만원 모으�
 calcs.push({id:'goal-100m',label:'1억 모으기',title:'1억 모으기 계산기',group:'money',disclaimerExtra:GOALD,fields:goalF('10000'),run:goalRun});
 calcs.push({id:'loan',label:'대출 이자 계산기',title:'대출 이자 계산기',group:'money',
  disclaimerExtra:'금리가 대출 기간 내내 같다고 보고 계산했어요. 변동금리는 금리가 바뀔 때마다 상환액도 바뀌어요.',
- fields:[{id:'p',label:'대출금액',unit:'원',placeholder:'예: 100000000'},PU,NF('대출기간'),{id:'rate',label:'대출금리',unit:'%',placeholder:'예: 4.5'},
+ fields:[{id:'p',label:'대출금액',unit:'원',placeholder:'예: 100000000'},PU,{...NF('대출기간'),def:'30'},{id:'rate',label:'대출금리',unit:'%',placeholder:'예: 4.5'},
   {id:'how',type:'seg',label:'상환방법',options:[{value:'eq',label:'원리금균등'},{value:'pr',label:'원금균등'},{value:'bul',label:'만기일시'}]}],
  run(v){const P=+v.p||0,n=nMon(v),i=(+v.rate||0)/100/12;if(!P||!n)return{main:'대출금액과 기간을 넣어 주세요',sub:[]};
   let bal=P,tot=0;const rows=[];
@@ -958,8 +992,17 @@ function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts
 function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
  return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
  ${list.map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}${foot}`}
-const ex=f=>f.def!=null?f.def:f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
+const ex=f=>f.def=='today'?todayK():f.def!=null?f.def:f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
+ wage:'시급을 넣으면 주휴수당을 포함한 월급으로 바꿔 드려요',unemployment:'퇴사 전 급여와 나이, 가입 기간으로 실업급여를 계산해요',resign:'퇴직금, 남은 연차수당, 실업급여를 한 번에 더해 봐요',
+ parttime:'요일별 근무시간을 넣으면 주휴수당까지 더한 알바 월급이 나와요',overtime:'연장·야간·휴일에 일한 시간으로 가산수당을 계산해요','minwage-check':'내 시급이 올해 최저임금보다 많은지 확인해요',
+ 'labor-cost':'직원 한 명을 쓸 때 월급에 더해 드는 보험료까지 계산해요','split-14h':'한 명을 쓸 때와 주 15시간 미만으로 나눠 쓸 때 비용을 비교해요','daily-worker-tax':'일당에서 떼는 세금과 실제로 받는 돈을 계산해요',
+ 'card-fee':'카드 결제 금액에서 수수료를 빼고 통장에 들어오는 돈을 계산해요',vat:'공급가액이나 합계를 넣으면 부가세 10%를 나눠 드려요',
+ deposit:'목돈을 맡기면 세금 떼고 만기에 얼마를 받는지 계산해요',savings:'매달 넣는 돈으로 세금 뗀 만기 수령액과 실제 이자를 계산해요',
+ goal:'목표 금액을 모으려면 매달 얼마씩, 몇 년이 걸리는지 계산해요','goal-50m':'5천만원을 모으려면 매달 얼마씩 모아야 하는지 기간별로 보여 드려요','goal-100m':'1억을 모으려면 매달 얼마씩 모아야 하는지 기간별로 보여 드려요',
+ loan:'대출 금액과 금리, 기간으로 매달 갚을 돈과 총 이자를 계산해요','prepay-fee':'대출을 일찍 갚을 때 내는 수수료를 계산해요',compound:'매달 넣는 돈에 이자가 붙어 몇 년 뒤 얼마가 되는지 계산해요',
+ percent:'A의 B%, 변화율, 할인·인상 금액을 바로 계산해요',pyeong:'㎡와 평을 서로 바꿔 드려요','age':'생년월일로 만 나이와 다음 생일까지 남은 날을 계산해요',
+ 'lotto-tax':'당첨금을 넣으면 세금 떼고 실제로 받는 돈을 알려 드려요','pension-tax':'연금복권 당첨금을 매달 세금 떼고 얼마 받는지 계산해요',
  'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
  severance:'최근 3개월 급여와 근속기간으로 퇴직금을 계산해요','annual-leave':'남은 연차를 돈으로 바꾸면 얼마인지 계산해요',
  'weekly-rest':'시급과 주당 근무시간으로 주휴수당을 계산해요',freelance:'프리랜서 원천징수 3.3%를 뗀 실제 수령액을 확인해 보세요.',
@@ -1000,11 +1043,11 @@ function gnav(g){return `<nav class="gnav" aria-label="계산기 분야"><span>�
 function moreHtml(id,g,S){const inTabs=new Set(S?S.ids:[]),L=ALLC().filter(c=>c.group==g&&!c.hidden&&c.id!=id&&!inTabs.has(c.id)&&!inTabs.has(TABAL[c.id]||''));return L.length?`<div class="nrel nmore"><span>더 보기</span>${L.map(c=>A('c-'+c.id,'',c.label)).join('<i>·</i>')}</div>`:''}
 const SUITES=[{g:'employee',t:'직장인 계산기',sub:[['월급·연봉',['salary','salary-compare','insurance']],['시급·알바',['wage','parttime','weekly-rest','overtime','minwage-check']],['퇴사',['severance','annual-leave','unemployment','resign']]]},
  {g:'freelance',t:'프리랜서 계산기',ids:['freelance','tax-refund']},
- {g:'employer',t:'사업주 계산기',ids:['labor-cost','split-14h','daily-worker-tax','card-fee']},
- {g:'money',t:'재테크 계산기',sub:[['모으기',['goal','deposit','savings','compound']],['대출',['loan','prepay-fee']]]}];
+ {g:'employer',t:'사업주 계산기',ids:['labor-cost','split-14h','daily-worker-tax','card-fee','vat']},
+ {g:'money',t:'재테크 계산기',sub:[['모으기',['goal','deposit','savings','compound']],['대출',['loan','prepay-fee']],['생활 계산',['percent','pyeong','age']]]}];
 SUITES.forEach(S=>{if(S.sub)S.ids=S.sub.flatMap(x=>x[1])});
 const TABAL={'goal-50m':'goal','goal-100m':'goal'};
-const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비','salary-compare':'연봉 비교',insurance:'4대보험','annual-leave':'연차수당','split-14h':'쪼개기 고용','daily-worker-tax':'일용직 세금',deposit:'예금',savings:'적금',goal:'모으기',loan:'대출','prepay-fee':'중도상환수수료',compound:'복리'};
+const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비','salary-compare':'연봉 비교',insurance:'4대보험','annual-leave':'연차수당','split-14h':'쪼개기 고용','daily-worker-tax':'일용직 세금',deposit:'예금',savings:'적금',goal:'모으기',loan:'대출','prepay-fee':'중도상환수수료',compound:'복리',percent:'퍼센트',pyeong:'평수',age:'만 나이',vat:'부가세'};
 const suiteOf=id=>(id=TABAL[id]||id,SUITES.find(g=>g.ids.includes(id)&&g.ids.every(k=>k=='wage'||calcs.some(c=>c.id==k))));
 function hintTg(b){const p=b.closest('.fr').nextElementSibling;if(p&&p.classList.contains('fh'))p.hidden=!p.hidden}
 function nFieldHtml(id,f){const v=CV[id][f.id],hint=f.hint?`<button type="button" class="qi" aria-label="설명 보기" onclick="hintTg(this)">?</button>`:'';
@@ -1016,34 +1059,64 @@ function nFieldHtml(id,f){const v=CV[id][f.id],hint=f.hint?`<button type="button
  return `<div class="fr"><label for="f-${f.id}">${f.label}${hint}</label><div class="fi"><input id="f-${f.id}" inputmode="decimal" autocomplete="off" value="${fmtN(v)}" onfocus="this.select()" oninput="nIn(this,'${id}','${f.id}')">${f.unit?`<span class="u">${typeof f.unit=='function'?f.unit(CV[id]):f.unit}</span>`:''}</div></div>${H}`}
 function nFieldsHtml(id,fs){let out='';for(let k=0;k<fs.length;k++){const f=fs[k];if(f.half){const g=fs[k+1]&&fs[k+1].half?fs[++k]:null;out+=`<div class="tpair">${nFieldHtml(id,f)}${g?nFieldHtml(id,g):''}</div>`}else out+=nFieldHtml(id,f)}return out}
 // 결과: 맨 위 요약 한 줄 + 작은 표, 안내 문장('')은 아래 회색 각주로
+// ── 계산기 화면 틀: 결과 문장 → 입력 → 세부 결과 → 초기화·공유 → 기준 / 접힌 설명 / 전체 목록. PC 는 왼쪽 목록 ──
 function splitMain(m){const x=String(m).match(/^(.*?)\s*([−-]?\s?[\d,]+원.*)$/);return x&&x[1]?[x[1],x[2]]:['',String(m)]}
-function nResHtml(id){const c=calcs.find(x=>x.id==id);let r;try{r=c.run(CV[id])}catch(e){return '<p class="fn">숫자를 확인해 주세요.</p>'}
- const [ml,mv]=splitMain(r.main),warn=/^⚠️/.test(r.main),notes=[];
- const rows=(r.sub||[]).map(([a,b])=>b===null?`<tr class="sec"><th colspan="2">${a}</th></tr>`:b===''?(notes.push(a),''):`<tr><th>${a}</th><td>${b}</td></tr>`).join('');
- return `<div class="ncm${warn?' warn':''}">${ml?`<span>${ml}</span>`:''}<b>${mv}</b></div>${rows?`<table class="nct2">${rows}</table>`:''}${notes.length?`<div class="fn">${notes.map(n=>`<p>${n}</p>`).join('')}</div>`:''}`}
-function resetC(id){const c=calcs.find(x=>x.id==id);CV[id]={_q:1};c.fields.forEach(f=>{CV[id][f.id]=f.type=='seg'?f.options[0].value:f.def!=null?f.def:f.type=='select'?'0':''});render()}
-function calcView(id){const L=LCALC.find(x=>x.id==id);if(L){const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- return `<div class="calc">${gnav('lotto')}<section class="nc nlot"><div class="nch"><h1>복권 계산기</h1></div><nav class="ntabs" aria-label="복권 세금 계산기">${LCALC.map(x=>A('c-'+x.id,x.id==id?'on':'',x.id=='lotto-tax'?'로또':'연금복권')).join('')}</nav><p class="nsub">${L.title}</p>${id=='lotto-tax'?taxPanel():penCalc()}<div class="fn bot"><p>${id=='lotto-tax'?'3억원까지 22%, 넘는 부분 33% (소득세 + 지방소득세) · 200만원 이하 비과세':'연금형은 매달 받는 금액에서 22%를 떼요 · 1등 20년, 2등·보너스 10년'}</p></div></section><details class="info"><summary>자주 묻는 질문 · 법적 근거</summary>${faq}<h3>법적 근거</h3><p>${LEGAL_BASIS[id]}</p></details></div>${foot}`}
- const c=calcs.find(x=>x.id==id);if(!c)return calcList();CV[id]=CV[id]||{};c.fields.forEach(f=>{if(CV[id][f.id]==null)CV[id][f.id]=ex(f)});
+// 결과 한 문장. {n} 자리에 결과 금액이 들어가요.
+const SAY={salary:'월 실수령액은 {n}이에요.',insurance:'매달 4대보험으로 {n}을 내요.',wage:'월급으로 바꾸면 {n}이에요.',severance:'퇴직금은 {n}이에요.',resign:'퇴사하면 모두 {n}을 받아요.',
+ 'annual-leave':'연차수당은 {n}이에요.','weekly-rest':'주휴수당은 {n}이에요.','labor-cost':'직원 1명에 매달 {n}이 들어요.',deposit:'만기에 {n}을 받아요.',savings:'만기에 {n}을 받아요.',
+ 'card-fee':'통장에 {n}이 들어와요.','daily-worker-tax':'하루에 {n}을 받아요.',loan:null};
+function sumHtml(id,r){const m=String(r.main||''),warn=/^⚠️/.test(m),n=((m.match(/[−-]?\s?[\d,]+원/)||[])[0]||'').trim();
+ if(warn)return `<span class="warn">${m}</span>`;
+ if(SAY[id]&&n)return SAY[id].replace('{n}',`<b>${n}</b>`);
+ const [l,v]=splitMain(m);
+ if(id=='loan'&&n){const L={'매달':'매달 {n}씩 갚아요.','첫 달':'첫 달에 {n}을 갚아요.','매달 이자':'매달 이자로 {n}을 내요.'}[l];if(L)return L.replace('{n}',`<b>${n}</b>`)}
+ return l?`${l} <b>${v}</b>`:`<b>${v}</b>`}
+function calcRun(id){const c=calcs.find(x=>x.id==id);try{return c.run(CV[id])}catch(e){return null}}
+function nResHtml(id){const r=calcRun(id);if(!r)return '<p class="fn">숫자를 확인해 주세요.</p>';const notes=[],key=((String(r.main).match(/[\d,]{2,}원/)||[])[0]||'#');let hit=0;
+ const rows=(r.sub||[]).map(([a,b])=>b===null?`<div class="ro sec">${a}</div>`:b===''?(notes.push(a),''):`<div class="ro${!hit&&String(b).trim()==key&&++hit?' hi':''}"><span>${a}</span><output>${b}</output></div>`).join('');
+ return `${rows}${notes.length?`<div class="fn">${notes.map(n=>`<p>${n}</p>`).join('')}</div>`:''}`}
+function resetC(id){const c=calcs.find(x=>x.id==id);CV[id]={_q:1};c.fields.forEach(f=>{CV[id][f.id]=f.type=='seg'?f.options[0].value:f.def=='today'?todayK():f.def!=null?f.def:f.type=='select'?'0':''});
+ try{history.replaceState(null,'',location.pathname)}catch(e){}render()}
+// 분야 → 묶음 → 계산기 목록 (사이드바·하단 목록·칩 공용)
+function calcDir(){return Object.keys(GFIRST).map(g=>{const S=SUITES.find(s=>s.g==g);
+ const subs=g=='lotto'?[[null,LCALC.map(c=>c.id)]]:S?(S.sub||[[null,S.ids]]):[[null,[]]];
+ return{g,t:GNL[g],subs:subs.map(([n,ids])=>[n,ids.filter(k=>ALLC().some(c=>c.id==k))])}})}
+const CLAB=id=>{const c=ALLC().find(x=>x.id==id);return c?c.label.replace(/ 계산기$/,''):id};
+function dirHtml(id,cls){const on=TABAL[id]||id;return `<nav class="${cls}" aria-label="모든 계산기">${calcDir().map(G=>`<div class="dg"><p class="dgt">${G.t}</p>${G.subs.map(([n,ids])=>`${n?`<p class="dgs">${n}</p>`:''}${ids.map(k=>A('c-'+k,k==on?'on':'',CLAB(k))).join('')}`).join('')}</div>`).join('')}</nav>`}
+function chipsHtml(id,g){const on=TABAL[id]||id,G=calcDir().find(x=>x.g==g);if(!G)return '';const ids=G.subs.flatMap(s=>s[1]);
+ return `<nav class="cchips" aria-label="${G.t} 계산기"><a class="call" href="#calls">☰ 전체</a>${ids.map(k=>A('c-'+k,k==on?'on':'',TABL[k]||CLAB(k))).join('')}</nav>`}
+function shareC(btn,id){const c=calcs.find(x=>x.id==id),q=new URLSearchParams;
+ if(c)c.fields.forEach(f=>{const v=CV[id][f.id];if(v!=null&&v!==''&&/^[\d.:]+$|^[a-z0-9]+$|^\d{4}-\d{2}-\d{2}$/i.test(String(v).replace(/,/g,'')))q.set(f.id,String(v).replace(/,/g,''))});
+ const url=location.origin+location.pathname+(q.toString()?'?'+q:''),txt=(document.getElementById('csum')||{}).textContent||'',lab=btn.textContent;
+ const done=t=>{btn.textContent=t;setTimeout(()=>btn.textContent=lab,1800)};
+ (async()=>{if(navigator.share){try{await navigator.share({title:document.title,text:txt,url});return}catch(e){if(e&&e.name=='AbortError')return}}
+  try{await navigator.clipboard.writeText(url);done('링크를 복사했어요')}catch(e){done('주소창 링크를 복사해 주세요')}})()}
+function infoHtml(id){const faq=(CALC_FAQ[id]||[]).slice(0,5),c=ALLC().find(x=>x.id==id),how=[CALC_SRC[id]&&CALC_SRC[id](),c&&c.disclaimerExtra,LEGAL_BASIS[id]].filter(Boolean);
+ return `<details class="info cardx"><summary><span>계산 방법과 자주 묻는 질문</span><i>펼치기</i></summary>
+ ${how.length?`<h3>계산 기준</h3>${how.map(t=>`<p>${t}</p>`).join('')}`:''}
+ ${faq.length?`<h3>자주 묻는 질문</h3>${faq.map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('')}`:''}
+ <div id="crel">${calcs.some(x=>x.id==id)?relHtml(id):''}</div></details>`}
+function frame(id,g,title,card){return `<div class="cv">${dirHtml(id,'cside')}<div class="cvm">
+ <div class="ctop"><span>${GNL[g]||''} 계산기</span><a href="#calls">모든 계산기</a></div>
+ <h1 class="ch1">${title}</h1>${LEAD[id]||LEAD[TABAL[id]]?`<p class="clede">${LEAD[id]||LEAD[TABAL[id]]}</p>`:''}
+ ${card}${infoHtml(id)}<section class="cardx callw" id="calls"><h2>다른 계산기</h2>${dirHtml(id,'cdir')}</section></div></div>${foot}`}
+function calcView(id){const L=LCALC.find(x=>x.id==id);
+ if(L)return frame(id,'lotto',L.title,`<section class="cardx nc2"><h2 class="chd">${L.title.replace(/ 계산기$/,' 계산')}</h2>${id=='lotto-tax'?taxPanel():penCalc()}<div class="fn bot"><p>${id=='lotto-tax'?'3억원까지 22%, 넘는 부분 33% (소득세 + 지방소득세) · 200만원 이하 비과세':'연금형은 매달 받는 금액에서 22%를 떼요 · 1등 20년, 2등·보너스 10년'}</p></div></section>`);
+ const c=calcs.find(x=>x.id==id);if(!c)return home();CV[id]=CV[id]||{};c.fields.forEach(f=>{if(CV[id][f.id]==null)CV[id][f.id]=ex(f)});
  if(!CV[id]._q&&typeof location!='undefined'&&location.search){CV[id]._q=1;const q=new URLSearchParams(location.search);c.fields.forEach(f=>{const x=q.get(f.id);if(x!=null&&/^[\d.:]+$|^[a-z0-9]+$|^\d{4}-\d{2}-\d{2}$/i.test(x))CV[id][f.id]=x})}
- const faq=(CALC_FAQ[id]||[]).map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('');
- const S=suiteOf(id),tid=TABAL[id]||id,SB=S&&S.sub?S.sub.find(x=>x[1].includes(tid)):null,tids=SB?SB[1]:S?S.ids:[];
- const tabs=S?`${SB?`<nav class="nsubg" aria-label="${S.t} 묶음">${S.sub.map(([n,ids])=>A('c-'+ids[0],n==SB[0]?'on':'',n)).join('')}</nav>`:''}<nav class="ntabs" aria-label="${S.t}">${tids.filter(k=>calcs.some(c=>c.id==k)).map(k=>A('c-'+k,k==tid?'on':'',TABL[k]||k)).join('')}</nav>`:'';
  let body;
  if(c.dual){const R=resHtml(id),LB={contract:'<b class="hl">계약 금액</b> 기준',net:'<b class="hl">실제 수령액</b> 기준'},
   card=k=>`<section class="ccard"><div class="crow"><label class="ct" for="f-${k}">${LB[k]}</label><div class="inw"><input id="f-${k}" inputmode="decimal" autocomplete="off" value="${fmtN(CV[id][k])}" onfocus="this.select()" oninput="nIn(this,'${id}','${k}')"><span class="un">원</span></div></div><div id="dres-${k}">${R[k]}</div></section>`;
-  body=`<div class="dual">${['contract','net'].map(card).join('')}</div>`}
- else body=`<div class="nf">${nFieldsHtml(id,c.fields.filter(f=>!f.when||f.when==CV[id].mode))}</div><div class="ncr" id="cres">${nResHtml(id)}</div>`;
+  body=`<div class="nc dual-in"><div class="dual">${['contract','net'].map(card).join('')}</div></div>`}
+ else{const r=calcRun(id);body=`<p class="csum" id="csum" aria-live="polite">${r?sumHtml(id,r):''}</p><div class="cpanel"><div class="nf">${nFieldsHtml(id,c.fields.filter(f=>!f.when||f.when==CV[id].mode))}</div><div class="cres" id="cres">${nResHtml(id)}</div></div>`}
  const rel=(CALC_REL[id]||[]).map(k=>ALLC().find(c=>c.id==k)).filter(Boolean);
  const fn=[CALC_SRC[id]&&CALC_SRC[id](),c.disclaimerExtra].filter(Boolean);
- return `<div class="calc">${gnav(c.group)}
- <section class="nc"><div class="nch"><h1>${S?S.t:c.title}</h1><button type="button" class="nrst" onclick="resetC('${id}')">↻ 초기화</button></div>${tabs}
- ${S?`<p class="nsub">${c.title}</p>`:''}${body}
+ return frame(id,c.group,c.title,`<section class="cardx nc2"><h2 class="chd">${c.title.replace(/ 계산기$/,' 계산')}</h2>${body}
+ <div class="cact"><button type="button" class="btn2" onclick="resetC('${id}')"><span aria-hidden="true">↻</span> 초기화</button><button type="button" class="btn2" onclick="shareC(this,'${id}')">링크 공유하기</button></div>
  ${fn.length?`<div class="fn bot">${fn.map(t=>`<p>${t}</p>`).join('')}</div>`:''}
- ${rel.length?`<div class="nrel"><span>관련</span>${rel.map(c=>A('c-'+c.id,'',c.label)).join('<i>·</i>')}</div>`:''}</section>
- <details class="info"><summary>자주 묻는 질문 · 법적 근거</summary><div id="crel">${relHtml(id)}</div>${faq?faq:''}${LEGAL_BASIS[id]?`<h3>법적 근거</h3><p>${LEGAL_BASIS[id]}</p>`:''}</details></div>${foot}`}
+ ${rel.length?`<div class="nrel"><span>함께 보면 좋은</span>${rel.map(c=>A('c-'+c.id,'',c.label)).join('<i>·</i>')}</div>`:''}</section>`)}
 function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>{const e=document.getElementById(i);if(e)e.innerHTML=h};
- if(c.dual){const R=resHtml(id);set('dres-contract',R.contract);set('dres-net',R.net)}else set('cres',nResHtml(id));set('crel',relHtml(id))}
+ if(c.dual){const R=resHtml(id);set('dres-contract',R.contract);set('dres-net',R.net)}else{const r=calcRun(id);set('cres',nResHtml(id));set('csum',r?sumHtml(id,r):'')}set('crel',relHtml(id))}
 const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);

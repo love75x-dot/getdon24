@@ -46,5 +46,43 @@ for (const f of files) {
 }
 console.log(`판매점 ${files.length}개 회차 검사`);
 
+// 5) 계산기 정답 예시: 숫자가 바뀌면 여기서 걸려요. 값은 공식 표·급여명세서 방식으로 직접 검산한 것.
+{
+  const vm = await import('node:vm');
+  const appJs = await readFile(join(ROOT, 'src/app.js'), 'utf8');
+  const wtax = JSON.parse(await readFile(join(ROOT, 'data/wage-tax-2026-03.json'), 'utf8'));
+  const DATA = { draws: [], pension: [], places: {}, config: {}, posts: [], support: [], benefits: [], deadlines: [], hidden: { groups: [] }, wtax };
+  const ctx = { window: { DATA, __PRERENDER: 1 }, document: { getElementById: () => ({}), addEventListener() {} }, location: { pathname: '/', href: '/', search: '' },
+    history: { replaceState() {} }, localStorage: { getItem: () => null, setItem() {} }, setInterval() {}, setTimeout() {}, scrollTo() {}, addEventListener() {},
+    console, Date, Math, JSON, Object, Array, String, Number, Set, Map, RegExp, encodeURIComponent, decodeURIComponent, Intl };
+  ctx.window.window = ctx.window;
+  vm.createContext(ctx); vm.runInContext(appJs, ctx);
+  const run = (id, v) => JSON.parse(vm.runInContext(`JSON.stringify(calcs.find(c=>c.id==${JSON.stringify(id)}).run(${JSON.stringify(v)}))`, ctx));
+  const row = (r, label) => (r.sub.find(([a]) => a.startsWith(label)) || [])[1];
+  const CASES = [
+    // 연봉 4천만원·비과세 20만원·1명: 국민연금 기준소득월액 천원 미만 절사, 보험료 10원 미만 절사, 간이세액표 84,620원
+    ['salary', { annual: '4000', nonTaxable: '20', dependents: '1', kids: '0' }, { '국민연금': '148,810원', '건강보험': '112,640원', '장기요양': '14,800원', '고용보험': '28,190원', '소득세': '84,620원', '지방소득세': '8,460원', '월 실수령액': '2,935,813원' }],
+    // 간이세액표 예시 (홈택스): 월 350만원, 4명, 자녀 2명 → 3,510원
+    ['salary', { annual: '4200', nonTaxable: '0', dependents: '4', kids: '2' }, { '소득세': '3,510원' }],
+    ['loan', { p: '100000000', pu: 'y', n: '30', rate: '4.5', how: 'eq' }, { main: '매달 506,685원' }],
+    ['savings', { m: '1000000', pu: 'm', n: '12', rate: '3.5', how: 's', tax: 'normal' }, { '세전 이자': '227,500원', '이자소득세': '− 31,850원', '지방소득세': '− 3,180원' }],
+    ['deposit', { p: '10000000', pu: 'y', n: '1', rate: '3', how: 's', tax: 'normal' }, { '세후 이자': '253,800원' }],
+    ['vat', { mode: 'tot', amt: '1100000' }, { '공급가액': '1,000,000원', '부가세 10%': '100,000원' }],
+    ['pyeong', { mode: 'm2', x: '84' }, { '평': '25.41평' }],
+    ['age', { birth: '2000-12-01', base: '2026-11-19' }, { '만 나이': '25세' }],
+    ['percent', { mode: 'chg', a: '3', b: '4' }, { '변화율': '+33.33%' }],
+  ];
+  for (const [id, v, exp] of CASES) {
+    const r = run(id, v);
+    for (const [k, want] of Object.entries(exp)) {
+      const got = k === 'main' ? r.main : row(r, k);
+      if (got !== want) bad(`${id} ${k}: ${got} (예상 ${want})`);
+    }
+  }
+  const wage = vm.runInContext(`Math.round(RATES.minimumWage*209)`, ctx);
+  if (wage !== 2156880) bad(`최저임금 월 환산 ${wage}`);
+  console.log(`계산기 예시 ${CASES.length}건 검사`);
+}
+
 if (fail) { console.error(`실패 ${fail}건`); process.exit(1); }
 console.log('모두 통과');
