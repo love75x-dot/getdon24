@@ -391,3 +391,87 @@ h2 .more2,h2 a.more2{font-size:13px;font-weight:500;color:var(--mute);text-decor
  .cside a:hover{background:var(--panel)}.cside a.on{background:var(--soft-acc);color:var(--navy);font-weight:700}
  .callw{display:none}
 }
+
+/* ── 모든 화면 공통: 계산기와 같은 모양 (회색 바탕 · 흰 카드 · 줄 목록 · 초록 하나) ── */
+.h1{font-size:26px;font-weight:700;letter-spacing:-.4px;margin:22px 0 6px;line-height:1.3}
+.h1+.note,.lsub{font-size:15px!important;color:var(--text2);margin:0 0 16px!important;line-height:1.6}
+.crumb{font-size:14px;margin-top:10px}.crumb a{color:var(--text2);text-decoration:none}
+.psec{margin-top:14px}
+.psec>h2,.hsec>h2,.cardx>h2{margin:0 0 10px;font-size:17px;font-weight:700;white-space:normal}
+.psec>h2 small,.hsec>h2 small{font-size:13px;color:var(--text2);font-weight:400}
+.psec .more2,.hsec .more2{font-size:13.5px;font-weight:400;color:var(--text2);text-decoration:none}
+/* 목록 줄: 카드 안에서는 줄로만 나눔, 마지막 줄 선 없음 */
+.gcard,.hsup,.it,.pen,.rl{border-bottom:1px solid var(--line)}
+.psec>:is(.gcard,.hsup,.it,.pen):last-child,.hsec>:is(.gcard,.hsup):last-child,.plist>.gcard:last-child{border-bottom:0}
+.gcard.lg{padding:14px 0}.gcard.lg b{font-size:16px;font-weight:600}.gcard.lg span{font-size:18px;color:var(--text2)}
+.plist{margin-top:12px;padding-top:6px;padding-bottom:6px}
+.plist .gcard b{font-size:15.5px;font-weight:600}
+/* 카드 안 카드는 평평하게 (줄로만 구분) */
+.psec :is(.ben,.sup,.dlc,.hidc){border:0;border-top:1px solid var(--line);border-radius:0;margin:0;padding:16px 0;background:none;box-shadow:none}
+.psec>h2+:is(.ben,.sup,.dlc,.hidc){border-top:0;padding-top:4px}
+:is(.ben,.sup,.dlc,.hidc){border:0;border-radius:16px;background:var(--card);box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);padding:18px;margin:12px 0}
+.hidc.ok{box-shadow:inset 0 0 0 1.5px var(--navy)}
+.ben .bt b,.sup h3{font-weight:700}.ben .ba,.sup .samt{font-weight:700}
+.ben .bl a,.dlb a,.dlb button{background:var(--card);border:1px solid var(--line2);font-weight:500}
+/* 선택 칩·탭: 계산기 선택 버튼과 같은 모양 */
+.chips button,.fchips button,.seg button,.dlchips button{border:1px solid var(--line2);background:var(--card);color:var(--fg);border-radius:99px;font-weight:500}
+.chips button.on,.fchips button.on,.seg button.on,.dlchips button.on{border-color:var(--navy);background:var(--soft-acc);color:var(--navy);font-weight:700}
+.lsw{background:none;padding:0;gap:0;border-bottom:1px solid var(--line);border-radius:0;margin-top:14px}
+.lsw a{border-radius:0;padding:12px 0;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px}
+.lsw a.on{background:none;box-shadow:none;color:var(--fg);border-color:var(--fg)}
+/* 버튼 */
+.btn{border-radius:10px;font-weight:600;min-height:46px}
+.btn.ghost{background:var(--card);border:1px solid var(--line2);color:var(--fg)}
+.fgo{background:var(--navy);color:#fff;border-radius:10px;font-weight:700}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.lotnote{background:var(--card);border-radius:16px}
+/* 복권 첫 화면: 초록 덩어리 대신 흰 카드 */
+.hero{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);border-radius:16px;margin-top:14px}
+.hero .t span{color:var(--text2)}.hero .big{color:var(--navy)}.hero .meta{color:var(--text2);opacity:1}
+.hero .more{background:var(--panel);color:var(--fg);border:1px solid var(--line)}
+.hero .cdw{color:var(--text2)}.hero .cd{background:var(--panel)!important;color:var(--fg)!important}
+.pc{border:0;background:var(--panel)}
+/* 홈 */
+.h-hero{background:var(--card);color:var(--fg);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);padding:22px 20px 18px;margin-top:10px}
+.h-hero h1{font-size:24px;font-weight:700;margin:0 0 16px}.h-hero h1 em{color:var(--navy)}
+.hlab{opacity:1;color:var(--text2)}
+.hbox{background:var(--panel);border:1px solid var(--line);border-radius:12px}.hbox input{color:var(--fg);font-weight:600;font-size:22px}.hbox span{color:var(--fg);font-weight:500}
+.hq button{background:var(--card);border:1px solid var(--line2);color:var(--fg);font-weight:500}
+.hq button.on{background:var(--soft-acc);border-color:var(--navy);color:var(--navy);font-weight:700}
+.hres span{opacity:1;color:var(--text2)}.hres b{color:var(--navy);font-weight:700}
+.h-hero a{color:var(--text2)}.h-hero small,.h-hero p{color:var(--text2)}
+.hsec{margin-top:14px;background:var(--card);border-radius:16px;padding:20px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12)}
+.hsec:has(>.c4){background:none;box-shadow:none;padding:0}
+.c4{margin-top:0}
+.c4i{border:0;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);border-radius:16px}
+.c4-w,.c4-g,.c4-r,.c4-l{border-top:0}.c4i b{font-weight:700}
+.season{background:var(--card);box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);margin-top:14px}
+.season .stag{color:var(--navy)}
+.hlot{border:0;padding:4px 0 0}
+.lnav a{background:var(--card);border-color:var(--line2)}
+.hidp{background:var(--card);box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);border-radius:16px}
+.dlsub{background:var(--card);box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12);color:var(--fg)}
+.lcard{border:0;box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px -12px rgba(16,24,40,.12)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.hsec,.h-hero,.hero,.c4i,.season,.ben,.sup,.dlc,.hidc,.hidp,.dlsub,.lcard,.psec){box-shadow:0 0 0 1px var(--line)}}
+:root[data-theme="dark"] :is(.hsec,.h-hero,.hero,.c4i,.season,.ben,.sup,.dlc,.hidc,.hidp,.dlsub,.lcard,.psec){box-shadow:0 0 0 1px var(--line)}
+.psec :is(.ben,.sup,.dlc,.hidc){box-shadow:none!important}
+.panel>*{min-width:0}.panel input{width:100%;min-width:0}
+.art.cardx{padding:22px 20px;margin-top:12px}
+/* ── flit 처럼: 위쪽 한 줄 머리말, 아래 메뉴바 없음, 홈은 목록 카드만 ── */
+.tabbar{display:none!important}
+.wrap{padding-bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+header{background:var(--bg)}
+.hd{height:56px}
+.logo{font-size:18px;font-weight:700;letter-spacing:-.3px}.logo a{text-decoration:none;color:var(--fg)}
+.hall{font-size:14.5px;color:var(--text2);text-decoration:none}
+.hh1{margin-top:12px}
+.hcard{margin-top:14px;padding:18px 20px 6px}
+.hct{margin:0 0 2px;font-size:13.5px;font-weight:600;color:var(--text2)}
+.hrow{display:block;padding:15px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--fg)}
+.hcard .hrow:last-child{border-bottom:0}
+.hrow b{display:block;font-size:16.5px;font-weight:700;letter-spacing:-.2px}
+.hrow small{display:block;margin-top:2px;font-size:13px;color:var(--text2)}
+.hrow:hover b{color:var(--navy)}
+.habout{padding-bottom:18px}.habout h2{font-size:17px;margin:0 0 6px}.habout h3{font-size:15px;margin:16px 0 4px}.habout p{margin:0;font-size:14px;line-height:1.7;color:var(--text2)}
+@media (min-width:1024px){.wrap:has(.hcard){max-width:688px}}
+@media (min-width:1024px){body:has(.cv) header .wrap{max-width:1180px}body:has(.hcard) header .wrap{max-width:688px}}

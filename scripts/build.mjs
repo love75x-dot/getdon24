@@ -130,7 +130,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(
 ${ads}${ga}
 </head>
 <body>
-<header><div class="wrap" style="padding-bottom:0"><div class="hd"><div class="logo"><a href="/">받는<b>돈</b></a></div><small id="hsub"></small></div></div></header>
+<header><div class="wrap" style="padding-bottom:0"><div class="hd"><div class="logo"><a href="/">받는<b>돈</b></a></div><a class="hall" href="/">모든 계산기</a></div></div></header>
 <main class="wrap" id="app">${html}</main>
 <nav class="tabbar" id="tabs">${tabs}</nav>
 <script>window.__ROUTE=${JSON.stringify(route)};${pre ? 'window.__PRE=1;' : ''}</script>

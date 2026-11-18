@@ -425,15 +425,15 @@ function mk(t){const c={};DRAWS.slice(0,10).forEach(d=>d.n.forEach(n=>c[n]=(c[n]
 const PR=[['1등+2등 4장','combo',0,0],['1등','월',7e6,240],['2등·보너스','월',1e6,120],['3등','일시',1e6,1],['4등','일시',1e5,1],['5등','일시',5e4,1]];let pr=0;
 function penCalc(){if(PR[pr][1]=='combo')return penCombo();const [n,k,g,m]=PR[pr],tx=k=='월'?Math.floor(g*.22):0,net=g-tx;const r=(a,b,st='')=>`<div class="res"><span>${a}</span><b ${st}>${b}</b></div>`;
  return `<div class="seg" style="flex-wrap:wrap">${PR.map((p,i)=>`<button class="${i==pr?'on':''}" style="flex:1 0 30%" onclick="pr=${i};render()">${p[0]}</button>`).join('')}</div>`
- +(k=='월'?r('매달 당첨금',W(g))+r('세금 22% (소득세 20% + 지방세 2%)','− '+W(tx))+`<div style="border-top:2px solid var(--fg)"></div>`+r('매달 실수령액',W(net),'style="font-size:20px;color:var(--blue)"')+r(`${m/12}년 동안 받는 총액`,W(net*m))+r('세금 총액',W(tx*m))
-  :r('당첨금',W(g))+r('세금','0원 (200만원 이하 비과세)')+r('실수령액',W(g),'style="font-size:20px;color:var(--blue)"'))}
+ +(k=='월'?r('매달 당첨금',W(g))+r('세금 22% (소득세 20% + 지방세 2%)','− '+W(tx))+`<div style="border-top:2px solid var(--fg)"></div>`+r('매달 실수령액',W(net),'style="font-size:20px;color:var(--navy)"')+r(`${m/12}년 동안 받는 총액`,W(net*m))+r('세금 총액',W(tx*m))
+  :r('당첨금',W(g))+r('세금','0원 (200만원 이하 비과세)')+r('실수령액',W(g),'style="font-size:20px;color:var(--navy)"'))}
 function penCombo(){const r=(a,b,st='')=>`<div class="res"><span>${a}</span><b ${st}>${b}</b></div>`,hr=w=>`<div style="border-top:${w}px solid var(--fg)"></div>`;
  const n1=7e6-Math.floor(7e6*.22),n2=1e6-Math.floor(1e6*.22),a=n1+n2*4;
  return `<div class="seg" style="flex-wrap:wrap">${PR.map((p,i)=>`<button class="${i==pr?'on':''}" style="flex:1 0 30%" onclick="pr=${i};render()">${p[0]}</button>`).join('')}</div>
  <p class="note">같은 번호를 1~5조 모두 사서(5장) 1등이 되면, 나머지 4장은 조만 달라서 자동으로 2등이에요.</p>
- <b>처음 10년 (1~120개월)</b>${r('1등 매달 700만 − 세금 22%',W(n1))}${r('2등 4장 × (100만 − 세금 22%)',W(n2*4))}${hr(2)}${r('매달 실수령액',W(a),'style="font-size:20px;color:var(--blue)"')}
- <b style="margin-top:6px">다음 10년 (121~240개월)</b>${r('1등만 계속',W(n1))}${hr(2)}${r('매달 실수령액',W(n1),'style="font-size:18px;color:var(--blue)"')}
- <b style="margin-top:6px">20년 합계</b>${r('1등 546만 × 240개월',W(n1*240))}${r('2등 312만 × 120개월',W(n2*4*120))}${hr(2)}${r('총 실수령액',W(n1*240+n2*4*120),'style="font-size:20px;color:var(--red)"')}${r('세금 총액',W(7e6*.22*240+1e6*.22*4*120))}`}
+ <b>처음 10년 (1~120개월)</b>${r('1등 매달 700만 − 세금 22%',W(n1))}${r('2등 4장 × (100만 − 세금 22%)',W(n2*4))}${hr(2)}${r('매달 실수령액',W(a),'style="font-size:20px;color:var(--navy)"')}
+ <b style="margin-top:6px">다음 10년 (121~240개월)</b>${r('1등만 계속',W(n1))}${hr(2)}${r('매달 실수령액',W(n1),'style="font-size:18px;color:var(--navy)"')}
+ <b style="margin-top:6px">20년 합계</b>${r('1등 546만 × 240개월',W(n1*240))}${r('2등 312만 × 120개월',W(n2*4*120))}${hr(2)}${r('총 실수령액',W(n1*240+n2*4*120),'style="font-size:20px;color:var(--navy)"')}${r('세금 총액',W(7e6*.22*240+1e6*.22*4*120))}`}
 function pension(){const p=PEN[0],[jo,num]=[p[2].split('조')[0],p[2].split(' ')[1]];
  return lotSwitch('pension')+`<section class="hero"><div class="t">제 ${p[0]}회 연금복권720+ <span>${p[1]}</span></div><div class="balls"><span class="ball jo">${jo}<small>조</small></span>${num.split('').map((c,k)=>`<span class="ball ${['r','y','b','g','pu','n'][k]}">${c}</span>`).join('')}</div><div class="meta" style="margin-top:12px">1등 월 700만원 × 20년 · 매주 목요일 19:05 추첨</div><div class="cdw">다음 추첨까지 <span class="cd" id="cdp"></span></div></section>
  <h2>연금복권 실수령액 <small>등수 선택</small></h2><div class="panel">${penCalc()}<p class="note">연금형은 매달 받는 금액에 22%가 붙어요. 1등은 20년, 2등과 보너스는 10년 동안 받아요.</p></div><h2>지난 회차 <small>최근 5회</small></h2>${PEN.slice(1,6).map(p=>`<div class="pen"><span><strong>${p[0]}회</strong><small>${p[1]}</small></span><b>${p[2]}</b></div>`).join('')}${A('penall','btn ghost allbtn','전체 회차 보기 ›')}${foot}`}
@@ -444,14 +444,14 @@ function calc(a){if(a<=2e6)return{free:1,base:a,lo:0,hi:0,inc:0,loc:0,tot:0,net:
  const base=a-1000,lo=Math.min(base,3e8),hi=Math.max(base-3e8,0),inc=Math.floor((lo*.2+hi*.3)/10)*10,loc=Math.floor(inc*.1/10)*10,tot=inc+loc;
  return{base,lo,hi,inc,loc,tot,net:a-tot,rate:tot/a*100}}
 function breakdown(a){const c=calc(a);
- if(c.free)return `<div class="res"><span>세금</span><b>0원</b></div><div class="res"><span>실수령액</span><b style="font-size:20px;color:var(--blue)">${W(a)}</b></div><p class="note">200만원 이하라 세금이 없어요 (5등·4등·3등 대부분).</p>`;
+ if(c.free)return `<div class="res"><span>세금</span><b>0원</b></div><div class="res"><span>실수령액</span><b style="font-size:20px;color:var(--navy)">${W(a)}</b></div><p class="note">200만원 이하라 세금이 없어요 (5등·4등·3등 대부분).</p>`;
  const r=(k,v,s='')=>`<div class="res"><span>${k}</span><b ${s}>${v}</b></div>`;
  return r('당첨금',W(a))+r('① 구입비 공제','− 1,000원')+r('과세 대상',W(c.base))
  +`<div style="border-top:1px solid var(--line)"></div>`
  +r('② 소득세 3억까지 × 20%',W(c.lo*.2))+(c.hi?r('③ 소득세 3억 초과분 × 30%',W(c.hi*.3)):'')
  +r('④ 지방소득세 (소득세 × 10%)',W(c.loc))+r('세금 합계','− '+W(c.tot))
  +`<div style="border-top:2px solid var(--fg)"></div>`
- +r('실수령액',W(c.net),'style="font-size:20px;color:var(--blue)"')+r('실효세율',c.rate.toFixed(1)+' %')}
+ +r('실수령액',W(c.net),'style="font-size:20px;color:var(--navy)"')+r('실효세율',c.rate.toFixed(1)+' %')}
 function taxPanel(){const a=+amtV.replace(/\D/g,'')||0;return `<div class="panel"><input id="amt" inputmode="numeric" value="${a.toLocaleString()}" oninput="amtV=this.value;upd()" aria-label="당첨금 (세금 떼기 전)"><div class="btns">${DRAWS[0]?`<button class="btn ghost" onclick="setA(${DRAWS[0].prize})">${DRAWS[0].r}회 1등</button>`:''}<button class="btn ghost" onclick="setA(5e7)">5천만</button><button class="btn ghost" onclick="setA(15e5)">150만</button></div><div id="bd" style="display:grid;gap:10px">${breakdown(a)}</div></div><button class="btn ghost" style="width:100%;margin-top:8px" onclick="go('b-lotto-tax-guide')">계산 방법 자세히 보기 ›</button>`}
 
 
@@ -974,21 +974,18 @@ let findPick=new Set;
 function findTg(k){findPick.has(k)?findPick.delete(k):findPick.add(k);document.querySelectorAll('.fchips button').forEach(b=>b.classList.toggle('on',findPick.has(b.dataset.k)));const g=document.getElementById('fgo');if(g){g.href='/find/'+(findPick.size?'?t='+[...findPick].join(','):'');g.textContent=findPick.size?`${findPick.size}개 골랐어요 · 받을 돈 보기 ›`:'받을 돈 보기 ›'}}
 const CATS4=[['월급·일한 돈','연봉·알바·퇴직금·3.3%','calc','w'],['나라에서 받는 돈','지원금·수당·장려금','find','g'],['숨은 돈','휴면예금·보험금·포인트·환급금','hidden','r'],['당첨된 돈','로또·연금복권 실수령액','lotto','l']];
 const POPC=['salary','parttime','goal-100m','freelance','severance','weekly-rest'];
-function home(){const d=DRAWS[0],S=(DATA.config&&DATA.config.season)||null,posts=allPosts().slice(0,3);
- return `<section class="h-hero"><h1>내가 받을 돈,<br><em>24시간</em> 다 찾아드려요</h1>
- <label class="hlab" for="hin">내 연봉 (세전)</label><div class="hbox"><input id="hin" inputmode="numeric" autocomplete="off" value="${(+heroA).toLocaleString()}" oninput="heroIn(this)" onfocus="this.select()"><span>만원</span></div>
- <div class="hq">${[3000,4000,5000].map(v=>`<button type="button" data-v="${v}" class="${heroA==v?'on':''}" onclick="heroSet(${v})">${v/1000}천만</button>`).join('')}</div>
- <div id="hout">${heroOut()}</div></section>
- <section class="hsec"><h2>1분 만에 받을 돈 찾기 <small>여러 개 골라도 돼요</small></h2><div class="fchips">${FINDT.map(([k,l])=>`<button type="button" data-k="${k}" class="${findPick.has(k)?'on':''}" onclick="findTg('${k}')">${l}</button>`).join('')}</div><a id="fgo" class="fgo" href="/find/">받을 돈 보기 ›</a></section>
- <section class="hsec"><div class="c4">${CATS4.map(([t,dsc,to,k])=>A(to,'c4i c4-'+k,`<b>${t}</b><small>${dsc}</small>`)).join('')}</div></section>
- <section class="hsec"><h2>이럴 때 받을 돈 ${A('life','more2','전체 ›')}</h2><nav class="lnav">${LIFE.map(y=>A('l-'+y.k,'',`${y.e} ${y.t}`)).join('')}</nav></section>
- ${S?`<a class="season" href="${S.url}"${/^https?:/.test(S.url)?' target="_blank" rel="noopener"':''}><span class="stag">${S.tag}</span><b>${S.title}</b><small>${S.desc}</small></a>`:''}
- <section class="hsec"><h2>많이 쓰는 계산기</h2>${POPC.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}</section>
- ${(()=>{const t=todayK(),xs=supSorted(SUP).filter(x=>x.end&&x.end>=t).slice(0,3);return xs.length?`<section class="hsec"><h2>마감 임박 혜택 ${A('benefits','more2','전체 ›')}</h2>${xs.map(x=>A('benefits','hsup',`${ddBadge(x)}<b class="one">${x.name}</b><small class="one">${x.host}${x.amount?` · 최대 ${x.amount}`:''}</small>`).replace('href="/benefits/"',`href="/benefits/#${x.id}"`)).join('')}</section>`:''})()}
- ${DL.length?`<section class="hsec"><h2>다가오는 신고·신청 마감 ${A('deadlines','more2','전체 ›')}</h2>${DL.slice(0,3).map(x=>A('deadlines','hsup',`<span class="dd">D-${dday(x.end)}</span><b class="one">${x.name}</b><small class="one">${ymd(x.end)}까지</small>`)).join('')}</section>`:''}
- ${d?`<section class="hsec"><h2>로또 ${d.r}회 <small>${ymd(d.date)}</small></h2>${A('lotto','hlot',`${balls(d,'sm')}<span>1등 ${d.win}명 · 1인 ${d.per}원 ›</span>`)}</section>`:''}
- <section class="hsec"><h2>최신 글 ${A('guide','more2',`전체 ${allPosts().length}개 ›`)}</h2>${posts.map(postRow).join('')}</section>${foot}`}
-
+function home(){const d=DRAWS[0],P=PEN[0],posts=allPosts().slice(0,3);
+ const row=(to,t,sub)=>A(to,'hrow',`<b>${t}</b>${sub?`<small>${sub}</small>`:''}`),card=(t,rows)=>`<section class="cardx hcard"><p class="hct">${t}</p>${rows.join('')}</section>`;
+ const dir=calcDir().filter(G=>G.g!='lotto'),cg=G=>card(G.t,G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return row('c-'+k,c.title)}));
+ return `<h1 class="ch1 hh1">받는돈</h1><p class="clede">세금 떼고 실제로 받는 돈을 계산하는 무료 계산기 모음</p>
+ ${cg(dir[0])}
+ ${card('받을 돈',[row('find','받을 돈 찾기','지원금·수당·환급금'),row('hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'),row('deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'),row('benefits','마감 임박 혜택','정부 지원사업·기업 이벤트'),row('life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴')])}
+ ${dir.slice(1).map(cg).join('')}
+ ${card('복권',[d?row('lotto','로또 당첨번호',`${d.r}회 · ${ymd(d.date)}`):'',P?row('pension','연금복권720+ 당첨번호',`${P[0]}회 · ${P[1]}`):'',row('c-lotto-tax','로또 세금 계산기'),row('c-pension-tax','연금복권 세금 계산기'),row('all','로또 전체 회차')])}
+ ${card('정보',[row('guide','정보 글 모음',`급여·세금·복권 글 ${allPosts().length}개`),...posts.map(p=>row(p.id,p.t,`${p.c} · ${p.d}`))])}
+ <section class="cardx hcard habout"><h2>받는돈은 이런 곳이에요</h2><p>연봉, 퇴직금, 실업급여, 3.3%, 대출 이자처럼 돈이 오가는 계산을 세금과 보험료까지 떼고 실제로 받는 금액으로 보여 드려요.</p>
+ <h3>계산 기준은 이렇게 정해요</h3><p>국세청 간이세액표, 4대보험 요율처럼 공공기관이 발표한 기준을 그대로 쓰고, 계산기마다 기준 연도를 적어 둬요.</p>
+ <h3>입력한 값은 저장하지 않아요</h3><p>계산은 쓰는 기기 안에서만 하고, 이름·주민번호·계좌 같은 개인정보는 받지 않아요.</p></section>${foot}`}
 function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
  return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
  ${list.map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}${foot}`}
@@ -1097,7 +1094,6 @@ function infoHtml(id){const faq=(CALC_FAQ[id]||[]).slice(0,5),c=ALLC().find(x=>x
  ${faq.length?`<h3>자주 묻는 질문</h3>${faq.map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('')}`:''}
  <div id="crel">${calcs.some(x=>x.id==id)?relHtml(id):''}</div></details>`}
 function frame(id,g,title,card){return `<div class="cv">${dirHtml(id,'cside')}<div class="cvm">
- <div class="ctop"><span>${GNL[g]||''} 계산기</span><a href="#calls">모든 계산기</a></div>
  <h1 class="ch1">${title}</h1>${LEAD[id]||LEAD[TABAL[id]]?`<p class="clede">${LEAD[id]||LEAD[TABAL[id]]}</p>`:''}
  ${card}${infoHtml(id)}<section class="cardx callw" id="calls"><h2>다른 계산기</h2>${dirHtml(id,'cdir')}</section></div></div>${foot}`}
 function calcView(id){const L=LCALC.find(x=>x.id==id);
@@ -1131,10 +1127,20 @@ function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win'
 function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
-function view(){const v=view0();return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
+// 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
+function cardify(h){const fi=h.indexOf('<div class="ad-slot" id="ad-foot"');const body=fi<0?h:h.slice(0,fi),tail=fi<0?'':h.slice(fi);
+ const re=/<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>/g,VOID=/^(input|img|br|hr|meta|link|source|wbr)$/i;let m,d=0,cuts=[];
+ while((m=re.exec(body))){if(m[1]){d--;continue}if(m[4]||VOID.test(m[2]))continue;if(d==0&&m[2].toLowerCase()=='h2')cuts.push(m.index);d++}
+ if(!cuts.length)return h;let out=body.slice(0,cuts[0]);
+ cuts.forEach((c,i)=>{out+=`<section class="cardx psec">${body.slice(c,cuts[i+1]??body.length)}</section>`});return out+tail}
+function view(){let v=view0();if(!cur.startsWith('c-')&&cur!='home'&&!cur.startsWith('b-')&&!PAGES[cur])v=cardify(v);
+ if(cur=='guide')v=v.replace('<div id="bl">','<div id="bl" class="cardx plist">');
+ if(cur.startsWith('b-'))v=v.replace('<article class="art"','<article class="art cardx"');
+ if(PAGES[cur])v=v.replace('<div class="art">','<div class="art cardx">');
+ return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
 function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
-function tick(){const lt=nextAt(6,20,35),pt=nextAt(4,19,5),set=(i,v)=>{const e=document.getElementById(i);if(e)e.textContent=v};set('cd',lt);set('cdp',pt);const t=tabOf(cur);set('hsub',t=='lotto'?'로또 추첨 '+lt:t=='pension'?'연금복권 추첨 '+pt:'')}
+function tick(){const lt=nextAt(6,20,35),pt=nextAt(4,19,5),set=(i,v)=>{const e=document.getElementById(i);if(e)e.textContent=v};set('cd',lt);set('cdp',pt)}
 if(!window.__PRERENDER){setInterval(tick,1000);render()}
