@@ -390,11 +390,11 @@ DRAWS.forEach(d=>{d.total=d.win?fmtEok(d.prize*d.win)+'원':'1등 없음';d.per=
 const PEN=DATA.pension.map(x=>[x[0],x[1].slice(5).replace('-','.'),x[2]+'조 '+x[3],x[4],x[1].replace(/-/g,'.')]).sort((a,b)=>b[0]-a[0]);
 const PL=DATA.places||{};
 const ymd=s=>s.replace(/-/g,'.');
-const TABS=[['home','⌂','홈'],['calc','≡','계산기'],['find','◎','받을돈 찾기'],['lotto','●','복권'],['guide','✎','정보']];
+const TABS=[['calc','','계산기'],['find','','받을 돈'],['guide','','정보'],['lotto','','복권']];
 const col=n=>n<=10?'y':n<=20?'b':n<=30?'r':n<=40?'g':'n';
 const ball=(n,s='')=>`<span class="ball ${col(n)} ${s}">${n}</span>`;
 const balls=(d,s='')=>`<div class="balls">${d.n.map(n=>ball(n,s)).join('')}<span class="plus">+</span>${ball(d.b,s)}</div>`;
-function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/salary/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';return '/'+t+'/'}
+function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';return '/'+t+'/'}
 function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';if(a=='life')return b?'l-'+b:'life';return a}
 let cur=(typeof window!='undefined'&&window.__ROUTE)||routeOf(typeof location!='undefined'?location.pathname:'/'),pick=new Set,placeF='region',gens=[];
 function go(t){location.href=pathOf(t)}
@@ -1043,6 +1043,7 @@ function findPage(){if(!findInit){findInit=1;findPick=findSel()}
   :list.length?BTYPE.map(([k,l])=>{const xs=list.filter(b=>b.type==k);return xs.length?`<h2>${l} <small>${xs.length}개</small></h2>${xs.map(benCard).join('')}`:''}).join('')
   :`<p class="note" style="margin-top:14px">고른 조건에 맞는 항목을 아직 준비하지 못했어요.</p>`;
  return `<h1 class="h1">받을 돈 찾기</h1><p class="note">나에게 해당하는 걸 고르세요 · 여러 개 가능</p>${chips}${body}
+ <section class="cardx hcard" style="margin-top:18px"><p class="hct">받을 돈 더 보기</p>${[['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계']].map(([to,t,x])=>A(to,'hrow',`<b>${t}</b><small>${x}</small>`)).join('')}</section>
  ${sel.length&&supFor(sel).length?`<h2>지금 신청할 수 있는 혜택 <small>마감 임박순</small></h2>${supFor(sel).slice(0,5).map(supCard).join('')}${A('benefits','btn ghost allbtn','마감 임박 혜택 전체 보기 ›')}`:''}
  ${sel.length?`<div class="shr"><button type="button" class="btn" onclick="findShare()">카카오톡·문자로 공유</button><button type="button" class="btn ghost" onclick="findCopy(this)">링크 복사</button></div><input id="shurl" hidden readonly aria-label="공유 주소" style="width:100%;margin-top:8px">`:''}
  <p class="note" style="margin-top:16px">금액과 조건은 해마다 바뀌어요. 여기 정보는 각 항목의 기준일 기준이고, 실제로 받을 수 있는지는 공식 안내에서 확인하세요.</p>${foot}`}
@@ -1062,21 +1063,30 @@ let findPick=new Set;
 function findTg(k){findPick.has(k)?findPick.delete(k):findPick.add(k);document.querySelectorAll('.fchips button').forEach(b=>b.classList.toggle('on',findPick.has(b.dataset.k)));const g=document.getElementById('fgo');if(g){g.href='/find/'+(findPick.size?'?t='+[...findPick].join(','):'');g.textContent=findPick.size?`${findPick.size}개 골랐어요 · 받을 돈 보기 ›`:'받을 돈 보기 ›'}}
 const CATS4=[['월급·일한 돈','연봉·알바·퇴직금·3.3%','calc','w'],['나라에서 받는 돈','지원금·수당·장려금','find','g'],['숨은 돈','휴면예금·보험금·포인트·환급금','hidden','r'],['당첨된 돈','로또·연금복권 실수령액','lotto','l']];
 const POPC=['salary','parttime','goal-100m','freelance','severance','weekly-rest'];
-function home(){const d=DRAWS[0],P=PEN[0],posts=allPosts().slice(0,3);
- const row=(to,t,sub)=>A(to,'hrow',`<b>${t}</b>${sub?`<small>${sub}</small>`:''}`),card=(t,rows)=>`<section class="cardx hcard"><p class="hct">${t}</p>${rows.join('')}</section>`;
- const dir=calcDir().filter(G=>G.g!='lotto'),cg=G=>card(G.t,G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return row('c-'+k,c.title)}));
- return `<h1 class="ch1 hh1">받는돈</h1><p class="clede">세금 떼고 실제로 받는 돈을 계산하는 무료 계산기 모음</p>
- ${cg(dir[0])}
- ${card('받을 돈',[row('find','받을 돈 찾기','지원금·수당·환급금'),row('hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'),row('deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'),row('benefits','마감 임박 혜택','정부 지원사업·기업 이벤트'),row('life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'),row('record','받은 돈 기록장','한 해 받은 돈을 모아 보기'),row('links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24 등 19곳')])}
- ${dir.slice(1).map(cg).join('')}
- ${card('복권',[d?row('lotto','로또 당첨번호',`${d.r}회 · ${ymd(d.date)}`):'',P?row('pension','연금복권720+ 당첨번호',`${P[0]}회 · ${P[1]}`):'',row('c-lotto-tax','로또 세금 계산기'),row('c-pension-tax','연금복권 세금 계산기'),row('all','로또 전체 회차')])}
- ${card('정보',[row('guide','정보 글 모음',`급여·세금·복권 글 ${allPosts().length}개`),...posts.map(p=>row(p.id,p.t,`${p.c} · ${p.d}`))])}
- <section class="cardx hcard habout"><h2>받는돈은 이런 곳이에요</h2><p>연봉, 퇴직금, 실업급여, 3.3%, 대출 이자처럼 돈이 오가는 계산을 세금과 보험료까지 떼고 실제로 받는 금액으로 보여 드려요.</p>
- <h3>계산 기준은 이렇게 정해요</h3><p>국세청 간이세액표, 4대보험 요율처럼 공공기관이 발표한 기준을 그대로 쓰고, 계산기마다 기준 연도를 적어 둬요.</p>
- <h3>입력한 값은 저장하지 않아요</h3><p>계산은 쓰는 기기 안에서만 하고, 이름·주민번호·계좌 같은 개인정보는 받지 않아요.</p></section>${foot}`}
-function calcList(){const list=VIS().filter(c=>calcG=='all'||c.group==calcG);
- return `<h1 class="h1">실수령액 계산기 모음</h1><p class="note">${VIS().length}종 · 숫자만 넣으면 바로 계산돼요</p><div class="chips">${Object.keys(GL).map(k=>`<button class="${k==calcG?'on':''}" onclick="calcG='${k}';render()">${GL[k]}</button>`).join('')}</div>
- ${list.map(c=>A('c-'+c.id,'gcard lg',`<div><b class="one">${c.label}</b></div><span>›</span>`)).join('')}${foot}`}
+// ── 홈: 검색 · 자주 쓰는 계산기 · 최신 글 · 분야 바로가기 · 이번 주 챙길 것 ──
+const HPOP=['salary','severance','unemployment','freelance','goal-100m','weekly-rest'];
+const HCAT=[['직장인','연봉·퇴직금·실업급여','c-salary'],['알바','시급·주휴수당·알바 월급','c-parttime'],['프리랜서','3.3%·종소세 환급','c-freelance'],['사업주','인건비·부가세·카드 수수료','c-labor-cost'],['재테크','모으기·예적금·대출·복비','c-goal-100m'],['받을 돈','지원금·숨은 돈·마감 달력','find']];
+// 검색 대상: 계산기 + 글 + 주요 화면
+function searchIdx(){const c=ALLC().filter(x=>!x.hidden).map(x=>({to:'c-'+x.id,t:x.title,s:LEAD[x.id]||LEAD[TABAL[x.id]]||'',k:'계산기'}));
+ const p=allPosts().map(x=>({to:x.id,t:x.t,s:x.e||'',k:'글'}));
+ const g=[['find','받을 돈 찾기','지원금·수당·환급금'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['lotto','로또 당첨번호','이번 회차·1등 판매점'],['pension','연금복권 당첨번호','연금복권720+']].map(([to,t,s])=>({to,t,s,k:'바로가기'}));
+ return [...c,...g,...p]}
+function hsearch(q){const box=document.getElementById('hsr');if(!box)return;q=q.trim().toLowerCase();if(!q){box.hidden=true;box.innerHTML='';return}
+ const words=q.split(/\s+/),hits=searchIdx().map(x=>{const a=(x.t+' '+x.s).toLowerCase();let sc=0;for(const w of words){if(!a.includes(w))return null;sc+=x.t.toLowerCase().includes(w)?2:1}return[sc+(x.k=='계산기'?.5:0),x]}).filter(Boolean).sort((a,b)=>b[0]-a[0]).slice(0,8).map(x=>x[1]);
+ box.hidden=false;box.innerHTML=hits.length?hits.map(x=>A(x.to,'hsr-i',`<span>${x.k}</span><b>${x.t}</b>`)).join(''):'<p class="hsr-n">찾는 결과가 없어요. 다른 말로 찾아보세요.</p>'}
+function home(){const d=DRAWS[0],posts=allPosts().slice(0,5),dl=(typeof DL!='undefined'?DL:[]).slice(0,2);
+ return `<section class="hhero"><h1>세금 떼고 <em>진짜 받는 돈</em>,<br>바로 계산해요</h1>
+ <div class="hsearch" role="search"><input id="hq" type="search" placeholder="계산기·글 찾기 (예: 실업급여, 홈택스)" autocomplete="off" aria-label="계산기와 글 검색" oninput="hsearch(this.value)"><div id="hsr" class="hsr" hidden></div></div></section>
+ <section class="cardx hcard"><p class="hct">자주 쓰는 계산기 ${A('calc','hmore','전체 계산기 ›')}</p><div class="hpop">${HPOP.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'hpi',`<b>${c.label.replace(/ 계산기$/,'')}</b><small>${LEAD[c.id]||LEAD[TABAL[c.id]]||''}</small>`)).join('')}</div></section>
+ <section class="cardx hcard"><p class="hct">최신 글 ${A('guide','hmore',`정보 글 전체 ${allPosts().length}개 ›`)}</p>${posts.map(p=>A(p.id,'hpost',`<span class="hpc">${p.c}</span><b>${p.t}</b>${p.e?`<small>${p.e}</small>`:''}<em>${p.d}</em>`)).join('')}</section>
+ <section class="cardx hcard"><p class="hct">분야별로 찾기</p><div class="hcat">${HCAT.map(([t,s,to])=>A(to,'hci',`<b>${t}</b><small>${s}</small>`)).join('')}</div></section>
+ <section class="cardx hcard"><p class="hct">이번에 챙길 것</p>
+ ${dl.map(x=>A('deadlines','hrow',`<b>${x.name}</b><small>${ymd(x.end)}까지 · D-${dday(x.end)}</small>`)).join('')}
+ ${d?A('lotto','hrow',`<b>로또 ${d.r}회 당첨번호</b><small>${d.n.join(' · ')} + ${d.b} · ${ymd(d.date)}</small>`):''}
+ ${A('hidden','hrow','<b>숨은 돈 찾기</b><small>잊고 있던 예금·보험금·카드포인트 확인</small>')}</section>${foot}`}
+// ── /calc/ 모든 계산기: 분야별 목록 ──
+function calcList(){return `<h1 class="h1">모든 계산기</h1><p class="lsub">${VIS().length}개 계산기를 분야별로 모았어요</p>
+ ${calcDir().map(G=>`<section class="cardx hcard"><p class="hct">${G.t}</p>${G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return A('c-'+k,'hrow',`<b>${c.title}</b><small>${LEAD[k]||LEAD[TABAL[k]]||''}</small>`)}).join('')}</section>`).join('')}${foot}`}
 const ex=f=>f.def=='today'?todayK():f.def!=null?f.def:f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
  wage:'시급을 넣으면 주휴수당을 포함한 월급으로 바꿔 드려요',unemployment:'퇴사 전 급여와 나이, 가입 기간으로 실업급여를 계산해요',resign:'퇴직금, 남은 연차수당, 실업급여를 한 번에 더해 봐요',
@@ -1315,16 +1325,18 @@ const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);
 function guide(){const all=allPosts(),cats=['전체','급여','세금','복권','바로가기'].filter(c=>c=='전체'||all.some(p=>p.c==c));
- return `<h1 class="h1">정보</h1><p class="note">급여·세금·복권 정보글 ${all.length}개</p><input id="bq" placeholder="글 제목 검색" value="${boardQ}" oninput="boardQ=this.value;document.getElementById('bl').innerHTML=bl()" style="margin:10px 0" aria-label="글 제목 검색"><div class="chips">${cats.map(c=>`<button class="${c==boardF?'on':''}" onclick="boardF='${c}';render()">${c}</button>`).join('')}</div><div id="bl">${bl()}</div>${foot}`}
+ const top=all[0];return `<h1 class="h1">정보</h1><p class="note">돈 계산에 도움 되는 정보 글 ${all.length}개</p>${top?A(top.id,'cardx gtop',`<span class="hpc">최신 글 · ${top.c}</span><b>${top.t}</b>${top.e?`<small>${top.e}</small>`:''}<em>${top.d}</em>`):''}<input id="bq" placeholder="글 제목 검색" value="${boardQ}" oninput="boardQ=this.value;document.getElementById('bl').innerHTML=bl()" style="margin:10px 0" aria-label="글 제목 검색"><div class="chips">${cats.map(c=>`<button class="${c==boardF?'on':''}" onclick="boardF='${c}';render()">${c}</button>`).join('')}</div><div id="bl">${bl()}</div>${foot}`}
 function bl(){const l=allPosts().filter(p=>(boardF=='전체'||p.c==boardF)&&(!boardQ||p.t.includes(boardQ)));return l.length?l.map(postRow).join(''):'<p class="note">찾는 글이 없어요.</p>'}
 function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x=>x.id==a.calc);
- return `<div class="crumb">${A('guide','','정보')} › ${a.cat}</div><h1 class="h1">${a.title}</h1><p class="note">${pd(s)} · ${a.cat} · ${a.min}분</p><article class="art" style="margin-top:12px">${(typeof window!='undefined'&&window.__POSTHTML)||''}</article>${c?A('c-'+c.id,'btn cta',`${c.title} 바로 쓰기 ›`):''}${foot}`}
+ return `<div class="crumb">${A('guide','','정보')} › ${a.cat}</div><h1 class="h1">${a.title}</h1><p class="note">${pd(s)} · ${a.cat} · ${a.min}분</p><article class="art" style="margin-top:12px">${(typeof window!='undefined'&&window.__POSTHTML)||''}</article>${c?A('c-'+c.id,'btn cta',`${c.title} 바로 쓰기 ›`):''}${postMore(s)}${foot}`}
+function postMore(s){const all=allPosts(),i=all.findIndex(p=>p.id=='b-'+s);if(i<0)return '';const me=all[i],same=all.filter(p=>p.c==me.c&&p.id!=me.id).slice(0,3),nx=all[i-1],pv=all[i+1];
+ return `${same.length?`<section class="cardx hcard"><p class="hct">${me.c} 글 더 보기</p>${same.map(p=>A(p.id,'hrow',`<b>${p.t}</b><small>${p.d}</small>`)).join('')}</section>`:''}<nav class="pnav" aria-label="이전 글 다음 글">${pv?A(pv.id,'pn-p',`<small>이전 글</small><b>${pv.t}</b>`):'<span></span>'}${nx?A(nx.id,'pn-n',`<small>다음 글</small><b>${nx.t}</b>`):'<span></span>'}</nav>`}
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
-function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
+function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}"${k==tabOf(cur)?' class="on" aria-current="page"':''}>${l}</a>`).join('')}
 // 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
 function cardify(h){const fi=h.indexOf('<div class="ad-slot" id="ad-foot"');const body=fi<0?h:h.slice(0,fi),tail=fi<0?'':h.slice(fi);
  const re=/<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>/g,VOID=/^(input|img|br|hr|meta|link|source|wbr)$/i;let m,d=0,cuts=[];

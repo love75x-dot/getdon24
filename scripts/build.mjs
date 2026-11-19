@@ -136,9 +136,8 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(
 ${ads}${ga}
 </head>
 <body>
-<header><div class="wrap" style="padding-bottom:0"><div class="hd"><div class="logo"><a href="/">받는<b>돈</b></a></div><a class="hall" href="/">모든 계산기</a></div></div></header>
+<header><div class="wrap" style="padding-bottom:0"><div class="hd"><div class="logo"><a href="/">받는<b>돈</b></a></div></div><nav class="topnav" id="tabs" aria-label="주요 메뉴">${tabs}</nav></div></header>
 <main class="wrap" id="app">${html}</main>
-<nav class="tabbar" id="tabs">${tabs}</nav>
 <script>window.__ROUTE=${JSON.stringify(route)};${pre ? 'window.__PRE=1;' : ''}</script>
 <script src="/assets/data.js?v=${assets.data}"></script>${extrasFor(route).map((k) => `<script src="/assets/data-${k}.js?v=${assets['x_' + k]}"></script>`).join('')}
 <script src="/assets/app.js?v=${assets.js}"></script>
@@ -149,7 +148,7 @@ ${ads}${ga}
 // app.js 와 같은 주소 규칙
 function pathOf(t) {
   if (t === 'home') return '/';
-  if (t === 'calc') return '/calc/salary/';
+  if (t === 'calc') return '/calc/';
   if (t.startsWith('c-')) return `/calc/${t.slice(2)}/`;
   if (t === 'lotto') return '/lotto/';
   if (t === 'all') return '/lotto/all/';
@@ -459,6 +458,9 @@ await emit('hidden', { title: `숨은 돈 찾기 - 휴면예금·미환급금·�
 await emit('deadlines', { title: `신고·신청 마감 달력 - 종합소득세·부가세·근로장려금 | ${site}`, desc: '종합소득세, 부가가치세, 근로장려금, 자동차세, 재산세처럼 해마다 돌아오는 신고·신청·납부 마감일을 D-day 순서로 모았어요. 휴대폰 캘린더에 넣으면 3일 전에 알려 줘요.' });
 await writeFile(join(DIST, 'deadlines.ics'), icsOf(DATA.deadlines));
 
+// 모든 계산기
+await emit('calc', { title: `모든 계산기 - 연봉·퇴직금·실업급여·3.3%·대출·복비 | ${site}`, desc: '연봉 실수령액, 퇴직금, 실업급여, 3.3%, 대출 이자, 복비, 자동차세까지 세금 떼고 실제로 받는 돈을 계산하는 계산기를 분야별로 모았어요.' });
+
 // 받을 돈 찾기
 await emit('find', { title: `받을 돈 찾기 - 지원금·수당·환급금 한 번에 | ${site}`, desc: '직장인, 알바, 프리랜서, 육아 중, 구직·퇴사, 청년, 자영업 중 해당하는 걸 고르면 매달 받는 돈, 한 번에 받는 돈, 돌려받는 돈을 모아 보여 드려요.' });
 
@@ -490,7 +492,7 @@ await writeFile(join(DIST, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"
 await writeFile(join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${SITE}/sitemap.xml\n`);
 if (config.adsenseClient) await writeFile(join(DIST, 'ads.txt'), `google.com, ${config.adsenseClient.replace(/^ca-/, '')}, DIRECT, f08c47fec0942fa0\n`);
 // 옛 주소는 합쳐진 계산기로 301 이동
-await writeFile(join(DIST, '_redirects'), '/calc/ /calc/salary/ 301\n/calc /calc/salary/ 301\n/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
+await writeFile(join(DIST, '_redirects'), '/calc/freelance-reverse/ /calc/freelance/ 301\n/calc/freelance-reverse /calc/freelance/ 301\n');
 // 페이지(HTML)는 늘 최신본을 확인하고, 버전이 붙은 /assets/ 만 오래 저장 (예전 회차가 보이던 문제 방지)
 await writeFile(join(DIST, '_headers'), `/*\n  Cache-Control: public, max-age=0, must-revalidate\n/deadlines.ics\n  Content-Type: text/calendar; charset=utf-8\n/assets/*\n  ! Cache-Control\n  Cache-Control: public, max-age=31536000, immutable\n/*.png\n  ! Cache-Control\n  Cache-Control: public, max-age=86400\n`);
 await writeFile(join(DIST, 'rss.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>받는돈 정보 게시판</title><link>${SITE}/blog/</link><description>급여·세금·복권 정보글</description>\n${posts.slice(0, 30).map((p) => `<item><title>${esc(p.title)}</title><link>${SITE}${pathOf('b-' + p.slug)}</link><guid>${SITE}${pathOf('b-' + p.slug)}</guid><pubDate>${new Date(p.date + 'T09:00:00+09:00').toUTCString()}</pubDate><description>${esc(p.excerpt)}</description></item>`).join('\n')}\n</channel></rss>\n`);
