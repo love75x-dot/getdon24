@@ -264,7 +264,12 @@ async function loadSupport() {
   });
   if (errs.length) throw new Error('기업 이벤트 등록 형식 오류:\n' + errs.join('\n'));
   const govs = gov.map((g) => ({ id: g.id, kind: 'gov', name: g.name, host: g.host, amount: g.amount || '', tags: g.tags || [], who: g.target || '', cond: '', start: g.start || '', end: g.end || '', url: g.url, src: '', checked: g.checkedAt }));
-  return [...events, ...govs];
+  // 화면에는 지금 신청할 수 있는 공고만, 마감이 가까운 순으로 최대 120건 (모든 페이지가 함께 받는 데이터라 가볍게)
+  const openGov = govs.filter((g) => !g.end || g.end >= TODAY)
+    .sort((a, b) => (a.end || '9999').localeCompare(b.end || '9999'))
+    .slice(0, 120)
+    .map(({ src, ...g }) => g);
+  return [...events, ...openGov];
 }
 
 // 시즌 배너: config.json 의 seasons 중 오늘 날짜에 해당하는 것 하나

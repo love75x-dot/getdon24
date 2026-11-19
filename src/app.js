@@ -884,7 +884,7 @@ function benefitsPage(){const l=supSorted(SUP.filter(x=>(supT=='전체'||x.tags.
  return `<h1 class="h1">마감 임박 혜택</h1><p class="note">정부 지원사업과 기업 이벤트를 마감이 가까운 순서로 모았어요 · ${A('deadlines','','세금 신고·신청 마감 달력 ›')}</p>
  <div class="chips">${['전체','소상공인','직장인','청년','육아'].map(v=>chip(v,supT,'supT')).join('')}</div>
  <div class="chips">${['전체','정부 지원','기업 이벤트'].map(v=>chip(v,supK,'supK')).join('')}</div>
- <p class="note">신청 가능 ${live}개${l.length>live?` · 종료 ${l.length-live}개`:''}</p>
+ <p class="note">신청 가능 ${live}개${l.length>live?` · 종료 ${l.length-live}개`:''} · 정부 지원사업은 마감이 가까운 120건까지 보여 드려요. 전체 공고는 <a href="https://www.bizinfo.go.kr/web/lay1/bbs/S1T122C128/AS/74/list.do" target="_blank" rel="noopener">기업마당 ↗</a></p>
  ${l.length?l.map(supCard).join(''):SUP.length?`<p class="note" style="margin:20px 0">지금 조건에 맞는 혜택이 없어요. 다른 대상을 골라 보세요.</p>`:`<p class="note" style="margin:20px 0">혜택 정보를 모으고 있어요. 곧 정부 지원사업과 기업 이벤트가 여기에 올라와요.</p>`}
  <p class="note" style="margin-top:14px">금액과 조건은 공고·이벤트 원문에 있는 내용만 옮겼어요. 비어 있는 칸은 원문에서 확인하세요.</p>${foot}`}
 // 받을 돈 찾기 칩 → 혜택 대상
