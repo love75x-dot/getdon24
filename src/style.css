@@ -583,3 +583,13 @@ main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important
  .fmore .hct{grid-column:1/-1}
  .fmore .hrow{border-bottom:1px solid var(--line)}
 }
+/* 왼쪽 계산기 목록: 분야 접고 펴기 */
+.cside summary.dgt{display:flex;align-items:center;gap:6px;list-style:none;cursor:pointer;margin:2px 0!important;padding:8px 10px!important;border-radius:8px;font-size:13.5px!important;font-weight:700;color:var(--fg)!important}
+.cside summary.dgt::-webkit-details-marker{display:none}
+.cside summary.dgt i{font-style:normal;font-weight:500;font-size:12px;color:var(--text2)}
+.cside summary.dgt::after{content:'';margin-left:auto;width:7px;height:7px;border-right:2px solid var(--text2);border-bottom:2px solid var(--text2);transform:rotate(45deg) translateY(-2px);transition:transform .15s}
+.cside details[open]>summary.dgt::after{transform:rotate(-135deg) translate(-2px,0)}
+.cside summary.dgt:hover{background:var(--panel)}
+.cside summary.dgt:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.cside details.dg{margin-bottom:2px}
+.cside details.dg>div{padding-bottom:6px}

@@ -1178,7 +1178,8 @@ function calcDir(){return Object.keys(GFIRST).map(g=>{const S=SUITES.find(s=>s.g
  const subs=g=='lotto'?[[null,LCALC.map(c=>c.id)]]:S?(S.sub||[[null,S.ids]]):[[null,[]]];
  return{g,t:GNL[g],subs:subs.map(([n,ids])=>[n,ids.filter(k=>ALLC().some(c=>c.id==k))])}})}
 const CLAB=id=>{const c=ALLC().find(x=>x.id==id);return c?c.label.replace(/ 계산기$/,''):id};
-function dirHtml(id,cls){const on=TABAL[id]||id;return `<nav class="${cls}" aria-label="모든 계산기">${calcDir().map(G=>`<div class="dg"><p class="dgt">${G.t}</p><div>${G.subs.flatMap(s=>s[1]).map(k=>A('c-'+k,k==on?'on':'',CLAB(k))).join('')}</div></div>`).join('')}</nav>`}
+function dirHtml(id,cls){const on=TABAL[id]||id,side=cls=='cside';return `<nav class="${cls}" aria-label="모든 계산기">${calcDir().map(G=>{const ids=G.subs.flatMap(s=>s[1]),body=ids.map(k=>A('c-'+k,k==on?'on':'',CLAB(k))).join('');
+ return side?`<details class="dg"${ids.includes(on)?' open':''}><summary class="dgt">${G.t}<i>${ids.length}</i></summary><div>${body}</div></details>`:`<div class="dg"><p class="dgt">${G.t}</p><div>${body}</div></div>`}).join('')}</nav>`}
 function chipsHtml(id,g){const on=TABAL[id]||id,G=calcDir().find(x=>x.g==g);if(!G)return '';const ids=G.subs.flatMap(s=>s[1]);
  return `<nav class="cchips" aria-label="${G.t} 계산기"><a class="call" href="#calls">☰ 전체</a>${ids.map(k=>A('c-'+k,k==on?'on':'',TABL[k]||CLAB(k))).join('')}</nav>`}
 function shareC(btn,id){const c=calcs.find(x=>x.id==id),q=new URLSearchParams;
