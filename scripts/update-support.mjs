@@ -53,7 +53,7 @@ export function toItem(r) {
     name,
     host: String(r.jrsdInsttNm || r.excInsttNm || '').trim(),
     target,
-    tags: targetTags(`${target} ${r.hashtags || ''} ${name}`),
+    tags: targetTags(`${target} ${r.hashTags || r.hashtags || ''} ${name}`),
     amount: '',
     start, end,
     url,
@@ -71,7 +71,9 @@ async function fetchAll(key) {
     const text = await res.text();
     let json;
     try { json = JSON.parse(text); } catch { throw new Error('기업마당 응답이 JSON 이 아니에요 (키 오류·점검 중일 수 있어요)'); }
-    const rows = json.jsonArray || json.items || json.item || (Array.isArray(json) ? json : null);
+    // 공식 응답 예시: { jsonArray: { title, link, ..., item: [ ...공고 ] } }
+    const j = json.jsonArray;
+    const rows = (j && (Array.isArray(j) ? j : j.item)) || json.items || json.item || (Array.isArray(json) ? json : null);
     if (!Array.isArray(rows)) throw new Error('기업마당 응답에서 공고 목록을 찾지 못했어요. 응답 형식 확인 필요: ' + Object.keys(json).join(','));
     out.push(...rows);
     if (rows.length < 100) break;
