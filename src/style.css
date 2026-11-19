@@ -536,3 +536,50 @@ header{border-bottom:1px solid var(--line)}
 @media (min-width:1024px){.wrap:has(.hhero){max-width:760px}.hpop{grid-template-columns:repeat(3,1fr)}.hcat{grid-template-columns:repeat(3,1fr)}body:has(.hhero) header .wrap{max-width:760px}body:has(.hcard):not(:has(.hhero)) header .wrap{max-width:688px}}
 .hpi small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 @media (min-width:768px){header>.wrap{display:flex;align-items:center;gap:36px}header .hd{flex:none}.topnav{margin:0;align-self:stretch;align-items:flex-end}.topnav a{padding:16px 0 15px}}
+/* ── 모든 화면 같은 폭·같은 여백 (머리말과 본문 왼쪽 끝을 맞춤) ── */
+:root{--pagew:720px}
+.wrap,header>.wrap{max-width:var(--pagew)!important;margin-left:auto;margin-right:auto;padding-left:max(16px,env(safe-area-inset-left,0px))!important;padding-right:max(16px,env(safe-area-inset-right,0px))!important}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:8;background:var(--bg)}
+.cv{display:block!important}.cside{display:none!important}.callw{display:block!important}
+/* 위쪽 여백: 모든 화면 첫 제목이 같은 높이에서 시작 */
+main.wrap>:first-child{margin-top:28px!important}
+main.wrap>.hhero:first-child{padding-top:0}
+.h1,.ch1{margin-top:28px}
+.cv .ch1{margin-top:0}
+main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important}
+.crumb+.h1{margin-top:8px}
+/* 모든 계산기: 짧게 (이름만, 2~3칸 격자) */
+.cjump{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 4px}
+.cjump a{padding:6px 12px;border-radius:99px;border:1px solid var(--line2);background:var(--card);font-size:13.5px;color:var(--fg);text-decoration:none}
+.cgrp{scroll-margin-top:72px}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:6px 0 14px}
+.cgi{display:flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:10px;background:var(--panel);font-size:14.5px;font-weight:600;color:var(--fg);text-decoration:none;line-height:1.35}
+.cgi:hover{color:var(--navy)}.cgi.on{background:var(--soft-acc);color:var(--navy)}
+@media (min-width:600px){.cgrid{grid-template-columns:repeat(3,1fr)}}
+/* 계산기 화면 아래 '다른 계산기'도 같은 격자 */
+.cdir .dg{padding:10px 0 4px}
+.cdir .dg>div{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+@media (min-width:600px){.cdir .dg>div{grid-template-columns:repeat(3,1fr)}}
+.cdir a{display:flex!important;align-items:center;min-height:42px;padding:8px 12px!important;border-radius:10px;background:var(--panel);border:0!important;font-size:14px!important;font-weight:600}
+/* ── PC 폭 1000px: 모든 화면 같은 폭, 넓은 화면은 칸 나누기 ── */
+.mcol>.cardx:first-child{margin-top:14px}
+.pside{display:none}
+@media (min-width:1024px){
+ :root{--pagew:1000px}
+ .cjump{display:none}
+ .mcol{column-gap:16px;margin-top:14px}.mcol3{column-count:3}.mcol2{column-count:2}
+ .mcol>.cardx{break-inside:avoid;display:inline-block;width:100%;margin:0 0 16px!important;vertical-align:top}
+ .hcols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start;margin-top:14px}
+ .hcols .hcard:first-child{margin-top:0}
+ .hcat{grid-template-columns:1fr 1fr!important}
+ .cv{display:grid!important;grid-template-columns:240px minmax(0,1fr);gap:40px;align-items:start}
+ .cside{display:block!important;position:sticky;top:76px;max-height:calc(100vh - 92px);overflow-y:auto;background:var(--card);border-radius:16px;padding:20px 12px}
+ .callw{display:none!important}
+ .pcols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+ .pside{display:block;position:sticky;top:76px;margin-top:12px}.pside .hcard{margin-top:0}.pside .hrow b{font-size:14.5px}
+}
+@media (min-width:1024px){
+ .fmore{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:24px}
+ .fmore .hct{grid-column:1/-1}
+ .fmore .hrow{border-bottom:1px solid var(--line)}
+}

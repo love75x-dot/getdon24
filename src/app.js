@@ -1034,7 +1034,7 @@ const LINKS=[
   ['찾기쉬운 생활법령정보','법제처','생활 속 법령을 쉬운 말로 안내','https://www.easylaw.go.kr',''],
   ['동행복권','동행복권','로또·연금복권 당첨번호 확인','https://www.dhlottery.co.kr','lotto-tax']]}];
 function linksPage(){return `<h1 class="h1">공식 사이트 바로가기</h1><p class="lsub">돈과 관련된 조회·신청은 공식 사이트에서 해요. 분야별로 모았어요</p>
- ${LINKS.map(g=>`<section class="cardx hcard"><p class="hct">${g.t}</p>${g.items.map(([n,o,w,u,c])=>{const cc=c&&ALLC().find(x=>x.id==c);return `<div class="lkrow"><a class="lka" href="${u}" target="_blank" rel="noopener"><b>${n} <i aria-hidden="true">↗</i></b><small>${w}</small><em>${o}</em></a>${cc?A('c-'+cc.id,'lkc',`${cc.label.replace(/ 계산기$/,'')} 계산 ›`):''}</div>`}).join('')}</section>`).join('')}
+ <div class="mcol mcol2">${LINKS.map(g=>`<section class="cardx hcard"><p class="hct">${g.t}</p>${g.items.map(([n,o,w,u,c])=>{const cc=c&&ALLC().find(x=>x.id==c);return `<div class="lkrow"><a class="lka" href="${u}" target="_blank" rel="noopener"><b>${n} <i aria-hidden="true">↗</i></b><small>${w}</small><em>${o}</em></a>${cc?A('c-'+cc.id,'lkc',`${cc.label.replace(/ 계산기$/,'')} 계산 ›`):''}</div>`}).join('')}</section>`).join('')}</div>
  <div class="fn bot"><p>주소는 2026년 11월 19일에 각 기관 사이트를 직접 열어 확인했어요. 받는돈은 개인정보를 받지 않고, 조회·신청은 모두 공식 사이트에서 해요.</p><p>문자·카톡으로 받은 링크 대신 위 주소로 직접 들어가세요.</p></div>${foot}`}
 function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const sel=[...findPick],list=sel.length?BEN.filter(b=>b.tags.some(t=>findPick.has(t))):[];
@@ -1043,7 +1043,7 @@ function findPage(){if(!findInit){findInit=1;findPick=findSel()}
   :list.length?BTYPE.map(([k,l])=>{const xs=list.filter(b=>b.type==k);return xs.length?`<h2>${l} <small>${xs.length}개</small></h2>${xs.map(benCard).join('')}`:''}).join('')
   :`<p class="note" style="margin-top:14px">고른 조건에 맞는 항목을 아직 준비하지 못했어요.</p>`;
  return `<h1 class="h1">받을 돈 찾기</h1><p class="note">나에게 해당하는 걸 고르세요 · 여러 개 가능</p>${chips}${body}
- <section class="cardx hcard" style="margin-top:18px"><p class="hct">받을 돈 더 보기</p>${[['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계']].map(([to,t,x])=>A(to,'hrow',`<b>${t}</b><small>${x}</small>`)).join('')}</section>
+ <section class="cardx hcard fmore" style="margin-top:18px"><p class="hct">받을 돈 더 보기</p>${[['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계']].map(([to,t,x])=>A(to,'hrow',`<b>${t}</b><small>${x}</small>`)).join('')}</section>
  ${sel.length&&supFor(sel).length?`<h2>지금 신청할 수 있는 혜택 <small>마감 임박순</small></h2>${supFor(sel).slice(0,5).map(supCard).join('')}${A('benefits','btn ghost allbtn','마감 임박 혜택 전체 보기 ›')}`:''}
  ${sel.length?`<div class="shr"><button type="button" class="btn" onclick="findShare()">카카오톡·문자로 공유</button><button type="button" class="btn ghost" onclick="findCopy(this)">링크 복사</button></div><input id="shurl" hidden readonly aria-label="공유 주소" style="width:100%;margin-top:8px">`:''}
  <p class="note" style="margin-top:16px">금액과 조건은 해마다 바뀌어요. 여기 정보는 각 항목의 기준일 기준이고, 실제로 받을 수 있는지는 공식 안내에서 확인하세요.</p>${foot}`}
@@ -1078,15 +1078,16 @@ function home(){const d=DRAWS[0],posts=allPosts().slice(0,5),dl=(typeof DL!='und
  return `<section class="hhero"><h1>세금 떼고 <em>진짜 받는 돈</em>,<br>바로 계산해요</h1>
  <div class="hsearch" role="search"><input id="hq" type="search" placeholder="계산기·글 찾기 (예: 실업급여, 홈택스)" autocomplete="off" aria-label="계산기와 글 검색" oninput="hsearch(this.value)"><div id="hsr" class="hsr" hidden></div></div></section>
  <section class="cardx hcard"><p class="hct">자주 쓰는 계산기 ${A('calc','hmore','전체 계산기 ›')}</p><div class="hpop">${HPOP.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'hpi',`<b>${c.label.replace(/ 계산기$/,'')}</b><small>${LEAD[c.id]||LEAD[TABAL[c.id]]||''}</small>`)).join('')}</div></section>
- <section class="cardx hcard"><p class="hct">최신 글 ${A('guide','hmore',`정보 글 전체 ${allPosts().length}개 ›`)}</p>${posts.map(p=>A(p.id,'hpost',`<span class="hpc">${p.c}</span><b>${p.t}</b>${p.e?`<small>${p.e}</small>`:''}<em>${p.d}</em>`)).join('')}</section>
+ <div class="hcols"><div><section class="cardx hcard"><p class="hct">최신 글 ${A('guide','hmore',`정보 글 전체 ${allPosts().length}개 ›`)}</p>${posts.map(p=>A(p.id,'hpost',`<span class="hpc">${p.c}</span><b>${p.t}</b>${p.e?`<small>${p.e}</small>`:''}<em>${p.d}</em>`)).join('')}</section></div><div>
  <section class="cardx hcard"><p class="hct">분야별로 찾기</p><div class="hcat">${HCAT.map(([t,s,to])=>A(to,'hci',`<b>${t}</b><small>${s}</small>`)).join('')}</div></section>
  <section class="cardx hcard"><p class="hct">이번에 챙길 것</p>
  ${dl.map(x=>A('deadlines','hrow',`<b>${x.name}</b><small>${ymd(x.end)}까지 · D-${dday(x.end)}</small>`)).join('')}
  ${d?A('lotto','hrow',`<b>로또 ${d.r}회 당첨번호</b><small>${d.n.join(' · ')} + ${d.b} · ${ymd(d.date)}</small>`):''}
- ${A('hidden','hrow','<b>숨은 돈 찾기</b><small>잊고 있던 예금·보험금·카드포인트 확인</small>')}</section>${foot}`}
+ ${A('hidden','hrow','<b>숨은 돈 찾기</b><small>잊고 있던 예금·보험금·카드포인트 확인</small>')}</section></div></div>${foot}`}
 // ── /calc/ 모든 계산기: 분야별 목록 ──
-function calcList(){return `<h1 class="h1">모든 계산기</h1><p class="lsub">${VIS().length}개 계산기를 분야별로 모았어요</p>
- ${calcDir().map(G=>`<section class="cardx hcard"><p class="hct">${G.t}</p>${G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return A('c-'+k,'hrow',`<b>${c.title}</b><small>${LEAD[k]||LEAD[TABAL[k]]||''}</small>`)}).join('')}</section>`).join('')}${foot}`}
+function calcList(){const D=calcDir();return `<h1 class="h1">모든 계산기</h1><p class="lsub">${VIS().length}개 계산기를 분야별로 모았어요</p>
+ <nav class="cjump" aria-label="분야로 이동">${D.map(G=>`<a href="#g-${G.g}">${G.t}</a>`).join('')}</nav>
+ <div class="mcol mcol3">${D.map(G=>`<section class="cardx hcard cgrp" id="g-${G.g}"><p class="hct">${G.t}</p>${G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return A('c-'+k,'hrow',`<b>${c.title}</b>`)}).join('')}</section>`).join('')}</div>${foot}`}
 const ex=f=>f.def=='today'?todayK():f.def!=null?f.def:f.type=='seg'?f.options[0].value:f.type=='select'?'0':((f.placeholder||'').match(/[\d.]+/)||[''])[0];
 const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 나와요',
  wage:'시급을 넣으면 주휴수당을 포함한 월급으로 바꿔 드려요',unemployment:'퇴사 전 급여와 나이, 가입 기간으로 실업급여를 계산해요',resign:'퇴직금, 남은 연차수당, 실업급여를 한 번에 더해 봐요',
@@ -1177,7 +1178,7 @@ function calcDir(){return Object.keys(GFIRST).map(g=>{const S=SUITES.find(s=>s.g
  const subs=g=='lotto'?[[null,LCALC.map(c=>c.id)]]:S?(S.sub||[[null,S.ids]]):[[null,[]]];
  return{g,t:GNL[g],subs:subs.map(([n,ids])=>[n,ids.filter(k=>ALLC().some(c=>c.id==k))])}})}
 const CLAB=id=>{const c=ALLC().find(x=>x.id==id);return c?c.label.replace(/ 계산기$/,''):id};
-function dirHtml(id,cls){const on=TABAL[id]||id;return `<nav class="${cls}" aria-label="모든 계산기">${calcDir().map(G=>`<div class="dg"><p class="dgt">${G.t}</p>${G.subs.map(([n,ids])=>`${n?`<p class="dgs">${n}</p>`:''}${ids.map(k=>A('c-'+k,k==on?'on':'',CLAB(k))).join('')}`).join('')}</div>`).join('')}</nav>`}
+function dirHtml(id,cls){const on=TABAL[id]||id;return `<nav class="${cls}" aria-label="모든 계산기">${calcDir().map(G=>`<div class="dg"><p class="dgt">${G.t}</p><div>${G.subs.flatMap(s=>s[1]).map(k=>A('c-'+k,k==on?'on':'',CLAB(k))).join('')}</div></div>`).join('')}</nav>`}
 function chipsHtml(id,g){const on=TABAL[id]||id,G=calcDir().find(x=>x.g==g);if(!G)return '';const ids=G.subs.flatMap(s=>s[1]);
  return `<nav class="cchips" aria-label="${G.t} 계산기"><a class="call" href="#calls">☰ 전체</a>${ids.map(k=>A('c-'+k,k==on?'on':'',TABL[k]||CLAB(k))).join('')}</nav>`}
 function shareC(btn,id){const c=calcs.find(x=>x.id==id),q=new URLSearchParams;
@@ -1328,7 +1329,7 @@ function guide(){const all=allPosts(),cats=['전체','급여','세금','복권',
  const top=all[0];return `<h1 class="h1">정보</h1><p class="note">돈 계산에 도움 되는 정보 글 ${all.length}개</p>${top?A(top.id,'cardx gtop',`<span class="hpc">최신 글 · ${top.c}</span><b>${top.t}</b>${top.e?`<small>${top.e}</small>`:''}<em>${top.d}</em>`):''}<input id="bq" placeholder="글 제목 검색" value="${boardQ}" oninput="boardQ=this.value;document.getElementById('bl').innerHTML=bl()" style="margin:10px 0" aria-label="글 제목 검색"><div class="chips">${cats.map(c=>`<button class="${c==boardF?'on':''}" onclick="boardF='${c}';render()">${c}</button>`).join('')}</div><div id="bl">${bl()}</div>${foot}`}
 function bl(){const l=allPosts().filter(p=>(boardF=='전체'||p.c==boardF)&&(!boardQ||p.t.includes(boardQ)));return l.length?l.map(postRow).join(''):'<p class="note">찾는 글이 없어요.</p>'}
 function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x=>x.id==a.calc);
- return `<div class="crumb">${A('guide','','정보')} › ${a.cat}</div><h1 class="h1">${a.title}</h1><p class="note">${pd(s)} · ${a.cat} · ${a.min}분</p><article class="art" style="margin-top:12px">${(typeof window!='undefined'&&window.__POSTHTML)||''}</article>${c?A('c-'+c.id,'btn cta',`${c.title} 바로 쓰기 ›`):''}${postMore(s)}${foot}`}
+ return `<div class="crumb">${A('guide','','정보')} › ${a.cat}</div><h1 class="h1">${a.title}</h1><p class="note">${pd(s)} · ${a.cat} · ${a.min}분</p><div class="pcols"><div><article class="art" style="margin-top:12px">${(typeof window!='undefined'&&window.__POSTHTML)||''}</article>${c?A('c-'+c.id,'btn cta',`${c.title} 바로 쓰기 ›`):''}${postMore(s)}</div><aside class="pside"><section class="cardx hcard"><p class="hct">최신 글</p>${allPosts().filter(p=>p.id!='b-'+s).slice(0,6).map(p=>A(p.id,'hrow',`<b>${p.t}</b><small>${p.c} · ${p.d}</small>`)).join('')}</section></aside></div>${foot}`}
 function postMore(s){const all=allPosts(),i=all.findIndex(p=>p.id=='b-'+s);if(i<0)return '';const me=all[i],same=all.filter(p=>p.c==me.c&&p.id!=me.id).slice(0,3),nx=all[i-1],pv=all[i+1];
  return `${same.length?`<section class="cardx hcard"><p class="hct">${me.c} 글 더 보기</p>${same.map(p=>A(p.id,'hrow',`<b>${p.t}</b><small>${p.d}</small>`)).join('')}</section>`:''}<nav class="pnav" aria-label="이전 글 다음 글">${pv?A(pv.id,'pn-p',`<small>이전 글</small><b>${pv.t}</b>`):'<span></span>'}${nx?A(nx.id,'pn-n',`<small>다음 글</small><b>${nx.t}</b>`):'<span></span>'}</nav>`}
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
