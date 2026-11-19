@@ -1012,6 +1012,30 @@ function recordPage(){const pre=typeof window!='undefined'&&window.__PRERENDER,L
  ${YL.length?`<p class="rtot">${won(tot)}</p><div class="exr">${byC.map(([c,a])=>`<div><span>${c}</span><b>${won(a)}</b></div>`).join('')}</div>
  ${months.map(m=>{const ms=YL.filter(r=>r.d.startsWith(m));return `<h3 class="rmo">${+m.slice(5)}월 <small>${won(ms.reduce((s,r)=>s+r.a,0))}</small></h3>${ms.map(r=>`<div class="rrow"><div><b>${r.t.replace(/[<>&"]/g,'')}</b><small>${ymd(r.d)} · ${r.c}</small></div><output>${won(r.a)}</output><button type="button" aria-label="${r.t.replace(/[<>&"]/g,'')} 지우기" onclick="recDel('${r.id}')">×</button></div>`).join('')}`}).join('')}`
  :`<p class="note" style="font-size:14px">아직 적은 돈이 없어요. 위에서 첫 기록을 적어 보세요.</p>`}</section>${foot}`}
+// ── 공식 사이트 바로가기 (/links/): 주소는 각 기관 사이트를 직접 열어 확인한 것만 (2026-11-19) ──
+const LINKS=[
+ {t:'세금·환급',items:[['홈택스','국세청','연말정산 간소화, 종합소득세 신고, 국세 환급금 조회','https://www.hometax.go.kr','tax-refund'],
+  ['위택스','행정안전부','자동차세·재산세 같은 지방세 신고와 납부','https://www.wetax.go.kr','car-tax'],
+  ['미환급 공과금 조회','정부24','돌려받지 못한 세금·공과금 조회','https://www.gov.kr/mw/AA210LifeSvcInfo.do?MCODE=11020','']]},
+ {t:'일·실업·임금',items:[['고용24','고용노동부','실업급여, 국민취업지원제도, 육아휴직급여 신청','https://www.work24.go.kr','unemployment'],
+  ['근로복지공단','근로복지공단','산재보험, 퇴직연금 등 근로자 복지 업무','https://www.comwel.or.kr','severance'],
+  ['최저임금위원회','최저임금위원회','연도별 최저임금 확인','https://www.minimumwage.go.kr','minwage-check']]},
+ {t:'연금·건강보험',items:[['국민연금공단','국민연금공단','가입 내역과 예상 연금액 확인','https://www.nps.or.kr',''],
+  ['국민건강보험','국민건강보험공단','건강보험료 조회, 환급금 확인','https://www.nhis.or.kr','insurance']]},
+ {t:'복지·지원금',items:[['복지로','보건복지부','복지서비스 찾기와 온라인 신청','https://www.bokjiro.go.kr',''],
+  ['정부24','행정안전부','민원서류 발급, 받을 수 있는 혜택 확인','https://www.gov.kr','']]},
+ {t:'집',items:[['마이홈포털','국토교통부','공공임대주택과 주거지원 정보','https://www.myhome.go.kr',''],
+  ['인터넷등기소','대법원','등기사항증명서(등기부등본) 열람·발급','https://www.iros.go.kr','jeonse-guarantee'],
+  ['주택도시보증공사(HUG)','주택도시보증공사','전세보증금반환보증 가입','https://www.khug.or.kr','jeonse-guarantee']]},
+ {t:'잠자는 돈·금융',items:[['파인','금융감독원','금융소비자 정보, 업권별 계좌 조회','https://fine.fss.or.kr',''],
+  ['내 계좌 한눈에','금융결제원','오래 안 쓴 계좌·휴면예금·보험금 한 번에 조회','https://payinfo.or.kr/',''],
+  ['카드포인트 통합조회','여신금융협회','여러 카드 포인트 조회와 계좌 입금','https://www.cardpoint.or.kr/','']]},
+ {t:'생활',items:[['인터넷우체국','우정사업본부','등기·소포 배송 조회','https://www.epost.go.kr',''],
+  ['찾기쉬운 생활법령정보','법제처','생활 속 법령을 쉬운 말로 안내','https://www.easylaw.go.kr',''],
+  ['동행복권','동행복권','로또·연금복권 당첨번호 확인','https://www.dhlottery.co.kr','lotto-tax']]}];
+function linksPage(){return `<h1 class="h1">공식 사이트 바로가기</h1><p class="lsub">돈과 관련된 조회·신청은 공식 사이트에서 해요. 분야별로 모았어요</p>
+ ${LINKS.map(g=>`<section class="cardx hcard"><p class="hct">${g.t}</p>${g.items.map(([n,o,w,u,c])=>{const cc=c&&ALLC().find(x=>x.id==c);return `<div class="lkrow"><a class="lka" href="${u}" target="_blank" rel="noopener"><b>${n} <i aria-hidden="true">↗</i></b><small>${w}</small><em>${o}</em></a>${cc?A('c-'+cc.id,'lkc',`${cc.label.replace(/ 계산기$/,'')} 계산 ›`):''}</div>`}).join('')}</section>`).join('')}
+ <div class="fn bot"><p>주소는 2026년 11월 19일에 각 기관 사이트를 직접 열어 확인했어요. 받는돈은 개인정보를 받지 않고, 조회·신청은 모두 공식 사이트에서 해요.</p><p>문자·카톡으로 받은 링크 대신 위 주소로 직접 들어가세요.</p></div>${foot}`}
 function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const sel=[...findPick],list=sel.length?BEN.filter(b=>b.tags.some(t=>findPick.has(t))):[];
  const chips=`<div class="fchips">${FINDT.map(([k,l])=>`<button type="button" class="${findPick.has(k)?'on':''}" onclick="findTg2('${k}')">${l}</button>`).join('')}</div>`;
@@ -1043,7 +1067,7 @@ function home(){const d=DRAWS[0],P=PEN[0],posts=allPosts().slice(0,3);
  const dir=calcDir().filter(G=>G.g!='lotto'),cg=G=>card(G.t,G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return row('c-'+k,c.title)}));
  return `<h1 class="ch1 hh1">받는돈</h1><p class="clede">세금 떼고 실제로 받는 돈을 계산하는 무료 계산기 모음</p>
  ${cg(dir[0])}
- ${card('받을 돈',[row('find','받을 돈 찾기','지원금·수당·환급금'),row('hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'),row('deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'),row('benefits','마감 임박 혜택','정부 지원사업·기업 이벤트'),row('life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'),row('record','받은 돈 기록장','한 해 받은 돈을 모아 보기')])}
+ ${card('받을 돈',[row('find','받을 돈 찾기','지원금·수당·환급금'),row('hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'),row('deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'),row('benefits','마감 임박 혜택','정부 지원사업·기업 이벤트'),row('life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'),row('record','받은 돈 기록장','한 해 받은 돈을 모아 보기'),row('links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24 등 19곳')])}
  ${dir.slice(1).map(cg).join('')}
  ${card('복권',[d?row('lotto','로또 당첨번호',`${d.r}회 · ${ymd(d.date)}`):'',P?row('pension','연금복권720+ 당첨번호',`${P[0]}회 · ${P[1]}`):'',row('c-lotto-tax','로또 세금 계산기'),row('c-pension-tax','연금복권 세금 계산기'),row('all','로또 전체 회차')])}
  ${card('정보',[row('guide','정보 글 모음',`급여·세금·복권 글 ${allPosts().length}개`),...posts.map(p=>row(p.id,p.t,`${p.c} · ${p.d}`))])}
@@ -1290,7 +1314,7 @@ function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>
 const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);
-function guide(){const all=allPosts(),cats=['전체','급여','세금','복권'].filter(c=>c=='전체'||all.some(p=>p.c==c));
+function guide(){const all=allPosts(),cats=['전체','급여','세금','복권','바로가기'].filter(c=>c=='전체'||all.some(p=>p.c==c));
  return `<h1 class="h1">정보</h1><p class="note">급여·세금·복권 정보글 ${all.length}개</p><input id="bq" placeholder="글 제목 검색" value="${boardQ}" oninput="boardQ=this.value;document.getElementById('bl').innerHTML=bl()" style="margin:10px 0" aria-label="글 제목 검색"><div class="chips">${cats.map(c=>`<button class="${c==boardF?'on':''}" onclick="boardF='${c}';render()">${c}</button>`).join('')}</div><div id="bl">${bl()}</div>${foot}`}
 function bl(){const l=allPosts().filter(p=>(boardF=='전체'||p.c==boardF)&&(!boardQ||p.t.includes(boardQ)));return l.length?l.map(postRow).join(''):'<p class="note">찾는 글이 없어요.</p>'}
 function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x=>x.id==a.calc);
@@ -1298,7 +1322,7 @@ function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
 // 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
@@ -1312,7 +1336,7 @@ function view(){let v=view0();if(!cur.startsWith('c-')&&cur!='home'&&!cur.starts
  if(cur.startsWith('b-'))v=v.replace('<article class="art"','<article class="art cardx"');
  if(PAGES[cur])v=v.replace('<div class="art">','<div class="art cardx">');
  return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}

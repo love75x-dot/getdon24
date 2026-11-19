@@ -34,7 +34,7 @@ function parsePost(slug, text) {
   const html = mdToHtml(m[2]);
   const chars = html.replace(/<[^>]+>/g, '').length;
   // 게시판 분류는 3개(급여·세금·복권)로 묶는다. 글 파일의 category 는 그대로 두고 화면에서만 묶음
-  const CAT3 = { 세금정보: '세금', 복권정보: '복권' };
+  const CAT3 = { 세금정보: '세금', 복권정보: '복권', 바로가기: '바로가기' };
   return { slug, title: meta.title, cat: CAT3[meta.category] || '급여', catRaw: meta.category, date: meta.date, excerpt: meta.excerpt, calc: meta.calc || '', min: Math.max(1, Math.round(chars / 500)), html };
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -49,6 +49,7 @@ function mdToHtml(md) {
     if (b.startsWith('## ')) return `<h2>${inline(b.slice(3))}</h2>`;
     if (b.startsWith('### ')) return `<h3>${inline(b.slice(4))}</h3>`;
     if (/^- /m.test(b) && b.split('\n').every((l) => l.startsWith('- '))) return `<ul>${b.split('\n').map((l) => `<li>${inline(l.slice(2))}</li>`).join('')}</ul>`;
+    if (b.split('\n').every((l) => /^\d+\. /.test(l))) return `<ol>${b.split('\n').map((l) => `<li>${inline(l.replace(/^\d+\. /, ''))}</li>`).join('')}</ol>`;
     return `<p>${inline(b.replace(/\n/g, ' '))}</p>`;
   }).join('\n');
 }
@@ -444,6 +445,9 @@ const LIFE_SEO = { marriage: ['결혼할 때 받을 돈·할 일 - 결혼세액�
   retire: ['은퇴 준비 체크리스트 - 국민연금·IRP·노후자금', '국민연금 예상액 확인, 노후자금 모으기 계산, 퇴직금 IRP, 기초연금까지 은퇴 전에 확인할 것을 모았어요.'] };
 await emit('life', { title: `인생 이벤트별 받을 돈 - 결혼·출산·이사·퇴사·은퇴 | ${site}`, desc: '결혼, 출산, 이사, 퇴사, 은퇴 때 받을 수 있는 돈과 해야 할 일을 시기별로 모았어요.' });
 for (const [k, [t, d]] of Object.entries(LIFE_SEO)) await emit(`l-${k}`, { title: `${t} | ${site}`, desc: d });
+
+// 공식 사이트 바로가기
+await emit('links', { title: `공식 사이트 바로가기 - 홈택스·정부24·복지로·고용24·국민연금 | ${site}`, desc: '홈택스, 위택스, 정부24, 복지로, 고용24, 국민연금, 건강보험, 인터넷등기소처럼 돈과 관련된 조회·신청을 하는 공식 사이트 주소를 분야별로 모았어요.' });
 
 // 받은 돈 기록장 (브라우저에만 저장)
 await emit('record', { title: `받은 돈 기록장 - 월급·지원금·환급금 한 해 합계 | ${site}`, desc: '월급, 지원금, 환급금, 이자처럼 받은 돈을 적어 두면 월별·분류별 합계를 보여 드려요. 기록은 내 브라우저에만 저장돼요.' });
