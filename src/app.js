@@ -913,15 +913,15 @@ const LIFE=[
    ['다음 해 연말정산','배우자 연 소득이 100만원 이하(근로소득만 있으면 총급여 500만원 이하)면 배우자 기본공제를 받을 수 있어요','https://www.hometax.go.kr'],
    ['집 구할 때','신혼부부 전세·구입 대출은 조건이 자주 바뀌어요. 주택도시기금에서 지금 기준을 확인하세요','https://nhuf.molit.go.kr'],
    ['돈 모을 때','둘이 합쳐 목표를 정하고 매달 얼마씩 모을지 계산해 보세요','c-goal-100m']],
-  calcs:['goal-100m','loan','salary'],ben:['eitc'],
-  src:'결혼세액공제: 세정일보 「2025년 달라지는 조세제도」(조세특례제한법 개정) 기준 · 2026-11-12 확인'},
+  calcs:['goal-100m','loan','salary'],ben:['marriage-credit','rent-credit','eitc'],
+  src:'결혼세액공제: 정책브리핑 「자주 묻는 연말정산 ⑧결혼 세액공제?」(2024-11-26) 기준 · 2026-11-19 확인'},
  {k:'birth',e:'👶',t:'출산',d:'출생신고 때 한 번에 신청하는 돈',
   steps:[['임신 중','임신·출산 진료비 바우처(국민행복카드)는 건강보험공단·카드사에서 신청해요','https://www.nhis.or.kr'],
    ['출생신고 할 때','부모급여·아동수당·첫만남이용권을 행정복지센터나 복지로에서 한 번에 신청할 수 있어요 (출생 후 60일 안에)','https://www.bokjiro.go.kr'],
    ['아이 키우는 동안','육아휴직급여는 고용24에서 신청해요','https://www.work24.go.kr'],
    ['다음 해 5월','자녀장려금 대상인지 확인하세요','https://www.hometax.go.kr'],
    ['다음 해 연말정산','자녀가 있으면 자녀세액공제·출산입양 세액공제를 받을 수 있어요','https://www.hometax.go.kr']],
-  calcs:['goal','savings'],ben:['parent-pay','child-allowance','first-voucher','parental-leave','eitc']},
+  calcs:['goal','savings'],ben:['pregnancy-voucher','maternity-leave','paternity-leave','birth-pay-uninsured','parent-pay','child-allowance','first-voucher','parental-leave','child-tax-credit','eitc']},
  {k:'moving',e:'📦',t:'이사',d:'대출·전입신고·월세 지원',
   steps:[['집 고를 때','대출이면 매달 얼마씩 갚는지 먼저 계산해 보세요','c-loan'],
    ['기존 대출 갚을 때','중도상환수수료가 있는지 약정서를 보고 계산해 보세요','c-prepay-fee'],
@@ -929,7 +929,7 @@ const LIFE=[
    ['계약서 받으면','전입신고와 함께 확정일자를 받아 두면 보증금을 지키는 데 도움이 돼요','https://www.gov.kr'],
    ['월세 사는 청년이면','청년월세 지원 대상인지 확인하세요','https://www.bokjiro.go.kr'],
    ['다음 해 연말정산','무주택 세대주라면 월세 세액공제를 받을 수 있는지 확인하세요','https://www.hometax.go.kr']],
-  calcs:['loan','prepay-fee','deposit'],ben:['youth-rent']},
+  calcs:['loan','prepay-fee','deposit'],ben:['rent-credit','youth-rent','housing-benefit']},
  {k:'resign',e:'🚪',t:'퇴사',d:'퇴직금·실업급여·세금 정리',
   steps:[['퇴사 전','퇴직금·남은 연차수당·실업급여를 한 번에 계산해 보세요','c-resign'],
    ['퇴사 후 14일 안에','퇴직금은 퇴사 후 14일 안에 받아야 해요 (근로자퇴직급여 보장법). 늦으면 회사에 먼저 물어보세요','c-severance'],
@@ -937,13 +937,13 @@ const LIFE=[
    ['실업급여가 안 되면','국민취업지원제도를 확인하세요','https://www.work24.go.kr'],
    ['건강보험','지역가입자로 바뀌어 보험료가 오를 수 있어요. 임의계속가입을 신청할 수 있는지 건강보험공단에서 확인하세요','https://www.nhis.or.kr'],
    ['다음 해 5월','중간에 퇴사해서 연말정산을 못 했다면 5월 종합소득세 신고 때 정산해요','https://www.hometax.go.kr'],['정리하면서','회사 다니며 만든 계좌·보험·카드 포인트에 잊은 돈이 없는지 확인하세요','hidden']],
-  calcs:['resign','severance','unemployment'],ben:['unemployment','kua']},
+  calcs:['resign','severance','unemployment'],ben:['unemployment','early-reemploy','kua','tomorrow-card']},
  {k:'retire',e:'🌿',t:'은퇴',d:'연금과 모아 둔 돈 점검',
   steps:[['은퇴 5~10년 전','국민연금공단 「내 연금 알아보기」에서 예상 연금액을 확인하세요','https://www.nps.or.kr'],
    ['은퇴 5~10년 전','목표 노후자금까지 매달 얼마씩 더 모아야 하는지 계산해 보세요','c-goal'],
    ['퇴직할 때','퇴직금·퇴직연금은 IRP로 옮기면 세금을 나중에 낼 수 있어요. 가입한 금융회사에서 확인하세요',''],['은퇴 전 한 번','오래된 예금·보험·주식 중 잊은 돈이 없는지 한 번에 확인하세요','hidden'],
    ['만 65세 이후','기초연금은 소득·재산 기준이 있어요. 복지로에서 대상인지 확인하세요','https://www.bokjiro.go.kr']],
-  calcs:['goal','compound','deposit'],ben:[]}];
+  calcs:['goal','compound','deposit'],ben:['nps-old-age','basic-pension','senior-job']}];
 const LIFEBY=Object.fromEntries(LIFE.map(x=>[x.k,x]));
 function lifeIdx(){return `<h1 class="h1">인생 이벤트별 받을 돈</h1><p class="lsub">결혼, 출산, 이사, 퇴사, 은퇴 때 챙길 돈과 할 일을 순서대로 모았어요</p>
  <div class="lgrid">${LIFE.map(x=>A('l-'+x.k,'lcard',`<span class="le">${x.e}</span><b>${x.t}</b><small>${x.d}</small>`)).join('')}</div>${foot}`}
@@ -1058,7 +1058,7 @@ function heroOut(){const r=heroNet(),a=+heroA||0;if(!r||!a)return '<p class="hno
  return `<div class="hres"><span>연봉 ${a.toLocaleString()}만원이면 한 달에</span><b>${m.toLocaleString()}원</b></div><p class="hnote">${RATES.minimumWageYear}년 기준 · 비과세 식대 20만원 · 본인 1명 가정 ${A('c-salary','',`자세히 계산하기 ›`).replace('href="/calc/salary/"',`href="/calc/salary/?annual=${a}"`)}</p>`}
 function heroIn(el){heroA=el.value.replace(/[^\d]/g,'');el.value=heroA?(+heroA).toLocaleString():'';document.getElementById('hout').innerHTML=heroOut()}
 function heroSet(v){heroA=String(v);const e=document.getElementById('hin');if(e)e.value=(+v).toLocaleString();document.querySelectorAll('.hq button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));document.getElementById('hout').innerHTML=heroOut()}
-const FINDT=[['worker','직장인'],['parttime','알바'],['freelance','프리랜서·N잡'],['parent','육아 중'],['jobless','구직·퇴사'],['youth','청년'],['self','자영업']];
+const FINDT=[['worker','직장인'],['parttime','알바'],['freelance','프리랜서·N잡'],['self','자영업'],['jobless','구직·퇴사'],['youth','청년'],['student','대학생'],['newlywed','결혼·신혼'],['renter','월세 사는 중'],['preg','임신·출산'],['parent','육아 중'],['senior','65세 이상'],['low','저소득 가구']];
 let findPick=new Set;
 function findTg(k){findPick.has(k)?findPick.delete(k):findPick.add(k);document.querySelectorAll('.fchips button').forEach(b=>b.classList.toggle('on',findPick.has(b.dataset.k)));const g=document.getElementById('fgo');if(g){g.href='/find/'+(findPick.size?'?t='+[...findPick].join(','):'');g.textContent=findPick.size?`${findPick.size}개 골랐어요 · 받을 돈 보기 ›`:'받을 돈 보기 ›'}}
 const CATS4=[['월급·일한 돈','연봉·알바·퇴직금·3.3%','calc','w'],['나라에서 받는 돈','지원금·수당·장려금','find','g'],['숨은 돈','휴면예금·보험금·포인트·환급금','hidden','r'],['당첨된 돈','로또·연금복권 실수령액','lotto','l']];
