@@ -101,6 +101,11 @@ async function loadPlaces(latestRound) {
   };
 }
 
+// 공유 이미지: static/og/{이름}.png 가 있으면 그 화면 전용 이미지 (scripts/make-og.cjs 로 만든다)
+function ogOf(route) {
+  const n = route.startsWith('c-') ? route.slice(2) : route;
+  return existsSync(join(ROOT, 'static/og', n + '.png')) ? `/og/${n}.png` : '/og-image.png';
+}
 // ---------- 페이지 틀 ----------
 function page({ route, title, desc, html, tabs, jsonld, assets, noindex, ogType = 'website', pre = false }) {
   const url = SITE + pathOf(route);
@@ -118,7 +123,7 @@ function page({ route, title, desc, html, tabs, jsonld, assets, noindex, ogType 
 ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:type" content="${ogType}"><meta property="og:site_name" content="받는돈">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}">
-<meta property="og:url" content="${url}"><meta property="og:image" content="${SITE}/og-image.png"><meta property="og:locale" content="ko_KR">
+<meta property="og:url" content="${url}"><meta property="og:image" content="${SITE}${ogOf(route)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0B7A5A">
 <link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="받는돈"><meta name="mobile-web-app-capable" content="yes">
@@ -134,7 +139,7 @@ ${ads}${ga}
 <main class="wrap" id="app">${html}</main>
 <nav class="tabbar" id="tabs">${tabs}</nav>
 <script>window.__ROUTE=${JSON.stringify(route)};${pre ? 'window.__PRE=1;' : ''}</script>
-<script src="/assets/data.js?v=${assets.data}"></script>
+<script src="/assets/data.js?v=${assets.data}"></script>${extrasFor(route).map((k) => `<script src="/assets/data-${k}.js?v=${assets['x_' + k]}"></script>`).join('')}
 <script src="/assets/app.js?v=${assets.js}"></script>
 </body>
 </html>
@@ -313,7 +318,25 @@ const DATA = {
 // 화면 함수 실행 준비
 const appJs = await readFile(join(ROOT, 'src/app.js'), 'utf8');
 const css = await readFile(join(ROOT, 'src/style.css'), 'utf8');
-const dataJs = `window.DATA=${JSON.stringify(DATA)};\n`;
+// 모든 페이지가 받는 기본 데이터는 가볍게: 무거운 자료는 필요한 화면에서만 따로 받는다
+const topBy = (arr, n) => [...arr].sort((a, b) => b[0] - a[0]).slice(0, n);
+const CORE = { ...DATA, draws: topBy(DATA.draws, 12), pension: topBy(DATA.pension, 6), support: [], wtax: null };
+const dataJs = `window.DATA=${JSON.stringify(CORE)};\n`;
+const EXTRA = {
+  draws: `window.DATA.draws=${JSON.stringify(DATA.draws)};\n`,
+  pension: `window.DATA.pension=${JSON.stringify(DATA.pension)};\n`,
+  support: `window.DATA.support=${JSON.stringify(DATA.support)};\n`,
+  wtax: `window.DATA.wtax=${JSON.stringify(DATA.wtax)};\n`,
+};
+// 화면별로 더 받을 자료
+function extrasFor(route) {
+  const x = [];
+  if (route === 'all' || /^draw\d/.test(route)) x.push('draws');
+  if (route === 'penall') x.push('pension');
+  if (route === 'benefits' || route === 'find') x.push('support');
+  if (['c-salary', 'c-salary-compare', 'c-parttime'].includes(route)) x.push('wtax');
+  return x;
+}
 let els = {};
 const stubEl = () => ({ innerHTML: '', textContent: '', value: '', scrollIntoView() {} });
 const ctx = {
@@ -345,13 +368,14 @@ function renderRoute(route, postHtml) {
 }
 
 const hash = (s) => createHash('sha1').update(s).digest('hex').slice(0, 8);
-const assets = { css: hash(css), js: hash(appJs), data: hash(dataJs) };
+const assets = { css: hash(css), js: hash(appJs), data: hash(dataJs), ...Object.fromEntries(Object.entries(EXTRA).map(([k, v]) => ['x_' + k, hash(v)])) };
 
 await rm(DIST, { recursive: true, force: true });
 await mkdir(join(DIST, 'assets'), { recursive: true });
 await writeFile(join(DIST, 'assets/app.js'), appJs);
 await writeFile(join(DIST, 'assets/style.css'), css);
 await writeFile(join(DIST, 'assets/data.js'), dataJs);
+for (const [k, v] of Object.entries(EXTRA)) await writeFile(join(DIST, `assets/data-${k}.js`), v);
 await cp(join(ROOT, 'static'), DIST, { recursive: true });
 
 const pages = []; // [route, lastmod]

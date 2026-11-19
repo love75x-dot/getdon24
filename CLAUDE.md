@@ -21,6 +21,8 @@
 2. `CALC_FAQ[id]`, `LEGAL_BASIS[id]` 추가
 3. `scripts/build.mjs` 의 `CALC_DESC[id]` 에 검색 설명 한두 문장
 4. 주소는 자동으로 `/calc/{id}/`
+5. `HOWTO[id]`(계산하는 법·자주 하는 실수), `scripts/test.mjs` 의 정답 예시 1건 추가
+6. 공유 이미지: `node scripts/make-og.cjs` 를 돌려 `static/og/{id}.png` 를 만든다 (로컬 Playwright 필요)
 
 ## 확인 방법 (고친 뒤 항상)
 ```bash
