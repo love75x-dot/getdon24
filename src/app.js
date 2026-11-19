@@ -983,6 +983,35 @@ function hiddenPage(){const d=typeof window!='undefined'&&window.__PRERENDER?new
  ${HID.groups.map(g=>`<h2 class="lh">${g.t}</h2>${g.items.map(x=>`<article class="hidc${d.has(x.id)?' ok':''}"><div class="hidt"><b>${x.name}</b><small>${x.host}</small></div><p>${x.what}</p>
   <div class="dlb"><a href="${x.url}" target="_blank" rel="noopener">조회하러 가기 ↗</a><button type="button" onclick="hidTg('${x.id}')" aria-pressed="${d.has(x.id)}">${d.has(x.id)?'✓ 확인했어요':'확인했어요'}</button><span class="hneed">${x.need}</span></div></article>`).join('')}`).join('')}
  <div class="fn bot"><p>받는돈은 조회를 대신하지 않고, 이름·주민번호·계좌 같은 개인정보를 받지 않아요. 조회는 각 기관 사이트에서 직접 해요.</p><p>문자·카톡으로 온 "숨은 돈 찾아 드려요" 링크는 누르지 말고, 위 공식 사이트로 직접 들어가세요.</p><p>사이트 주소는 금융감독원 파인 「업권별 계좌 조회」 안내로 ${ymd(HID.checked)}에 확인했어요.</p></div>${foot}`}
+// ── 받은 돈 기록장 (/record/): 이 브라우저(localStorage)에만 저장. 서버로 아무것도 보내지 않는다 ──
+const RECK=['급여','지원금·수당','환급금','이자·배당','부수입','기타'];
+let REC=null,recCat='급여',recY=null;
+function recLoad(){if(REC)return REC;REC=[];try{const x=JSON.parse(localStorage.getItem('gd-record')||'[]');if(Array.isArray(x))REC=x.filter(r=>r&&r.d&&isFinite(r.a))}catch(e){}return REC}
+function recPick(b,c){recCat=c;b.parentElement.querySelectorAll('button').forEach(x=>{const on=x==b;x.classList.toggle('on',on);x.setAttribute('aria-checked',on)})}
+function recSave(){try{localStorage.setItem('gd-record',JSON.stringify(REC))}catch(e){}}
+function recAdd(){const g=i=>document.getElementById(i),d=g('rd').value,a=+String(g('ra').value).replace(/[^\d]/g,''),t=g('rt').value.trim().slice(0,40);
+ if(!d||!a){g('rmsg').textContent='날짜와 금액을 넣어 주세요.';return}
+ recLoad().push({id:Date.now().toString(36),d,a,c:recCat,t:t||recCat});REC.sort((x,y)=>y.d.localeCompare(x.d));recSave();recY=d.slice(0,4);render()}
+function recDel(id){recLoad();REC=REC.filter(r=>r.id!==id);recSave();render()}
+function recCsv(){const rows=[['날짜','분류','내용','금액'],...recLoad().map(r=>[r.d,r.c,r.t.replace(/"/g,'""'),r.a])].map(r=>r.map(x=>`"${x}"`).join(',')).join('\n');
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+rows],{type:'text/csv'}));a.download='받은돈기록장.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function recordPage(){const pre=typeof window!='undefined'&&window.__PRERENDER,L=pre?[]:recLoad(),years=[...new Set(L.map(r=>r.d.slice(0,4)))].sort().reverse();
+ const Y=recY&&years.includes(recY)?recY:years[0]||todayK().slice(0,4),YL=L.filter(r=>r.d.startsWith(Y)),tot=YL.reduce((s,r)=>s+r.a,0);
+ const byC=RECK.map(c=>[c,YL.filter(r=>r.c==c).reduce((s,r)=>s+r.a,0)]).filter(x=>x[1]);
+ const months=[...new Set(YL.map(r=>r.d.slice(0,7)))];
+ return `<h1 class="h1">받은 돈 기록장</h1><p class="lsub">월급, 지원금, 환급금처럼 받은 돈을 적어 두면 한 해 동안 얼마 받았는지 모아 보여 드려요</p>
+ <section class="cardx nc2"><h2 class="chd">받은 돈 적기</h2>
+ <div class="cpanel"><div class="fseg" role="radiogroup" aria-label="분류">${RECK.map(c=>`<button type="button" role="radio" aria-checked="${c==recCat}" class="${c==recCat?'on':''}" onclick="recPick(this,'${c}')">${c}</button>`).join('')}</div>
+ <div class="fr"><label for="rd">받은 날</label><div class="fi"><input type="date" id="rd" value="${todayK()}"></div></div>
+ <div class="fr"><label for="rt">내용</label><div class="fi"><input id="rt" maxlength="40" placeholder="예: 11월 월급" autocomplete="off" style="text-align:right"></div></div>
+ <div class="fr"><label for="ra">금액</label><div class="fi"><input id="ra" inputmode="numeric" placeholder="0" autocomplete="off" oninput="this.value=fmtN(this.value)"><span class="u">원</span></div></div></div>
+ <p class="rmsg" id="rmsg" role="status"></p>
+ <div class="cact"><button type="button" class="btn2 pri" onclick="recAdd()">적기</button><button type="button" class="btn2" onclick="recCsv()"${L.length?'':' disabled'}>엑셀(CSV)로 받기</button></div>
+ <div class="fn bot"><p>기록은 이 휴대폰(브라우저)에만 저장돼요. 받는돈 서버로는 아무것도 보내지 않아요. 브라우저 기록을 지우면 함께 지워지니, 가끔 CSV로 받아 두세요.</p></div></section>
+ <section class="cardx psec"><h2>${Y}년 받은 돈 ${years.length>1?`<span class="ryr">${years.map(y=>`<button type="button" class="${y==Y?'on':''}" onclick="recY='${y}';render()">${y}</button>`).join('')}</span>`:''}</h2>
+ ${YL.length?`<p class="rtot">${won(tot)}</p><div class="exr">${byC.map(([c,a])=>`<div><span>${c}</span><b>${won(a)}</b></div>`).join('')}</div>
+ ${months.map(m=>{const ms=YL.filter(r=>r.d.startsWith(m));return `<h3 class="rmo">${+m.slice(5)}월 <small>${won(ms.reduce((s,r)=>s+r.a,0))}</small></h3>${ms.map(r=>`<div class="rrow"><div><b>${r.t.replace(/[<>&"]/g,'')}</b><small>${ymd(r.d)} · ${r.c}</small></div><output>${won(r.a)}</output><button type="button" aria-label="${r.t.replace(/[<>&"]/g,'')} 지우기" onclick="recDel('${r.id}')">×</button></div>`).join('')}`}).join('')}`
+ :`<p class="note" style="font-size:14px">아직 적은 돈이 없어요. 위에서 첫 기록을 적어 보세요.</p>`}</section>${foot}`}
 function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const sel=[...findPick],list=sel.length?BEN.filter(b=>b.tags.some(t=>findPick.has(t))):[];
  const chips=`<div class="fchips">${FINDT.map(([k,l])=>`<button type="button" class="${findPick.has(k)?'on':''}" onclick="findTg2('${k}')">${l}</button>`).join('')}</div>`;
@@ -1014,7 +1043,7 @@ function home(){const d=DRAWS[0],P=PEN[0],posts=allPosts().slice(0,3);
  const dir=calcDir().filter(G=>G.g!='lotto'),cg=G=>card(G.t,G.subs.flatMap(s=>s[1]).map(k=>{const c=ALLC().find(x=>x.id==k);return row('c-'+k,c.title)}));
  return `<h1 class="ch1 hh1">받는돈</h1><p class="clede">세금 떼고 실제로 받는 돈을 계산하는 무료 계산기 모음</p>
  ${cg(dir[0])}
- ${card('받을 돈',[row('find','받을 돈 찾기','지원금·수당·환급금'),row('hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'),row('deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'),row('benefits','마감 임박 혜택','정부 지원사업·기업 이벤트'),row('life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴')])}
+ ${card('받을 돈',[row('find','받을 돈 찾기','지원금·수당·환급금'),row('hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'),row('deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'),row('benefits','마감 임박 혜택','정부 지원사업·기업 이벤트'),row('life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'),row('record','받은 돈 기록장','한 해 받은 돈을 모아 보기')])}
  ${dir.slice(1).map(cg).join('')}
  ${card('복권',[d?row('lotto','로또 당첨번호',`${d.r}회 · ${ymd(d.date)}`):'',P?row('pension','연금복권720+ 당첨번호',`${P[0]}회 · ${P[1]}`):'',row('c-lotto-tax','로또 세금 계산기'),row('c-pension-tax','연금복권 세금 계산기'),row('all','로또 전체 회차')])}
  ${card('정보',[row('guide','정보 글 모음',`급여·세금·복권 글 ${allPosts().length}개`),...posts.map(p=>row(p.id,p.t,`${p.c} · ${p.d}`))])}
@@ -1269,7 +1298,7 @@ function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record')return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}" class="${k==tabOf(cur)?'on':''}"><i>${i}</i>${l}</a>`).join('')}
 // 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
@@ -1283,7 +1312,7 @@ function view(){let v=view0();if(!cur.startsWith('c-')&&cur!='home'&&!cur.starts
  if(cur.startsWith('b-'))v=v.replace('<article class="art"','<article class="art cardx"');
  if(PAGES[cur])v=v.replace('<div class="art">','<div class="art cardx">');
  return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
