@@ -734,6 +734,41 @@ calcs.push({id:'age',label:'만 나이 계산기',title:'만 나이 계산기',g
   return{main:`만 ${a}세`,sub:[['만 나이',`${a}세`],['연 나이 (올해 − 태어난 해)',`${ty-by}세`],['다음 생일까지',left==0?'오늘이 생일이에요':`${left}일`],['태어난 지',`${Math.round((new Date(t)-new Date(b))/864e5).toLocaleString('ko-KR')}일째`]]}}});
 CALC_FAQ['age']=[{q:'만 나이는 어떻게 세요?',a:'태어난 날을 0살로 보고, 생일이 지날 때마다 한 살씩 더해요. 올해 생일이 아직 안 지났으면 (올해 − 태어난 해 − 1)살이에요.'},{q:'청년 정책 나이도 만 나이인가요?',a:'2023년 6월 28일부터 법과 행정에서는 따로 정하지 않으면 만 나이를 써요. 다만 병역·청소년 보호처럼 연 나이를 쓰는 법도 있어서 정책 공고의 기준을 확인하세요.'}];
 LEGAL_BASIS['age']='행정기본법 제7조의2와 민법 제158조에 따라, 법령·계약·공문서의 나이는 따로 정하지 않으면 만 나이로 계산해요 (2023년 6월 28일 시행).';
+// ── 복비(중개보수): 공인중개사법 시행규칙 제20조, 시·도 주택 중개보수 조례(경기도 조례 별표1로 확인, 2026-11-19) ──
+const BRK={sale:[[5e7,.006,25e4],[2e8,.005,8e5],[9e8,.004,0],[12e8,.005,0],[15e8,.006,0],[Infinity,.007,0]],
+ rent:[[5e7,.005,2e5],[1e8,.004,3e5],[6e8,.003,0],[12e8,.004,0],[15e8,.005,0],[Infinity,.006,0]]};
+calcs.push({id:'brokerage',label:'복비 계산기',title:'중개수수료(복비) 계산기',group:'money',
+ fields:[{id:'mode',type:'seg',label:'거래',options:[{value:'sale',label:'매매'},{value:'jeonse',label:'전세'},{value:'monthly',label:'월세'}]},
+  {id:'house',type:'seg',label:'물건',options:[{value:'home',label:'주택'},{value:'ofs',label:'오피스텔'},{value:'etc',label:'토지·상가'}]},
+  {id:'price',label:'매매가',unit:'만원',placeholder:'예: 50000',when:'sale'},
+  {id:'dep',label:'보증금',unit:'만원',placeholder:'예: 1000',when:'jeonse'},
+  {id:'dep2',label:'보증금',unit:'만원',placeholder:'예: 1000',when:'monthly'},{id:'rent',label:'월세',unit:'만원',placeholder:'예: 50',when:'monthly'}],
+ run(v){const k=v.mode||'sale';let amt,how='';
+  if(k=='sale')amt=(+v.price||0)*1e4;else if(k=='jeonse')amt=(+v.dep||0)*1e4;
+  else{const d=(+v.dep2||0)*1e4,r=(+v.rent||0)*1e4;amt=d+r*100;how='보증금 + 월세 × 100';if(amt<5e7){amt=d+r*70;how='보증금 + 월세 × 70'}}
+  if(!amt)return{main:'금액을 넣어 주세요',sub:[]};
+  let rate,cap=0;const h=v.house||'home';
+  if(h=='ofs')rate=k=='sale'?.005:.004;else if(h=='etc')rate=.009;else{const b=BRK[k=='sale'?'sale':'rent'].find(x=>amt<x[0]);rate=b[1];cap=b[2]}
+  const raw=Math.floor(amt*rate),fee=cap?Math.min(raw,cap):raw;
+  return{main:`최대 중개보수 ${won(fee)}`,sub:[[how?`거래금액 (${how})`:'거래금액',won(amt)],...(how.includes('70')?[['보증금 + 월세 × 100이 5천만원 미만이라 × 70으로 다시 계산했어요.','']]:[]),['상한요율',`${(rate*100).toFixed(1)}%${h=='etc'?' 이내 (협의)':''}`],...(cap?[['한도액',won(cap)]]:[]),['최대 중개보수',won(fee)],['부가세 10% 더하면',won(fee*1.1)],
+   ['중개사무소가 일반과세자면 부가세를 따로 받을 수 있어요. 상한요율 안에서 협의해 정해요.','']]}}});
+CALC_FAQ['brokerage']=[{q:'월세 복비는 어떻게 계산해요?',a:'보증금 + 월세 × 100을 거래금액으로 봐요. 이 금액이 5천만원 미만이면 보증금 + 월세 × 70으로 다시 계산해요. 보증금 1,000만원·월세 50만원이면 6,000만원 × 0.4% = 24만원이 최대예요.'},{q:'상한요율대로 꼭 내야 하나요?',a:'아니요. 표의 요율은 받을 수 있는 최대치예요. 그 안에서 중개사와 협의해 정해요.'},{q:'부가세도 내야 하나요?',a:'중개사무소가 일반과세자면 중개보수의 10%를 부가세로 더 받을 수 있어요. 간이과세자는 다를 수 있어요.'}];
+LEGAL_BASIS['brokerage']='공인중개사법 제32조, 같은 법 시행규칙 제20조, 시·도 주택 중개보수 조례 기준이에요. 주택은 거래금액 구간별 상한요율과 한도액이 있고, 전용 85㎡ 이하 주거용 오피스텔은 매매 0.5%·임대 0.4%, 토지·상가는 0.9% 이내에서 협의해요.';
+CALC_SRC['brokerage']=()=>'공인중개사법 시행규칙 제20조 · 시·도 주택 중개보수 조례 기준';
+// ── 자동차세: 지방세법 제127조(세율), 차령 경감, 지방교육세 30%(지방세법 제151조) ──
+calcs.push({id:'car-tax',label:'자동차세 계산기',title:'자동차세 계산기',group:'money',
+ fields:[{id:'fuel',type:'seg',label:'차 종류',options:[{value:'ice',label:'휘발유·경유·하이브리드'},{value:'ev',label:'전기·수소'}]},
+  {id:'cc',label:'배기량',unit:'cc',placeholder:'예: 1998'},{id:'year',label:'처음 등록한 해',unit:'년',placeholder:'예: 2022'}],
+ run(v){const Y=+todayK().slice(0,4),yr=+v.year||Y,age=Math.max(1,Y-yr+1),cut=age>=3?Math.min((age-2)*5,50):0;
+  let base,how;
+  if(v.fuel=='ev'){base=1e5;how='전기·수소차 (그 밖의 승용차) 정액'}
+  else{const cc=+v.cc||0;if(!cc)return{main:'배기량을 넣어 주세요',sub:[]};const per=cc<=1000?80:cc<=1600?140:200;base=cc*per;how=`${cc.toLocaleString('ko-KR')}cc × ${per}원`}
+  const tax=Math.floor(base*(100-cut)/100/10)*10,edu=Math.floor(tax*0.3/10)*10,tot=tax+edu;
+  return{main:`1년 자동차세 ${won(tot)}`,sub:[['세액 계산',how],['차령',`${age}년차${cut?` · ${cut}% 깎아 줘요`:''}`],['자동차세',won(tax)],['지방교육세 (30%)',won(edu)],['1년 합계',won(tot)],['6월·12월에 나눠 내면',`${won(Math.floor(tot/2/10)*10)}씩`],
+   ['1월에 1년 치를 한 번에 내면(연납) 남은 기간분의 일부를 깎아 줘요. 2026년 공제율은 5%예요.','']]}}});
+CALC_FAQ['car-tax']=[{q:'자동차세는 언제 내요?',a:'6월(1~6월분)과 12월(7~12월분) 두 번 내요. 1월·3월·6월·9월에 미리 한 번에 내면 연납 할인을 받아요.'},{q:'오래된 차는 싸지나요?',a:'승용차는 처음 등록한 지 3년째부터 해마다 5%씩, 최대 50%까지 깎아 줘요.'},{q:'전기차는 얼마예요?',a:'배기량이 없어서 1년 10만원에 지방교육세 3만원을 더해 13만원이에요.'}];
+LEGAL_BASIS['car-tax']='지방세법 제127조에 따라 비영업용 승용차는 1,000cc 이하 cc당 80원, 1,600cc 이하 140원, 1,600cc 초과 200원이고, 전기차 등 그 밖의 승용차는 연 10만원이에요. 차령 3년째부터 해마다 5%씩 최대 50%를 깎고, 지방교육세는 자동차세의 30%예요(지방세법 제151조).';
+CALC_SRC['car-tax']=()=>'지방세법 제127조 · 비영업용 승용차 기준 · 연납 공제율 2026년 5%';
 calcs.push({id:'deposit',label:'예금 이자 계산기',title:'예금 이자 계산기',group:'money',
  disclaimerExtra:'만기에 이자를 한 번에 받는다고 보고 계산했어요. 실제 이자는 은행의 일수 계산 방식에 따라 몇 원~몇백 원 다를 수 있어요.',
  fields:[{id:'p',label:'예치금액',unit:'원',placeholder:'예: 10000000'},PU,NF('예금기간'),{id:'rate',label:'연 이자율',unit:'%',placeholder:'예: 3'},RM,TX],
@@ -998,7 +1033,7 @@ const LEAD={salary:'연봉만 넣으면 4대보험과 세금을 뗀 월급이 �
  deposit:'목돈을 맡기면 세금 떼고 만기에 얼마를 받는지 계산해요',savings:'매달 넣는 돈으로 세금 뗀 만기 수령액과 실제 이자를 계산해요',
  goal:'목표 금액을 모으려면 매달 얼마씩, 몇 년이 걸리는지 계산해요','goal-50m':'5천만원을 모으려면 매달 얼마씩 모아야 하는지 기간별로 보여 드려요','goal-100m':'1억을 모으려면 매달 얼마씩 모아야 하는지 기간별로 보여 드려요',
  loan:'대출 금액과 금리, 기간으로 매달 갚을 돈과 총 이자를 계산해요','prepay-fee':'대출을 일찍 갚을 때 내는 수수료를 계산해요',compound:'매달 넣는 돈에 이자가 붙어 몇 년 뒤 얼마가 되는지 계산해요',
- percent:'A의 B%, 변화율, 할인·인상 금액을 바로 계산해요',pyeong:'㎡와 평을 서로 바꿔 드려요','age':'생년월일로 만 나이와 다음 생일까지 남은 날을 계산해요',
+ percent:'A의 B%, 변화율, 할인·인상 금액을 바로 계산해요','jeonse-guarantee':'HUG 전세보증보험에 가입할 때 내는 보증료를 계산해요','youth-future':'청년미래적금에 3년 동안 넣으면 정부 기여금과 이자까지 얼마를 받는지 계산해요',brokerage:'매매·전세·월세 금액으로 받을 수 있는 최대 중개보수를 계산해요','car-tax':'배기량과 등록한 해로 1년 자동차세를 계산해요',pyeong:'㎡와 평을 서로 바꿔 드려요','age':'생년월일로 만 나이와 다음 생일까지 남은 날을 계산해요',
  'lotto-tax':'당첨금을 넣으면 세금 떼고 실제로 받는 돈을 알려 드려요','pension-tax':'연금복권 당첨금을 매달 세금 떼고 얼마 받는지 계산해요',
  'salary-compare':'두 회사 연봉을 넣고 실수령액 차이를 비교해요',insurance:'월급에서 빠지는 4대보험료를 항목별로 보여 드려요',
  severance:'최근 3개월 급여와 근속기간으로 퇴직금을 계산해요','annual-leave':'남은 연차를 돈으로 바꾸면 얼마인지 계산해요',
@@ -1041,10 +1076,10 @@ function moreHtml(id,g,S){const inTabs=new Set(S?S.ids:[]),L=ALLC().filter(c=>c.
 const SUITES=[{g:'employee',t:'직장인 계산기',sub:[['월급·연봉',['salary','salary-compare','insurance']],['시급·알바',['wage','parttime','weekly-rest','overtime','minwage-check']],['퇴사',['severance','annual-leave','unemployment','resign']]]},
  {g:'freelance',t:'프리랜서 계산기',ids:['freelance','tax-refund']},
  {g:'employer',t:'사업주 계산기',ids:['labor-cost','split-14h','daily-worker-tax','card-fee','vat']},
- {g:'money',t:'재테크 계산기',sub:[['모으기',['goal','deposit','savings','compound']],['대출',['loan','prepay-fee']],['생활 계산',['percent','pyeong','age']]]}];
+ {g:'money',t:'재테크 계산기',sub:[['모으기',['goal','deposit','savings','youth-future','compound']],['대출',['loan','prepay-fee']],['집·차',['jeonse-guarantee','brokerage','car-tax']],['생활 계산',['percent','pyeong','age']]]}];
 SUITES.forEach(S=>{if(S.sub)S.ids=S.sub.flatMap(x=>x[1])});
 const TABAL={'goal-50m':'goal','goal-100m':'goal'};
-const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비','salary-compare':'연봉 비교',insurance:'4대보험','annual-leave':'연차수당','split-14h':'쪼개기 고용','daily-worker-tax':'일용직 세금',deposit:'예금',savings:'적금',goal:'모으기',loan:'대출','prepay-fee':'중도상환수수료',compound:'복리',percent:'퍼센트',pyeong:'평수',age:'만 나이',vat:'부가세'};
+const TABL={wage:'시급',salary:'연봉',severance:'퇴직금',unemployment:'실업급여',resign:'퇴사 합계',parttime:'알바 월급','weekly-rest':'주휴수당',overtime:'연장·야간','minwage-check':'최저임금',freelance:'3.3%','tax-refund':'종소세 환급','card-fee':'카드 수수료','labor-cost':'인건비','salary-compare':'연봉 비교',insurance:'4대보험','annual-leave':'연차수당','split-14h':'쪼개기 고용','daily-worker-tax':'일용직 세금',deposit:'예금',savings:'적금',goal:'모으기',loan:'대출','prepay-fee':'중도상환수수료',compound:'복리',percent:'퍼센트',pyeong:'평수',brokerage:'복비','car-tax':'자동차세','jeonse-guarantee':'전세보증보험','youth-future':'청년미래적금',age:'만 나이',vat:'부가세'};
 const suiteOf=id=>(id=TABAL[id]||id,SUITES.find(g=>g.ids.includes(id)&&g.ids.every(k=>k=='wage'||calcs.some(c=>c.id==k))));
 function hintTg(b){const p=b.closest('.fr').nextElementSibling;if(p&&p.classList.contains('fh'))p.hidden=!p.hidden}
 function nFieldHtml(id,f){const v=CV[id][f.id],hint=f.hint?`<button type="button" class="qi" aria-label="설명 보기" onclick="hintTg(this)">?</button>`:'';
@@ -1069,8 +1104,8 @@ function sumHtml(id,r){const m=String(r.main||''),warn=/^⚠️/.test(m),n=((m.m
  if(id=='loan'&&n){const L={'매달':'매달 {n}씩 갚아요.','첫 달':'첫 달에 {n}을 갚아요.','매달 이자':'매달 이자로 {n}을 내요.'}[l];if(L)return L.replace('{n}',`<b>${n}</b>`)}
  return l?`${l} <b>${v}</b>`:`<b>${v}</b>`}
 function calcRun(id){const c=calcs.find(x=>x.id==id);try{return c.run(CV[id])}catch(e){return null}}
-function nResHtml(id){const r=calcRun(id);if(!r)return '<p class="fn">숫자를 확인해 주세요.</p>';const notes=[],key=((String(r.main).match(/[\d,]{2,}원/)||[])[0]||'#');let hit=0;
- const rows=(r.sub||[]).map(([a,b])=>b===null?`<div class="ro sec">${a}</div>`:b===''?(notes.push(a),''):`<div class="ro${!hit&&String(b).trim()==key&&++hit?' hi':''}"><span>${a}</span><output>${b}</output></div>`).join('');
+function nResHtml(id){const r=calcRun(id);if(!r)return '<p class="fn">숫자를 확인해 주세요.</p>';const notes=[],key=((String(r.main).match(/[\d,]{2,}원/)||[])[0]||'#'),sub=r.sub||[],last=sub.map(x=>String(x[1]).trim()).lastIndexOf(key);
+ const rows=sub.map(([a,b],i)=>b===null?`<div class="ro sec">${a}</div>`:b===''?(notes.push(a),''):`<div class="ro${i==last?' hi':''}"><span>${a}</span><output>${b}</output></div>`).join('');
  return `${rows}${notes.length?`<div class="fn">${notes.map(n=>`<p>${n}</p>`).join('')}</div>`:''}`}
 function resetC(id){const c=calcs.find(x=>x.id==id);CV[id]={_q:1};c.fields.forEach(f=>{CV[id][f.id]=f.type=='seg'?f.options[0].value:f.def=='today'?todayK():f.def!=null?f.def:f.type=='select'?'0':''});
  try{history.replaceState(null,'',location.pathname)}catch(e){}render()}
@@ -1088,9 +1123,119 @@ function shareC(btn,id){const c=calcs.find(x=>x.id==id),q=new URLSearchParams;
  const done=t=>{btn.textContent=t;setTimeout(()=>btn.textContent=lab,1800)};
  (async()=>{if(navigator.share){try{await navigator.share({title:document.title,text:txt,url});return}catch(e){if(e&&e.name=='AbortError')return}}
   try{await navigator.clipboard.writeText(url);done('링크를 복사했어요')}catch(e){done('주소창 링크를 복사해 주세요')}})()}
-function infoHtml(id){const faq=(CALC_FAQ[id]||[]).slice(0,5),c=ALLC().find(x=>x.id==id),how=[CALC_SRC[id]&&CALC_SRC[id](),c&&c.disclaimerExtra,LEGAL_BASIS[id]].filter(Boolean);
+// ── 계산기별 설명 (계산하는 법 · 자주 하는 실수). 예시는 화면에서 기본값으로 실제 계산해 자동으로 만든다 ──
+const HOWTO={
+ salary:{how:'연봉을 12로 나눠 월 급여를 구하고, 비과세액(식대 등)을 뺀 금액에 4대보험 요율을 곱해요. 소득세는 국세청 간이세액표에서 월 급여와 부양가족 수로 찾고, 지방소득세는 소득세의 10%예요. 월 급여에서 이 금액들을 모두 빼면 실수령액이에요.',
+  tips:['퇴직금이 연봉에 포함된 계약이면 연봉을 13으로 나눈 금액이 실제 월급에 가까워요.','부양가족은 본인을 포함해 기본공제 대상인 가족 수예요. 연 소득 100만원이 넘는 가족은 빼요.','실수령액은 매달 떼는 금액 기준이에요. 연말정산 결과에 따라 2월에 돌려받거나 더 낼 수 있어요.']},
+ 'salary-compare':{how:'두 연봉을 각각 연봉 실수령액 계산기와 같은 방식(4대보험 + 간이세액표 소득세)으로 계산하고, 월 실수령액 차이를 보여 줘요.',
+  tips:['연봉 차이보다 실수령액 차이가 작게 나와요. 늘어난 금액에도 세금과 보험료가 붙기 때문이에요.','비과세 식대가 회사마다 다르면 A·B에 따로 넣어야 정확해요.','성과급·복지포인트처럼 연봉에 안 들어가는 돈은 따로 비교하세요.']},
+ insurance:{how:'월 급여에 근로자 부담 요율을 곱해요. 국민연금 4.75%(기준소득월액 상·하한 적용), 건강보험 3.595%, 장기요양은 건강보험료의 13.14%, 고용보험 0.9%예요. 각 보험료는 10원 미만을 버려요.',
+  tips:['회사도 같은 만큼(고용보험은 더 많이) 따로 내요.','월 급여는 비과세 수당을 뺀 금액을 넣어요.','국민연금은 월 소득이 아주 높거나 낮으면 상한·하한 금액으로 계산돼요.']},
+ severance:{how:'퇴직 전 3개월 동안 받은 임금 총액(상여금·연차수당은 1년 치의 3/12 포함)을 그 기간 일수로 나눠 1일 평균임금을 구해요. 퇴직금은 1일 평균임금 × 30일 × (재직일수 ÷ 365)예요.',
+  tips:['1년 이상 일하고 4주 평균 주 15시간 이상 일했어야 받아요.','퇴직일은 마지막 근무일의 다음 날이에요.','퇴직금에도 퇴직소득세가 붙어요. 이 계산기는 세전 금액이에요.']},
+ 'annual-leave':{how:'남은 연차일수 × 하루 통상임금(통상시급 × 하루 근무시간)으로 계산해요. 하루 8시간 근무면 통상시급 × 8 × 남은 일수예요.',
+  tips:['회사가 연차 사용을 정식으로 독려(사용촉진)했는데 쓰지 않은 연차는 수당이 없을 수 있어요.','5인 미만 사업장은 연차휴가 규정이 적용되지 않아요.','퇴사할 때 남은 연차는 돈으로 정산받아요.']},
+ 'weekly-rest':{how:'일주일에 15시간 이상 일하고 그 주 소정 근무일을 다 나왔으면 하루치 임금을 더 받아요. 주휴수당 = (주 근무시간 ÷ 40) × 8 × 시급이고, 주 40시간 이상이면 8시간분이에요.',
+  tips:['주 15시간 미만이면 주휴수당이 없어요.','결근한 주는 주휴수당이 없을 수 있어요(지각·조퇴는 결근이 아니에요).','5인 미만 가게에서도 주휴수당은 받아요.']},
+ freelance:{how:'계약 금액에 소득세 3%와 지방소득세 0.3%를 떼면 실제 받는 돈이에요. 반대로 받을 돈에서 계약 금액을 구할 때는 ÷ 0.967로 계산해요. 두 세금 모두 10원 미만을 버려요.',
+  tips:['3.3%는 미리 떼는 세금이에요. 다음 해 5월 종합소득세 신고 때 정산해서 돌려받거나 더 낼 수 있어요.','소득세가 1,000원 미만이면 떼지 않아요(소액부징수).','근로계약이 아닌 사업소득이라 4대보험·퇴직금이 따로 없어요.']},
+ 'tax-refund':{how:'작년 사업소득에서 업종별 경비율로 비용을 빼고, 기본공제를 뺀 뒤 종합소득세 세율로 세금을 구해요. 이미 떼인 3.3% 중 소득세 3%와 비교해 더 낸 만큼이 환급 예상액이에요.',
+  tips:['경비율은 예시값이에요. 홈택스에서 내 업종코드의 단순·기준경비율을 확인하세요.','장부를 쓰거나 다른 소득이 있으면 결과가 크게 달라져요.','신고는 매년 5월 1~31일이에요.']},
+ 'labor-cost':{how:'직원 월급에 회사가 내는 4대보험(국민연금 4.75%, 건강보험 3.595%, 장기요양, 고용보험 사업주분, 산재보험)을 더해 한 명에게 매달 드는 비용을 계산해요.',
+  tips:['산재보험료율은 업종마다 크게 달라요. 근로복지공단에서 확인하세요.','퇴직금 적립분(월급의 약 1/12)은 따로 생각해야 해요.','두루누리 지원 대상이면 보험료 일부를 지원받을 수 있어요.']},
+ 'minwage-check':{how:'월 급여를 유급 근로시간(주휴시간 포함)으로 나눠 시간당 임금을 구하고, 올해 최저시급과 비교해요. 주 40시간이면 월 209시간으로 나눠요.',
+  tips:['식대·교통비 등 복리후생 수당 일부는 최저임금 계산에서 빠질 수 있어요.','수습 3개월은 최저임금의 90%까지 줄 수 있지만, 1년 미만 계약이거나 단순노무직이면 안 돼요.','최저임금은 매년 1월 1일에 바뀌어요.']},
+ 'daily-worker-tax':{how:'하루 일당에서 15만원을 빼고 6%를 곱한 뒤 55%를 세액공제해요. 이 소득세의 10%가 지방소득세예요. 소득세가 1,000원 미만이면 떼지 않아요.',
+  tips:['일당 15만원 이하면 세금이 없어요.','같은 사업주에게 3개월 이상(건설 1년 이상) 계속 일하면 일용직이 아니라 일반 근로자로 봐요.','고용보험은 일용직도 가입 대상이에요.']},
+ 'card-fee':{how:'결제 금액에 카드 수수료율을 곱해 수수료를 빼면 통장 입금액이에요. 연매출 규모에 따라 우대수수료율이 달라요.',
+  tips:['결제 금액 안의 부가세(1/11)는 입금 후 부가세 신고 때 따로 내요.','입금은 보통 결제 후 2~3영업일 뒤예요.','연매출 30억 초과 일반가맹점은 카드사마다 수수료율이 달라요.']},
+ unemployment:{how:'퇴직 전 3개월 평균임금의 60%가 하루 구직급여예요. 하루 상한 68,100원(2026년)과 하한(최저임금의 80% × 하루 소정근로시간) 사이로 맞추고, 나이와 고용보험 가입 기간에 따라 120~270일 동안 받아요.',
+  tips:['회사 사정(권고사직·계약만료 등)으로 그만둔 경우에 받아요. 자발적 퇴사는 원칙적으로 안 돼요.','퇴사 다음 날부터 12개월 안에 다 받아야 해서 빨리 신청하는 게 좋아요.','퇴직 전 18개월 중 고용보험 가입일이 180일 이상이어야 해요.']},
+ overtime:{how:'통상시급에 연장·야간·휴일 시간과 가산율을 곱해요. 연장 50%, 야간(밤 10시~아침 6시) 50%, 휴일 8시간까지 50%·넘는 부분 100%를 더 받아요. 겹치면 가산이 함께 붙어요.',
+  tips:['5인 미만 사업장은 가산수당 규정이 적용되지 않아요.','연장은 하루 8시간·주 40시간을 넘긴 시간이에요.','포괄임금 계약이라도 실제 일한 시간이 더 많으면 차액을 받을 수 있어요.']},
+ resign:{how:'퇴직금, 남은 연차수당, 실업급여를 각각 계산해 더해요. 퇴직금은 평균임금 × 30일 × 근속비율, 연차수당은 남은 일수 × 하루 임금, 실업급여는 평균임금의 60% × 받는 일수예요.',
+  tips:['실업급여는 회사 사정으로 그만둔 경우에만 받아요.','퇴직금은 퇴사 후 14일 안에 받는 게 원칙이에요.','퇴사한 해 연말정산을 못 했다면 다음 해 5월에 직접 신고해요.']},
+ wage:{how:'시급으로 월급을 구할 때는 (주 근무시간 + 주휴시간) × 365 ÷ 7 ÷ 12로 월 유급시간을 구해 시급을 곱해요. 주 40시간이면 월 209시간이에요.',
+  tips:['주 15시간 미만이면 주휴시간이 없어서 월 시간이 줄어요.','209시간은 주휴시간 8시간을 포함한 숫자예요.','세전 금액이에요. 4대보험·소득세를 떼면 실수령액은 더 적어요.']},
+ parttime:{how:'요일별 근무시간에서 휴게시간을 빼고 일주일 근무시간을 구한 뒤, 시급을 곱하고 주휴수당을 더해요. 한 달은 평균 4.345주로 계산해요.',
+  tips:['휴게시간은 임금에 들어가지 않아요(4시간에 30분, 8시간에 1시간 이상).','5인 이상 가게에서 하루 8시간을 넘기면 연장수당이 붙어요.','3.3%를 떼는 알바는 근로자인데 사업소득으로 처리된 경우가 있어요. 근로계약서를 확인하세요.']},
+ compound:{how:'매달 잔액에 월 이자(연 이자율 ÷ 12)를 붙이고 그 이자에도 다시 이자가 붙게 계산해요. 연복리는 1년에 한 번 이자를 붙여요. 만기에 이자소득세 15.4%를 떼요.',
+  tips:['기간이 길수록 단리와의 차이가 커져요.','투자 수익률은 해마다 달라서 실제 결과는 계산과 달라요.','ISA·비과세 상품은 세금이 줄거나 없어요.']},
+ percent:{how:'A의 B%는 A × B ÷ 100, A가 B의 몇 %인지는 A ÷ B × 100, 변화율은 (나중 − 처음) ÷ 처음 × 100으로 계산해요.',
+  tips:['%와 %p는 달라요. 3%→4%는 1%p, 변화율로는 약 33%예요.','20% 내린 뒤 20% 올리면 원래 값보다 작아요.','소수점은 둘째 자리에서 반올림해 보여 줘요.']},
+ vat:{how:'공급가액에 10%를 곱하면 부가세, 둘을 더하면 합계예요. 합계만 알면 ÷ 1.1로 공급가액을 구하고, 나머지가 부가세예요.',
+  tips:['간이과세자는 업종별 부가가치율을 곱해 실제 세금이 더 적어요.','1원 단위 처리는 발행처마다 달라 1원 차이가 날 수 있어요.','면세 품목(농산물 등)은 부가세가 없어요.']},
+ pyeong:{how:'1평은 400/121㎡(약 3.3058㎡)예요. ㎡를 3.3058로 나누면 평, 평에 3.3058을 곱하면 ㎡예요.',
+  tips:['아파트 "34평"은 보통 공급면적 기준이라 전용면적(84㎡ ≈ 25.4평)과 달라요.','계약서·등기에는 ㎡로 적어요.','발코니 확장 면적은 전용면적에 들어가지 않아요.']},
+ age:{how:'기준일 연도에서 태어난 해를 빼고, 올해 생일이 아직 안 지났으면 1을 더 빼요.',
+  tips:['2023년 6월 28일부터 법과 행정에서는 따로 정하지 않으면 만 나이를 써요.','청소년보호법·병역법처럼 연 나이를 쓰는 법도 있어요.','2월 29일생은 평년에는 2월 28일이 지나면 생일이 지난 것으로 봐요.']},
+ brokerage:{how:'거래금액에 구간별 상한요율을 곱하고, 한도액이 있으면 그 안으로 맞춰요. 월세는 보증금 + 월세 × 100(5천만원 미만이면 × 70)을 거래금액으로 봐요.',
+  tips:['상한요율은 최대치예요. 그 안에서 중개사와 협의해요.','계약 전에 중개보수를 미리 정해 두면 다툼이 줄어요.','중개사무소가 일반과세자면 부가세 10%를 따로 받을 수 있어요.']},
+ 'car-tax':{how:'배기량에 cc당 세액(1,000cc 이하 80원, 1,600cc 이하 140원, 초과 200원)을 곱하고, 3년차부터 해마다 5%씩(최대 50%) 깎아요. 여기에 지방교육세 30%를 더해요.',
+  tips:['1월에 연납하면 할인받아요. 3·6·9월에도 신청할 수 있지만 할인이 줄어요.','하이브리드도 배기량으로 계산해요.','영업용 차량은 세율이 달라요.']},
+ deposit:{how:'단리는 원금 × 연 이자율 × 개월 ÷ 12, 월복리는 원금 × ((1 + 연 이자율 ÷ 12)^개월 − 1)로 이자를 구해요. 이자에서 15.4%를 떼면 세후 이자예요.',
+  tips:['중도해지하면 약정 금리보다 훨씬 낮은 금리가 적용돼요.','예금자보호는 금융회사별 1인당 1억원까지예요(2025년 9월부터).','만기 후 찾지 않은 기간은 낮은 금리가 붙어요.']},
+ savings:{how:'매달 넣은 돈마다 남은 개월 수만큼 이자가 붙어요. 단리 기준 이자 = 월 납입액 × 연 이자율 ÷ 12 × (개월 × (개월 + 1) ÷ 2)예요. 이자에서 15.4%를 떼요.',
+  tips:['1년 적금 4%면 실제 이자는 넣은 돈의 약 2.17%예요.','납입을 빠뜨리면 이자가 줄거나 만기가 늦어져요.','같은 금리면 목돈은 예금이 이자가 더 많아요.']},
+ goal:{how:'지금 모아 둔 돈은 예금처럼, 매달 모으는 돈은 적금처럼 이자를 붙이고 세금 15.4%를 뺀 금액이 목표에 닿는 가장 작은 월 금액을 찾아요.',
+  tips:['금리가 바뀌면 결과도 달라져요. 몇 달마다 다시 계산해 보세요.','적금은 보통 한도와 기간이 있어서 여러 상품으로 나눠야 할 수 있어요.','비과세 상품을 쓰면 매달 금액이 조금 줄어요.']},
+ loan:{how:'원리금균등은 매달 같은 금액(원금 × 월이율 ÷ (1 − (1 + 월이율)^−개월))을 갚고, 원금균등은 원금을 개월로 나눈 금액에 남은 원금의 이자를 더해 갚아요. 만기일시는 매달 이자만 내고 마지막에 원금을 갚아요.',
+  tips:['총 이자는 원금균등이 가장 적고 만기일시가 가장 많아요.','은행은 일 단위로 이자를 계산해서 몇 원~몇백 원 다를 수 있어요.','변동금리는 금리가 바뀌면 상환액도 바뀌어요.']},
+ 'prepay-fee':{how:'갚는 금액 × 수수료율 × (남은 기간 ÷ 기준 기간)으로 계산해요. 기준 기간은 보통 면제기간(3년)이에요.',
+  tips:['대출 후 3년이 지나면 보통 수수료가 없어요.','해마다 일부(예: 10%)는 수수료 없이 갚게 해 주는 상품도 있어요.','금리가 많이 내렸다면 수수료를 내고 갈아타는 게 나을 수 있어요.']},
+ 'split-14h':{how:'한 명을 주 N시간 쓸 때와 주 15시간 미만으로 나눠 쓸 때의 임금, 주휴수당, 4대보험, 퇴직금을 각각 더해 비교해요.',
+  tips:['주 15시간 미만이면 주휴수당·퇴직금·연차가 없지만 사람 수가 늘어 관리 부담이 커져요.','근로시간을 나누려고 계약을 쪼개는 게 실제 근무와 다르면 문제가 될 수 있어요.','월 60시간 이상이면 4대보험 가입 대상이에요.']},
+ 'lotto-tax':{how:'당첨금이 200만원 이하면 세금이 없어요. 넘으면 1,000원(구입비)을 빼고 3억원까지 20%, 넘는 부분 30%의 소득세를 매기고, 그 10%를 지방소득세로 더해요.',
+  tips:['합치면 3억까지 22%, 넘는 부분 33%예요.','당첨금은 지급 개시일부터 1년 안에 받아야 해요.','1등은 농협은행 본점에서 받아요.']},
+ 'pension-tax':{how:'연금복권은 매달 받는 금액에서 22%(소득세 20% + 지방소득세 2%)를 떼요. 1등은 월 700만원을 20년, 2등은 월 100만원을 10년 받아요.',
+  tips:['1등 매달 실수령액은 546만원이에요.','같은 번호를 1~5조 모두 사서 1등이 되면 나머지 4장은 2등이에요.','당첨금 수령은 동행복권 안내를 따르세요.']}
+};
+CALC_FAQ['salary-compare']=[{q:'연봉이 300만원 오르면 월 실수령액은 얼마나 늘어요?',a:'세금과 보험료가 함께 늘어서 월 25만원보다 적게 늘어요. 위에 두 연봉을 넣으면 정확한 차이가 나와요.'},{q:'이직할 때 무엇을 더 봐야 하나요?',a:'퇴직금 포함 여부, 성과급, 식대 비과세, 복지포인트처럼 연봉 숫자에 안 보이는 조건을 함께 비교하세요.'}];
+// ── 전세보증보험(HUG 전세보증금반환보증) 보증료: 주택도시보증공사 상품개요 보증료율표 (2026-11-19 확인) ──
+// [보증금 상한, 아파트[70%이하,80%이하,초과], 그 외[...]] (연 %)
+const HUGR=[[1e8,[.097,.117,.137],[.111,.142,.172]],[2e8,[.102,.124,.146],[.117,.151,.184]],[5e8,[.107,.131,.154],[.124,.161,.197]],[Infinity,[.113,.138,.164],[.132,.172,.211]]];
+calcs.push({id:'jeonse-guarantee',label:'전세보증보험 보증료',title:'전세보증보험 보증료 계산기',group:'money',
+ disclaimerExtra:'주택도시보증공사(HUG) 전세보증금반환보증 기준이에요. 실제 가입 가능 여부와 주택가격은 HUG 심사로 정해져요. HF·SGI서울보증은 요율이 달라요.',
+ fields:[{id:'dep',label:'전세보증금',unit:'만원',placeholder:'예: 30000'},{id:'apt',type:'seg',label:'주택 유형',options:[{value:'apt',label:'아파트'},{value:'etc',label:'그 외 (빌라·오피스텔 등)'}]},
+  {id:'price',label:'주택가격 (시세)',unit:'만원',placeholder:'예: 50000',hint:'아파트는 KB시세 등, 빌라는 공시가격의 140% 등으로 HUG가 정해요.'},{id:'prior',label:'집에 잡힌 대출 (선순위)',unit:'만원',placeholder:'예: 0',hint:'등기부등본 을구의 근저당 금액이에요. 없으면 0이에요.'},
+  {id:'yrs',label:'계약 기간',unit:'년',placeholder:'예: 2'},
+  {id:'dc',type:'select',label:'할인',options:[{value:'0',label:'해당 없음'},{value:'60',label:'60% (연소득 5천만원 이하·한부모·1인 고령)'},{value:'40',label:'40% (신혼부부·다자녀·고령자 등)'},{value:'3',label:'3% (전자계약)'}]}],
+ run(v){const D=(+v.dep||0)*1e4,P=(+v.price||0)*1e4,B=(+v.prior||0)*1e4,Y=+v.yrs||2,dc=+v.dc||0;if(!D)return{main:'전세보증금을 넣어 주세요',sub:[]};if(!P)return{main:'주택가격을 넣어 주세요',sub:[]};
+  const lim=P*0.9,ratio=(B+D)/lim*100,row=HUGR.find(r=>D<=r[0]),rr=row[v.apt=='etc'?2:1],rate=ratio<=70?rr[0]:ratio<=80?rr[1]:rr[2];
+  const base=D*rate/100*Y*365/365,sur=B>lim*0.5?base*0.1:0,fee=Math.floor((base+sur)*(100-dc)/100);
+  const over=B+D>lim;
+  return{main:over?'⚠️ 보증 한도를 넘어 가입이 어려울 수 있어요':`보증료 ${won(fee)}`,sub:[['부채비율',`${nf(ratio,1)}%`],['적용 보증료율',`연 ${rate}%`],['기본 보증료',won(base)],...(sur?[['할증 10% (선순위가 많아요)','+ '+won(sur)]]:[]),...(dc?[[`할인 ${dc}%`,'− '+won((base+sur)*dc/100)]]:[]),['보증료 (계약 기간 전체)',won(fee)],['1년으로 치면',won(fee/Y)],
+   ['보증 한도',won(Math.max(lim-B,0))],[`보증금 한도: 수도권 7억원, 그 외 5억원 이하만 가입할 수 있어요. 보증료는 연말정산 세액공제 대상이에요(보증금 3억원 이내).`,'']]}}});
+CALC_FAQ['jeonse-guarantee']=[{q:'보증료는 어떻게 계산해요?',a:'보증금 × 보증료율 × 계약일수 ÷ 365예요. 보증료율은 보증금 구간, 주택 유형, 부채비율에 따라 연 0.097%~0.211%예요.'},{q:'언제까지 가입해야 해요?',a:'전세계약 기간의 절반이 지나기 전까지 신청해야 해요. 이사 전에 안심전세 앱에서 사전한도심사를 받을 수도 있어요.'},{q:'할인은 중복되나요?',a:'사회배려계층 할인(60%·40%)은 하나만 적용돼요. 자세한 조건은 HUG 안내를 확인하세요.'}];
+LEGAL_BASIS['jeonse-guarantee']='주택도시보증공사 전세보증금반환보증 상품개요의 보증료율표와 계산식(보증금액 × 보증료율 × 전월세계약기간 ÷ 365), 할인·할증 기준을 따랐어요. 부채비율 = (선순위 채권 + 전세보증금) ÷ (주택가격 × 90%).';
+CALC_SRC['jeonse-guarantee']=()=>'주택도시보증공사(HUG) 전세보증금반환보증 보증료율표 · 2026년 11월 확인';
+// ── 청년미래적금: 금융위원회 2026.6.22 보도자료 (월 최대 50만원, 3년, 정부 기여금 6%·12%, 이자 비과세) ──
+calcs.push({id:'youth-future',label:'청년미래적금',title:'청년미래적금 만기 계산기',group:'money',
+ disclaimerExtra:'정부 기여금에 붙는 이자는 지급 방식에 따라 달라 빼고 계산했어요. 실제 금리는 가입한 은행 상품을 확인하세요.',
+ fields:[{id:'m',label:'월 납입액',unit:'원',placeholder:'예: 500000',hint:'매달 최대 50만원까지 자유롭게 넣어요.'},{id:'type',type:'seg',label:'유형',options:[{value:'6',label:'일반형 (기여금 6%)'},{value:'12',label:'우대형 (기여금 12%)'}]},
+  {id:'rate',label:'은행 금리',unit:'%',placeholder:'예: 7',hint:'금융위원회 보도자료 예시는 7%·8%를 가정했어요. 가입한 상품의 금리를 넣으세요.'}],
+ run(v){const M=Math.min(+v.m||0,5e5),n=36,r=(+v.rate||0)/100,k=+(v.type||6)/100;if(!M)return{main:'월 납입액을 넣어 주세요',sub:[]};
+  const paid=M*n,gov=paid*k,it=Math.floor(savInt(M,r,n,'s')),tot=paid+gov+it,eq=it>0||gov>0?(gov+it)/0.846/(M*n*(n+1)/2/12)*100:0;
+  return{main:`만기에 ${won(tot)}`,sub:[['넣은 돈 (36개월)',won(paid)],[`정부 기여금 (${k*100}%)`,'+ '+won(gov)],['이자 (비과세)','+ '+won(it)],['만기 받는 돈',won(tot)],['일반 적금으로 치면',`연 ${nf(eq,1)}% 단리 적금과 비슷해요 (이자 세금 15.4% 감안)`],...(+v.m>5e5?[['월 50만원까지만 넣을 수 있어서 50만원으로 계산했어요.','']]:[])]}}});
+CALC_FAQ['youth-future']=[{q:'누가 가입할 수 있어요?',a:'만 19~34세 중 소득 요건을 갖춘 청년이에요(병역 기간은 나이 계산에서 최대 6년 빼요). 중소기업 재직자·신규 취업자·소상공인은 우대형(기여금 12%)이에요.'},{q:'기여금은 얼마나 받아요?',a:'넣은 돈의 6%(일반형) 또는 12%(우대형)예요. 월 50만원씩 3년이면 일반형 108만원, 우대형 216만원이에요.'},{q:'다음 가입은 언제예요?',a:'1차 가입은 2026년 7월 3일에 끝났고, 2차는 2026년 12월(잠정)이에요. 금융위원회 안내를 확인하세요.'}];
+LEGAL_BASIS['youth-future']='금융위원회 2026년 6월 22일 보도자료 「청년미래적금 출시」 기준이에요. 매월 최대 50만원, 3년 만기, 납입액의 6% 또는 12% 정부 기여금, 이자소득세 면제예요.';
+CALC_SRC['youth-future']=()=>'금융위원회 보도자료 (2026.6.22) 기준';
+HOWTO['jeonse-guarantee']={how:'부채비율 = (선순위 대출 + 전세보증금) ÷ (주택가격 × 90%)를 구하고, 보증금 구간·주택 유형·부채비율로 보증료율을 찾아요. 보증료 = 보증금 × 보증료율 × 계약일수 ÷ 365예요.',tips:['계약 기간의 절반이 지나기 전까지 신청해야 해요.','선순위 대출이 주택가격 × 90%의 절반을 넘으면 보증료가 10% 할증돼요.','빌라는 주택가격을 낮게 잡는 경우가 많아 한도가 부족할 수 있어요. 사전한도심사로 미리 확인하세요.']};
+HOWTO['youth-future']={how:'넣은 돈(최대 월 50만원 × 36개월)에 정부 기여금(6% 또는 12%)과 은행 이자를 더해요. 이자는 비과세라 세금을 떼지 않아요.',tips:['월 납입액은 자유롭게 바꿀 수 있지만, 기여금은 넣은 돈에 비례해요.','중도해지하면 기여금과 비과세 혜택을 못 받을 수 있어요.','금융위원회 예시(금리 7%, 일반형)로는 만기 약 2,110만원이에요.']};
+// 예시: 기본값으로 실제로 계산한 결과 (숫자를 손으로 적지 않아 틀릴 일이 없다)
+function exampleHtml(id){const c=calcs.find(x=>x.id==id);if(!c)return '';const v={};c.fields.forEach(f=>v[f.id]=ex(f));let r;try{r=c.run(v)}catch(e){return ''}
+ if(!r||!/\d/.test(String(r.main)))return '';
+ const ok=f=>(!f.when||f.when==v.mode)&&(!f.type||f.type=='number'||f.type=='select'||f.type=='date')&&v[f.id]!==''&&v[f.id]!=null&&!(f.type!='select'&&f.type!='date'&&+v[f.id]===0)&&!(f.type=='select'&&!f.options.some(o=>String(o.value)==String(v[f.id])));
+ const ins=c.fields.filter(ok).map(f=>{const u=typeof f.unit=='function'?f.unit(v):(f.unit||''),o=f.type=='select'?(f.options.find(o=>String(o.value)==String(v[f.id]))||{}).label:null;return `${f.label} ${o||(f.type=='date'?v[f.id]:(f.id=='year'?v[f.id]:fmtN(v[f.id]))+(u?' '+u:''))}`});
+ const segs=c.fields.filter(f=>f.type=='seg'&&f.id!='pu'&&(!f.when||f.when==v.mode)).map(f=>(f.options.find(o=>o.value==v[f.id])||{}).label).filter(Boolean);
+ const rows=(r.sub||[]).filter(([a,b])=>b).slice(0,6);
+ return `<p>${[...segs,...ins].join(', ')}이면</p><div class="exr">${rows.map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('')}</div><p><b>${r.main}</b></p>`}
+function infoHtml(id){const H=HOWTO[id]||{},faq=(CALC_FAQ[id]||[]).slice(0,5),c=ALLC().find(x=>x.id==id),src=[CALC_SRC[id]&&CALC_SRC[id](),LEGAL_BASIS[id]].filter(Boolean),exa=exampleHtml(id);
  return `<details class="info cardx"><summary><span>계산 방법과 자주 묻는 질문</span><i>펼치기</i></summary>
- ${how.length?`<h3>계산 기준</h3>${how.map(t=>`<p>${t}</p>`).join('')}`:''}
+ ${H.how?`<h3>${c?c.title.replace(/ 계산기$/,''):''} 계산하는 법</h3><p>${H.how}</p>`:''}
+ ${exa?`<h3>예시로 계산해 보기</h3>${exa}`:''}
+ ${H.tips?`<h3>자주 하는 실수와 알아 둘 점</h3><ul class="tips">${H.tips.map(t=>`<li>${t}</li>`).join('')}</ul>`:''}
+ ${src.length||c&&c.disclaimerExtra?`<h3>기준과 출처</h3>${src.map(t=>`<p>${t}</p>`).join('')}${c&&c.disclaimerExtra?`<p>${c.disclaimerExtra}</p>`:''}`:''}
  ${faq.length?`<h3>자주 묻는 질문</h3>${faq.map(q=>`<details><summary>${q.q}</summary><p>${q.a}</p></details>`).join('')}`:''}
  <div id="crel">${calcs.some(x=>x.id==id)?relHtml(id):''}</div></details>`}
 function frame(id,g,title,card){return `<div class="cv">${dirHtml(id,'cside')}<div class="cvm">
