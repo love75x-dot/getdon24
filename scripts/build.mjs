@@ -357,14 +357,15 @@ const css = await readFile(join(ROOT, 'src/style.css'), 'utf8');
 // 모든 페이지가 받는 기본 데이터는 가볍게: 무거운 자료는 필요한 화면에서만 따로 받는다
 const topBy = (arr, n) => [...arr].sort((a, b) => b[0] - a[0]).slice(0, n);
 const { map: placeMap, ...placesCore } = DATA.places;
-const CORE = { ...DATA, places: placesCore, draws: topBy(DATA.draws, 12), pension: topBy(DATA.pension, 6), support: [], wtax: null };
+const mapJs = `window.DATA.lmap={geo:${await readFile(join(ROOT, 'src/map-kr.json'), 'utf8')},u:${JSON.stringify(placeMap)}};\n`;
+const CORE = { ...DATA, config: { ...DATA.config, mapJs: `/assets/data-map.js?v=${createHash('sha1').update(mapJs).digest('hex').slice(0, 8)}` }, places: placesCore, draws: topBy(DATA.draws, 12), pension: topBy(DATA.pension, 6), support: [], wtax: null };
 const dataJs = `window.DATA=${JSON.stringify(CORE)};\n`;
 const EXTRA = {
   draws: `window.DATA.draws=${JSON.stringify(DATA.draws)};\n`,
   pension: `window.DATA.pension=${JSON.stringify(DATA.pension)};\n`,
   support: `window.DATA.support=${JSON.stringify(DATA.support)};\n`,
   wtax: `window.DATA.wtax=${JSON.stringify(DATA.wtax)};\n`,
-  map: `window.DATA.lmap={geo:${await readFile(join(ROOT, 'src/map-kr.json'), 'utf8')},u:${JSON.stringify(placeMap)}};\n`,
+  map: mapJs,
 };
 DATA.lmap = { geo: JSON.parse(await readFile(join(ROOT, 'src/map-kr.json'), 'utf8')), u: placeMap };
 { const have = new Set(DATA.lmap.geo.u.map((x) => x[0] + '|' + x[1])), miss = placeMap.filter((x) => !have.has(x[0] + '|' + x[1]));

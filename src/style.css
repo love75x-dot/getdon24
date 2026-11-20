@@ -605,7 +605,7 @@ main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important
 .kmap path{stroke:var(--card);stroke-width:1.1;stroke-linejoin:round;cursor:pointer;outline:none;transition:filter .15s}
 .kmap path:hover,.kmap path:focus-visible{filter:brightness(.9)}
 .kmap path:focus-visible{stroke:var(--fg);stroke-width:1.2}
-.kmap path.on{stroke:var(--fg)!important;stroke-width:1.4!important}
+.kmap path.on{stroke:var(--fg)!important}
 .lv0{fill:var(--soft);background:var(--soft)}
 .lv1{fill:color-mix(in srgb,var(--navy) 14%,var(--card));background:color-mix(in srgb,var(--navy) 14%,var(--card))}
 .lv2{fill:color-mix(in srgb,var(--navy) 32%,var(--card));background:color-mix(in srgb,var(--navy) 32%,var(--card))}
@@ -634,3 +634,7 @@ main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important
  .mside .mlist{max-height:60vh;overflow-y:auto}
 }
 @media (max-width:600px){.mlg{font-size:14px}.mlg tspan{font-size:12.5px}}
+.mapload{padding:40px 0;text-align:center;color:var(--mute);font-size:14px}
+.mcrumb .mbig{margin-left:auto;margin-right:0;color:var(--navy);font-weight:700;font-size:13.5px}
+.mbig2{display:block;margin-top:10px;text-align:center;padding:10px;border-radius:10px;background:var(--soft);color:var(--navy);font-weight:700;font-size:14px;text-decoration:none}
+.msub{font-size:12.5px;color:var(--mute);margin:-4px 0 0;line-height:1.5}

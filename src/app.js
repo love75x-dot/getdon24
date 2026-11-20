@@ -414,7 +414,9 @@ function tg(n){pick.has(n)?pick.delete(n):pick.size<6&&pick.add(n);render()}
 let mapG='',mapU='';
 const MLBL={'경기':[30,-38],'인천':[-22,10],'서울':[0,2],'충북':[26,-22],'세종':[-8,0],'대전':[4,6],'대구':[2,8],'경북':[8,-14],'울산':[10,-4],'부산':[8,6]};
 function mapPick(g,u){mapG=g||'';mapU=u||'';render();if(u){const e=document.getElementById('lmsel');if(e)e.scrollIntoView({block:'nearest',behavior:'smooth'})}}
-function lottoMap(){const M=DATA.lmap;if(!M)return `<h1 class="h1">로또 1등 지도</h1><p class="note">지도를 불러오지 못했어요.</p>${foot}`;
+let mapLoading=0;
+function loadMap(){if(DATA.lmap||mapLoading||typeof document=='undefined'||window.__PRERENDER)return;mapLoading=1;const sc=document.createElement('script');sc.src=(DATA.config&&DATA.config.mapJs)||'/assets/data-map.js';sc.onload=()=>render();sc.onerror=()=>{mapLoading=2;render()};document.head.appendChild(sc)}
+function lottoMap(embed){const M=DATA.lmap;if(!M){if(embed){setTimeout(loadMap);return `<div class="mapload">${mapLoading==2?'지도를 불러오지 못했어요. '+A('lmap','','지도 페이지에서 보기 ›'):'지도를 불러오는 중이에요…'}</div>`}return `<h1 class="h1">로또 1등 지도</h1><p class="note">지도를 불러오지 못했어요.</p>${foot}`}
  const G=M.geo,last=(PL.latest||{}).r,esc=t=>String(t).replace(/'/g,"\\'");
  const byU=new Map(M.u.map(x=>[x[0]+'|'+x[1],x])),gsum=new Map,glast=new Map;
  for(const x of M.u){gsum.set(x[0],(gsum.get(x[0])||0)+x[2]);if(x[3]==last)glast.set(x[0],1)}
@@ -426,23 +428,27 @@ function lottoMap(){const M=DATA.lmap;if(!M)return `<h1 class="h1">로또 1등 �
   list=[...gsum.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>[g,'',n,glast.has(g)])}
  else{const gb=(G.g.find(x=>x[0]==mapG)||[0,0,0,[0,0,G.W,G.H]])[3],pad=Math.max(gb[2],gb[3])*.06;vb=`${gb[0]-pad} ${gb[1]-pad} ${gb[2]+pad*2} ${gb[3]+pad*2}`;title=mapG;
   const us=G.u.filter(x=>x[0]==mapG),lv=scale(us.map(x=>(byU.get(x[0]+'|'+x[1])||[])[2]||0)),fs=Math.max(gb[2],gb[3])/34;
-  svg=us.map(([g,u,d])=>{const n=(byU.get(g+'|'+u)||[])[2]||0;return `<path d="${d}" class="lv${lv(n)}${u==mapU?' on':''}" style="stroke-width:${(fs/12).toFixed(2)}" ${pick(g,u)} aria-label="${u} 1등 ${n}건"><title>${u} ${n}건</title></path>`}).join('')
+  svg=us.map(([g,u,d])=>{const n=(byU.get(g+'|'+u)||[])[2]||0;return `<path d="${d}" class="lv${lv(n)}${u==mapU?' on':''}" style="stroke-width:${(u==mapU?fs/5:fs/12).toFixed(2)}" ${pick(g,u)} aria-label="${u} 1등 ${n}건"><title>${u} ${n}건</title></path>`}).join('')
    +us.map(([g,u,d,c,wh])=>{const x=byU.get(g+'|'+u),nm=u.replace(/^광주 /,''),fit=!wh||(wh[0]>fs*nm.length*.95&&wh[1]>fs*1.6);return `${fit?`<text x="${c[0]}" y="${c[1]}" class="ml" style="font-size:${fs.toFixed(2)}px;stroke-width:${(fs/4).toFixed(2)}px">${nm}</text>`:''}${x&&x[3]==last?`<circle cx="${c[0]}" cy="${(c[1]-fs*1.2).toFixed(1)}" r="${(fs/2.6).toFixed(2)}" class="mdot"/>`:''}`}).join('');
   list=us.map(([g,u])=>{const x=byU.get(g+'|'+u);return [g,u,x?x[2]:0,!!(x&&x[3]==last)]}).sort((a,b)=>b[2]-a[2])}
  const mx=Math.max(1,...list.map(x=>x[2]));
  const rows=list.map(([g,u,n,l])=>`<button type="button" class="mrow${u&&u==mapU?' on':''}" onclick="mapPick('${esc(g)}'${u?`,'${esc(u)}'`:''})"><span class="nm">${l?'<i class="mdot2"></i>':''}${u||g}</span><span class="bar"><i style="width:${n/mx*100}%"></i></span><b>${n.toLocaleString()}</b></button>`).join('');
  const sel=mapU&&byU.get(mapG+'|'+mapU);
  const selHtml=mapU?`<section class="cardx" id="lmsel"><h2>${mapU} 1등 판매점 <small>${sel?sel[2]:0}건${sel?` · 마지막 ${sel[3]}회`:''}</small></h2>${sel&&sel[4].length?sel[4].map((t,i)=>`<div class="it"><span class="rk">${i+1}</span><span class="nm">${t[0]}</span><span class="ad one">${t[1]}</span><span class="num">${t[2]}회</span></div>`).join(''):'<p class="note">이 기간에는 1등이 나온 판매점이 없어요.</p>'}${sel&&sel[4].length>=10?'<p class="note">1등이 많이 나온 10곳까지 보여 드려요.</p>':''}</section>`:'';
+
+ const crumb=`<nav class="mcrumb">${embed?'':A('lotto','','‹ 복권')}<button type="button" class="${mapG?'':'on'}" onclick="mapPick()">전국</button>${mapG?`<span>›</span><button type="button" class="${mapU?'':'on'}" onclick="mapPick('${esc(mapG)}')">${mapG}</button>`:''}${mapU?`<span>›</span><b>${mapU}</b>`:''}${embed?A('lmap','mbig','크게 보기 ›'):''}</nav>`;
+ const svgH=`<svg class="kmap" viewBox="${vb}" role="img" aria-label="${title} 로또 1등 지도">${svg}</svg><div class="mleg"><span>적음</span>${[1,2,3,4,5].map(i=>`<i class="lv${i}"></i>`).join('')}<span>많음</span><span class="mlast"><i class="mdot2"></i>${last}회 1등</span></div>`;
+ if(embed){const top=sel&&sel[4].length?`<p class="hct" id="lmsel" style="margin-top:14px">${mapU} 1등 판매점 · ${sel[2]}건</p>${sel[4].slice(0,5).map((t,i)=>`<div class="it"><span class="rk">${i+1}</span><span class="nm">${t[0]}</span><span class="ad one">${t[1]}</span><span class="num">${t[2]}회</span></div>`).join('')}${A('lmap','mbig2','시·군·구 순위와 판매점 더 보기 ›')}`:mapU?'<p class="note">이 기간에는 1등이 나온 판매점이 없어요.</p>':'';
+  return `<p class="msub">지도는 ${PL.from}~${PL.to}회 1등 ${total.toLocaleString()}건을 모은 거예요. 노란 점이 이번 회차 1등이 나온 곳이에요.</p>${crumb}${svgH}<p class="note">${mapG?'지역을 누르면 그곳 1등 판매점이 나와요.':'시·도를 누르면 시·군·구 지도로 들어가요.'}</p>${top}`}
  return `<h1 class="h1">로또 1등 지도</h1><p class="lsub">${PL.from}~${PL.to}회 1등 ${total.toLocaleString()}건 · 인터넷 판매 제외</p>
- <nav class="mcrumb">${A('lotto','','‹ 복권')}<button type="button" class="${mapG?'':'on'}" onclick="mapPick()">전국</button>${mapG?`<span>›</span><button type="button" class="${mapU?'':'on'}" onclick="mapPick('${esc(mapG)}')">${mapG}</button>`:''}${mapU?`<span>›</span><b>${mapU}</b>`:''}</nav>
- <div class="mapw"><section class="cardx" id="lmapc"><svg class="kmap" viewBox="${vb}" role="img" aria-label="${title} 로또 1등 지도">${svg}</svg>
- <div class="mleg"><span>적음</span>${[1,2,3,4,5].map(i=>`<i class="lv${i}"></i>`).join('')}<span>많음</span><span class="mlast"><i class="mdot2"></i>${last}회 1등</span></div>
+ ${crumb}
+ <div class="mapw"><section class="cardx" id="lmapc">${svgH}
  <p class="note">${mapG?'지역을 누르면 그곳 1등 판매점이 나와요.':'시·도를 누르면 시·군·구 지도로 들어가요.'}</p></section>
  <div class="mside">${selHtml}<section class="cardx"><h2>${title} 1등 순위 <small>${mapG?'시·군·구':'시·도'}</small></h2><div class="mlist">${rows}</div></section></div></div>
  <p class="note" style="margin-top:12px">동행복권 1등 배출점 기록을 주소로 묶었어요. 판매점이 많은 지역에서 1등도 많이 나와요. 통계는 재미로 보는 정보이고, 명당이 당첨 확률을 높이지는 않아요. 경계는 통계청 2013년 시·군·구 경계를 가공했고, 그 뒤 바뀐 행정구역(인천 구 개편, 군위군 대구 편입 등)은 예전 경계에 맞춰 묶었어요.</p>${foot}`}
 function place(){const L=PL.latest||{r:0,rows:[]},REG=PL.regions||[],TOP=PL.top||[],seg=`<div class="seg">${[['region','시도별 1등'],['top','명당 순위']].map(([k,l])=>`<button class="${placeF==k?'on':''}" onclick="placeF='${k}';render()">${l}</button>`).join('')}</div>`;
  const tag=m=>`<span class="tag ${m=='수동'?'m':m=='반자동'?'s':''}">${m}</span>`;
- const st=`${A('lmap','mapcta','<b>🗺️ 1등 지도로 보기</b><small>시·도, 시·군·구별로 1등이 나온 곳을 지도에서 봐요 ›</small>')}<h2>${L.r}회 1등 판매점 <small>1등 ${L.games}건</small></h2>${L.rows.map(s=>`<div class="it"><span class="nm">${s[0]}${s[3]>1?` ×${s[3]}`:''}</span><span class="ad one">${s[1]}</span>${tag(s[2])}</div>`).join('')}`;
+ const st=`<h2>${L.r}회 1등 판매점 <small>1등 ${L.games}건</small></h2>${lottoMap(1)}<p class="hct" style="margin-top:16px">${L.r}회 1등 판매점</p>${L.rows.map(s=>`<div class="it"><span class="nm">${s[0]}${s[3]>1?` ×${s[3]}`:''}</span><span class="ad one">${s[1]}</span>${tag(s[2])}</div>`).join('')}`;
  const mx=REG.length?REG[0][1]:1;
  if(placeF=='region')return st+`<h2>지역별 1등 <small>${PL.from}~${PL.to}회 · ${(PL.total||0).toLocaleString()}건</small></h2>${seg}<p class="note"><span class="dot"></span> ${L.r}회 1등 나온 지역 · 인터넷 판매 제외</p>${REG.map(r=>`<div class="rg"><span>${r[2]?'<span class="dot"></span>':''}</span><span class="nm">${r[0]}</span><div class="bar"><i style="width:${r[1]/mx*100}%"></i></div><b>${r[1].toLocaleString()}</b></div>`).join('')}${foot}`;
  return st+`<h2>명당 순위 TOP ${TOP.length} <small>1등 횟수</small></h2>${seg}${TOP.map((t,i)=>`<div class="it"><span class="rk">${i+1}</span><span class="nm">${t[0]}</span><span class="ad one">${t[1]}</span><span class="num">${t[2]}회</span></div>`).join('')}<p class="note" style="margin-top:8px">${PL.from}회부터 동행복권 1등 배출점 기록 기준이에요. 인터넷 판매는 뺐어요. 명당이 당첨 확률을 높이지는 않아요.</p>${foot}`}
