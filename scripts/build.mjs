@@ -140,7 +140,7 @@ async function loadPlaces(latestRound) {
 // 공유 이미지: static/og/{이름}.png 가 있으면 그 화면 전용 이미지 (scripts/make-og.cjs 로 만든다)
 function ogOf(route) {
   const n = route.startsWith('c-') ? route.slice(2) : route;
-  return existsSync(join(ROOT, 'static/og', n + '.png')) ? `/og/${n}.png` : '/og-image.png?v=2';
+  return existsSync(join(ROOT, 'static/og', n + '.png')) ? `/og/${n}.png` : '/og-image.png?v=3';
 }
 // ---------- 페이지 틀 ----------
 function page({ route, title, desc, html, tabs, jsonld, assets, noindex, ogType = 'website', pre = false }) {
