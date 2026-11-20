@@ -1169,13 +1169,14 @@ const HCAT=[['직장인','연봉·퇴직금·실업급여','c-salary'],['알바'
 function searchIdx(){const c=ALLC().filter(x=>!x.hidden).map(x=>({to:'c-'+x.id,t:x.title,s:LEAD[x.id]||LEAD[TABAL[x.id]]||'',k:'계산기'}));
  const p=allPosts().map(x=>({to:x.id,t:x.t,s:x.e||'',k:'글'}));
  const g=[['check','받을 돈 진단','질문 5개로 받을 수 있는 돈 찾기'],['month','이번 달 꼭 챙길 돈','마감·신청 임박 연말정산 세액공제'],['find','받을 돈 찾기','지원금·수당·환급금'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['lotto','로또 당첨번호','이번 회차·1등 판매점'],['pension','연금복권 당첨번호','연금복권720+']].map(([to,t,s])=>({to,t,s,k:'바로가기'}));
- return [...c,...g,...p]}
+ const n=BEN.map(b=>({to:'n-'+b.id,t:b.name,s:(b.amount||'')+' '+(b.who||''),k:'받을 돈'}));
+ return [...c,...n,...g,...p]}
 function hsearch(q){const box=document.getElementById('hsr');if(!box)return;q=q.trim().toLowerCase();if(!q){box.hidden=true;box.innerHTML='';return}
  const words=q.split(/\s+/),hits=searchIdx().map(x=>{const a=(x.t+' '+x.s).toLowerCase();let sc=0;for(const w of words){if(!a.includes(w))return null;sc+=x.t.toLowerCase().includes(w)?2:1}return[sc+(x.k=='계산기'?.5:0),x]}).filter(Boolean).sort((a,b)=>b[0]-a[0]).slice(0,8).map(x=>x[1]);
  box.hidden=false;box.innerHTML=hits.length?hits.map(x=>A(x.to,'hsr-i',`<span>${x.k}</span><b>${x.t}</b>`)).join(''):'<p class="hsr-n">찾는 결과가 없어요. 다른 말로 찾아보세요.</p>'}
 function home(){const d=DRAWS[0],posts=allPosts().slice(0,5),mp=monthPicks().slice(0,4);
- return `<section class="hhero"><h1>세금 떼고 <em>진짜 받는 돈</em>,<br>바로 계산해요</h1>
- <div class="hsearch" role="search"><input id="hq" type="search" placeholder="계산기·글 찾기 (예: 실업급여, 홈택스)" autocomplete="off" aria-label="계산기와 글 검색" oninput="hsearch(this.value)"><div id="hsr" class="hsr" hidden></div></div></section>
+ return `<section class="hhero"><h1>받을 돈, <em>놓치지 마세요</em></h1><p class="hsub">지원금 찾기부터 실수령액 계산까지 한 곳에서</p>
+ <div class="hsearch" role="search"><input id="hq" type="search" placeholder="받을 돈·계산기 찾기 (예: 기초연금, 실업급여)" autocomplete="off" aria-label="받을 돈, 계산기, 글 검색" oninput="hsearch(this.value)"><div id="hsr" class="hsr" hidden></div></div></section>
  <section class="cardx hcard hmust"><p class="hct">이번 달 꼭 챙길 것 ${A('month','hmore','전체 보기 ›')}</p>${mp.map(x=>{const [lab,cls]=mustState(x);return A('month','hrow',`<b>${x.name}</b><small><span class="mst ${cls}">${lab}</span> ${md(x.start)} ~ ${x.until||md(x.end)}</small>`)}).join('')||'<p class="note">한 달 안에 마감되는 항목이 없어요.</p>'}</section>
  <section class="cardx hcard"><p class="hct">자주 쓰는 계산기 ${A('calc','hmore','전체 계산기 ›')}</p><div class="hpop">${HPOP.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'hpi',`<b>${c.label.replace(/ 계산기$/,'')}</b><small>${LEAD[c.id]||LEAD[TABAL[c.id]]||''}</small>`)).join('')}</div></section>
  <div class="hcols"><div><section class="cardx hcard"><p class="hct">최신 글 ${A('guide','hmore',`정보 글 전체 ${allPosts().length}개 ›`)}</p>${posts.map(p=>A(p.id,'hpost',`<span class="hpc">${p.c}</span><b>${p.t}</b>${p.e?`<small>${p.e}</small>`:''}<em>${p.d}</em>`)).join('')}</section></div><div>

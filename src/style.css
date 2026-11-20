@@ -671,3 +671,5 @@ main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important
 .dqcta b{font-size:16px}.dqcta small{font-size:13px;opacity:.85}
 .scam{display:block;margin-top:14px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--red) 10%,var(--card));color:var(--fg);font-size:14px;font-weight:600;text-decoration:none;border:1px solid color-mix(in srgb,var(--red) 30%,var(--card))}
 .dq,.dres{margin-top:12px!important}
+.hhero .hsub{margin:6px 0 0;font-size:15px;color:var(--mute)}
+.hhero h1{margin-bottom:4px!important}.hhero .hsub{margin:0 0 14px!important}
