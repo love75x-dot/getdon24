@@ -394,8 +394,8 @@ const TABS=[['calc','','계산기'],['find','','받을 돈'],['guide','','정보
 const col=n=>n<=10?'y':n<=20?'b':n<=30?'r':n<=40?'g':'n';
 const ball=(n,s='')=>`<span class="ball ${col(n)} ${s}">${n}</span>`;
 const balls=(d,s='')=>`<div class="balls">${d.n.map(n=>ball(n,s)).join('')}<span class="plus">+</span>${ball(d.b,s)}</div>`;
-function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';return '/'+t+'/'}
-function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';if(a=='life')return b?'l-'+b:'life';return a}
+function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t=='lmap')return '/lotto/map/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';return '/'+t+'/'}
+function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b=='map'?'lmap':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';if(a=='life')return b?'l-'+b:'life';return a}
 let cur=(typeof window!='undefined'&&window.__ROUTE)||routeOf(typeof location!='undefined'?location.pathname:'/'),pick=new Set,placeF='region',gens=[];
 function go(t){location.href=pathOf(t)}
 const LOTNOTE=`<div class="lotnote"><div>로또·연금복권 정보는 동행복권 공식 발표 자료 기준이에요.</div><div>만 19세 이상 구매 가능 · 도박 문제 상담 <b>1336</b> (24시간)</div><div>통계와 번호 뽑기는 재미로 보는 정보예요. 당첨 확률을 바꾸지 않아요.</div></div>`;
@@ -410,9 +410,39 @@ function lottoWin(){const d=DRAWS[0],m=[...pick];let res='';
  <h2>지난 회차 <small>최근 5회</small></h2><div class="past">${DRAWS.slice(1,6).map(d=>A('draw'+d.r,'pc',`<p>${d.r}회 · ${d.d}</p>${balls(d,'sm')}`)).join('')}</div>${A('all','btn ghost allbtn','전체 회차 보기 ›')}${foot}`}
 function tg(n){pick.has(n)?pick.delete(n):pick.size<6&&pick.add(n);render()}
 
+// ── /lotto/map/ 1등 지도: 시·도 → 시·군·구. 경계는 src/map-kr.json(통계청 2013 경계 가공) ──
+let mapG='',mapU='';
+const MLBL={'경기':[30,-38],'인천':[-22,10],'서울':[0,2],'충북':[26,-22],'세종':[-8,0],'대전':[4,6],'대구':[2,8],'경북':[8,-14],'울산':[10,-4],'부산':[8,6]};
+function mapPick(g,u){mapG=g||'';mapU=u||'';render();if(u){const e=document.getElementById('lmsel');if(e)e.scrollIntoView({block:'nearest',behavior:'smooth'})}}
+function lottoMap(){const M=DATA.lmap;if(!M)return `<h1 class="h1">로또 1등 지도</h1><p class="note">지도를 불러오지 못했어요.</p>${foot}`;
+ const G=M.geo,last=(PL.latest||{}).r,esc=t=>String(t).replace(/'/g,"\\'");
+ const byU=new Map(M.u.map(x=>[x[0]+'|'+x[1],x])),gsum=new Map,glast=new Map;
+ for(const x of M.u){gsum.set(x[0],(gsum.get(x[0])||0)+x[2]);if(x[3]==last)glast.set(x[0],1)}
+ const scale=vals=>{const v=[...vals].filter(n=>n>0).sort((a,b)=>a-b),q=f=>v.length?v[Math.min(v.length-1,Math.floor(v.length*f))]:0,t=[q(.2),q(.4),q(.6),q(.8)];return n=>n<=0?0:1+t.filter(x=>n>x).length};
+ const total=M.u.reduce((a,x)=>a+x[2],0),pick=(g,u)=>`tabindex="0" role="button" onclick="mapPick('${esc(g)}'${u?`,'${esc(u)}'`:''})" onkeydown="if(event.key=='Enter')mapPick('${esc(g)}'${u?`,'${esc(u)}'`:''})"`;let svg,list,vb,title;
+ if(!mapG){const lv=scale(G.g.map(g=>gsum.get(g[0])||0));vb=`${G.W*.17} -4 ${G.W*.78} ${G.H+8}`;title='전국';
+  svg=G.g.map(([g,d])=>{const n=gsum.get(g)||0;return `<path d="${d}" class="lv${lv(n)}" ${pick(g)} aria-label="${g} 1등 ${n}건"><title>${g} ${n.toLocaleString()}건</title></path>`}).join('')
+   +G.g.map(([g,d,c0])=>{const o=MLBL[g]||[0,0],c=[c0[0]+o[0],c0[1]+o[1]];return `<text x="${c[0]}" y="${c[1]}" class="ml mlg">${g}<tspan x="${c[0]}" dy="12">${(gsum.get(g)||0).toLocaleString()}</tspan></text>${glast.has(g)?`<circle cx="${c[0]}" cy="${c[1]-14}" r="3.6" class="mdot"/>`:''}`}).join('');
+  list=[...gsum.entries()].sort((a,b)=>b[1]-a[1]).map(([g,n])=>[g,'',n,glast.has(g)])}
+ else{const gb=(G.g.find(x=>x[0]==mapG)||[0,0,0,[0,0,G.W,G.H]])[3],pad=Math.max(gb[2],gb[3])*.06;vb=`${gb[0]-pad} ${gb[1]-pad} ${gb[2]+pad*2} ${gb[3]+pad*2}`;title=mapG;
+  const us=G.u.filter(x=>x[0]==mapG),lv=scale(us.map(x=>(byU.get(x[0]+'|'+x[1])||[])[2]||0)),fs=Math.max(gb[2],gb[3])/34;
+  svg=us.map(([g,u,d])=>{const n=(byU.get(g+'|'+u)||[])[2]||0;return `<path d="${d}" class="lv${lv(n)}${u==mapU?' on':''}" style="stroke-width:${(fs/12).toFixed(2)}" ${pick(g,u)} aria-label="${u} 1등 ${n}건"><title>${u} ${n}건</title></path>`}).join('')
+   +us.map(([g,u,d,c,wh])=>{const x=byU.get(g+'|'+u),nm=u.replace(/^광주 /,''),fit=!wh||(wh[0]>fs*nm.length*.95&&wh[1]>fs*1.6);return `${fit?`<text x="${c[0]}" y="${c[1]}" class="ml" style="font-size:${fs.toFixed(2)}px;stroke-width:${(fs/4).toFixed(2)}px">${nm}</text>`:''}${x&&x[3]==last?`<circle cx="${c[0]}" cy="${(c[1]-fs*1.2).toFixed(1)}" r="${(fs/2.6).toFixed(2)}" class="mdot"/>`:''}`}).join('');
+  list=us.map(([g,u])=>{const x=byU.get(g+'|'+u);return [g,u,x?x[2]:0,!!(x&&x[3]==last)]}).sort((a,b)=>b[2]-a[2])}
+ const mx=Math.max(1,...list.map(x=>x[2]));
+ const rows=list.map(([g,u,n,l])=>`<button type="button" class="mrow${u&&u==mapU?' on':''}" onclick="mapPick('${esc(g)}'${u?`,'${esc(u)}'`:''})"><span class="nm">${l?'<i class="mdot2"></i>':''}${u||g}</span><span class="bar"><i style="width:${n/mx*100}%"></i></span><b>${n.toLocaleString()}</b></button>`).join('');
+ const sel=mapU&&byU.get(mapG+'|'+mapU);
+ const selHtml=mapU?`<section class="cardx" id="lmsel"><h2>${mapU} 1등 판매점 <small>${sel?sel[2]:0}건${sel?` · 마지막 ${sel[3]}회`:''}</small></h2>${sel&&sel[4].length?sel[4].map((t,i)=>`<div class="it"><span class="rk">${i+1}</span><span class="nm">${t[0]}</span><span class="ad one">${t[1]}</span><span class="num">${t[2]}회</span></div>`).join(''):'<p class="note">이 기간에는 1등이 나온 판매점이 없어요.</p>'}${sel&&sel[4].length>=10?'<p class="note">1등이 많이 나온 10곳까지 보여 드려요.</p>':''}</section>`:'';
+ return `<h1 class="h1">로또 1등 지도</h1><p class="lsub">${PL.from}~${PL.to}회 1등 ${total.toLocaleString()}건 · 인터넷 판매 제외</p>
+ <nav class="mcrumb">${A('lotto','','‹ 복권')}<button type="button" class="${mapG?'':'on'}" onclick="mapPick()">전국</button>${mapG?`<span>›</span><button type="button" class="${mapU?'':'on'}" onclick="mapPick('${esc(mapG)}')">${mapG}</button>`:''}${mapU?`<span>›</span><b>${mapU}</b>`:''}</nav>
+ <div class="mapw"><section class="cardx" id="lmapc"><svg class="kmap" viewBox="${vb}" role="img" aria-label="${title} 로또 1등 지도">${svg}</svg>
+ <div class="mleg"><span>적음</span>${[1,2,3,4,5].map(i=>`<i class="lv${i}"></i>`).join('')}<span>많음</span><span class="mlast"><i class="mdot2"></i>${last}회 1등</span></div>
+ <p class="note">${mapG?'지역을 누르면 그곳 1등 판매점이 나와요.':'시·도를 누르면 시·군·구 지도로 들어가요.'}</p></section>
+ <div class="mside">${selHtml}<section class="cardx"><h2>${title} 1등 순위 <small>${mapG?'시·군·구':'시·도'}</small></h2><div class="mlist">${rows}</div></section></div></div>
+ <p class="note" style="margin-top:12px">동행복권 1등 배출점 기록을 주소로 묶었어요. 판매점이 많은 지역에서 1등도 많이 나와요. 통계는 재미로 보는 정보이고, 명당이 당첨 확률을 높이지는 않아요. 경계는 통계청 2013년 시·군·구 경계를 가공했고, 그 뒤 바뀐 행정구역(인천 구 개편, 군위군 대구 편입 등)은 예전 경계에 맞춰 묶었어요.</p>${foot}`}
 function place(){const L=PL.latest||{r:0,rows:[]},REG=PL.regions||[],TOP=PL.top||[],seg=`<div class="seg">${[['region','시도별 1등'],['top','명당 순위']].map(([k,l])=>`<button class="${placeF==k?'on':''}" onclick="placeF='${k}';render()">${l}</button>`).join('')}</div>`;
  const tag=m=>`<span class="tag ${m=='수동'?'m':m=='반자동'?'s':''}">${m}</span>`;
- const st=`<h2>${L.r}회 1등 판매점 <small>1등 ${L.games}건</small></h2>${L.rows.map(s=>`<div class="it"><span class="nm">${s[0]}${s[3]>1?` ×${s[3]}`:''}</span><span class="ad one">${s[1]}</span>${tag(s[2])}</div>`).join('')}`;
+ const st=`${A('lmap','mapcta','<b>🗺️ 1등 지도로 보기</b><small>시·도, 시·군·구별로 1등이 나온 곳을 지도에서 봐요 ›</small>')}<h2>${L.r}회 1등 판매점 <small>1등 ${L.games}건</small></h2>${L.rows.map(s=>`<div class="it"><span class="nm">${s[0]}${s[3]>1?` ×${s[3]}`:''}</span><span class="ad one">${s[1]}</span>${tag(s[2])}</div>`).join('')}`;
  const mx=REG.length?REG[0][1]:1;
  if(placeF=='region')return st+`<h2>지역별 1등 <small>${PL.from}~${PL.to}회 · ${(PL.total||0).toLocaleString()}건</small></h2>${seg}<p class="note"><span class="dot"></span> ${L.r}회 1등 나온 지역 · 인터넷 판매 제외</p>${REG.map(r=>`<div class="rg"><span>${r[2]?'<span class="dot"></span>':''}</span><span class="nm">${r[0]}</span><div class="bar"><i style="width:${r[1]/mx*100}%"></i></div><b>${r[1].toLocaleString()}</b></div>`).join('')}${foot}`;
  return st+`<h2>명당 순위 TOP ${TOP.length} <small>1등 횟수</small></h2>${seg}${TOP.map((t,i)=>`<div class="it"><span class="rk">${i+1}</span><span class="nm">${t[0]}</span><span class="ad one">${t[1]}</span><span class="num">${t[2]}회</span></div>`).join('')}<p class="note" style="margin-top:8px">${PL.from}회부터 동행복권 1등 배출점 기록 기준이에요. 인터넷 판매는 뺐어요. 명당이 당첨 확률을 높이지는 않아요.</p>${foot}`}
@@ -1336,7 +1366,7 @@ function postMore(s){const all=allPosts(),i=all.findIndex(p=>p.id=='b-'+s);if(i<
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all'||c=='lmap')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}"${k==tabOf(cur)?' class="on" aria-current="page"':''}>${l}</a>`).join('')}
 // 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
@@ -1350,7 +1380,7 @@ function view(){let v=view0();if(!cur.startsWith('c-')&&cur!='home'&&!cur.starts
  if(cur.startsWith('b-'))v=v.replace('<article class="art"','<article class="art cardx"');
  if(PAGES[cur])v=v.replace('<div class="art">','<div class="art cardx">');
  return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='lmap'?lottoMap():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}

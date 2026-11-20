@@ -593,3 +593,44 @@ main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important
 .cside summary.dgt:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
 .cside details.dg{margin-bottom:2px}
 .cside details.dg>div{padding-bottom:6px}
+/* 로또 1등 지도 */
+.mapcta{display:flex;flex-direction:column;gap:2px;margin:12px 0 4px;padding:14px 16px;border-radius:14px;background:var(--card);box-shadow:var(--shadow);text-decoration:none;color:var(--fg)}
+.mapcta b{font-size:15.5px}.mapcta small{font-size:13px;color:var(--mute)}
+.mcrumb{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:14px 0 2px;font-size:14px;color:var(--mute)}
+.mcrumb a{color:var(--mute);text-decoration:none;margin-right:6px}
+.mcrumb button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:99px;padding:5px 12px;font:500 13.5px var(--body);cursor:pointer}
+.mcrumb button.on{border-color:var(--navy);color:var(--navy);font-weight:700}
+.mcrumb b{color:var(--fg)}
+.kmap{display:block;width:100%;height:auto;max-height:72vh}
+.kmap path{stroke:var(--card);stroke-width:1.1;stroke-linejoin:round;cursor:pointer;outline:none;transition:filter .15s}
+.kmap path:hover,.kmap path:focus-visible{filter:brightness(.9)}
+.kmap path:focus-visible{stroke:var(--fg);stroke-width:1.2}
+.kmap path.on{stroke:var(--fg)!important;stroke-width:1.4!important}
+.lv0{fill:var(--soft);background:var(--soft)}
+.lv1{fill:color-mix(in srgb,var(--navy) 14%,var(--card));background:color-mix(in srgb,var(--navy) 14%,var(--card))}
+.lv2{fill:color-mix(in srgb,var(--navy) 32%,var(--card));background:color-mix(in srgb,var(--navy) 32%,var(--card))}
+.lv3{fill:color-mix(in srgb,var(--navy) 52%,var(--card));background:color-mix(in srgb,var(--navy) 52%,var(--card))}
+.lv4{fill:color-mix(in srgb,var(--navy) 74%,var(--card));background:color-mix(in srgb,var(--navy) 74%,var(--card))}
+.lv5{fill:var(--navy);background:var(--navy)}
+.ml{font:700 10px var(--body);fill:var(--fg);text-anchor:middle;paint-order:stroke;stroke:var(--card);stroke-width:2.5px;stroke-linejoin:round;pointer-events:none}
+.ml tspan{font-weight:500;font-size:9px}
+.mlg{font-size:12.5px}.mlg tspan{font-size:11px}
+.mdot{fill:var(--gold);stroke:var(--fg);stroke-width:.6;pointer-events:none}
+.mdot2{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--gold);border:1px solid var(--fg);margin-right:6px;vertical-align:1px}
+.mleg{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:10px;font-size:12px;color:var(--mute)}
+.mleg>i{width:20px;height:10px;border-radius:3px;border:1px solid var(--line)}
+.mleg .mlast{margin-left:auto}
+.mlist{display:flex;flex-direction:column}
+.mrow{display:grid;grid-template-columns:minmax(0,7.5em) 1fr auto;align-items:center;gap:10px;padding:9px 6px;border:0;border-bottom:1px solid var(--line);background:none;color:var(--fg);font:500 14px var(--body);text-align:left;cursor:pointer;border-radius:6px}
+.mrow:last-child{border-bottom:0}.mrow:hover{background:var(--soft)}.mrow.on{background:var(--soft);font-weight:700}
+.mrow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .bar{height:8px;background:var(--soft);border-radius:99px;overflow:hidden}.mrow .bar i{display:block;height:100%;background:var(--navy);border-radius:99px}
+.mrow b{font-variant-numeric:tabular-nums;font-size:13.5px}
+.mside .cardx:first-child{margin-top:12px}
+@media (min-width:1024px){
+ .mapw{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+ .mapw>#lmapc{position:sticky;top:76px}
+ .mside .cardx:first-child{margin-top:12px}
+ .mside .mlist{max-height:60vh;overflow-y:auto}
+}
+@media (max-width:600px){.mlg{font-size:14px}.mlg tspan{font-size:12.5px}}

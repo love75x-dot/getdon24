@@ -13,6 +13,7 @@
 - `scripts/update-lotto.mjs` / `update-pension.mjs` 동행복권 공식 자료 수집·검증. `scripts/test.mjs` 데이터 검사.
 - `content/posts/*.md` 게시글 (머리말 title·category·date·excerpt·calc). date 가 미래면 그날 07시에 자동 공개.
 - `data/` 로또·연금·판매점 데이터. GitHub Actions 가 자동 갱신하므로 직접 고치지 않는다.
+- `src/map-kr.json` 로또 1등 지도(/lotto/map/) 경계. `scripts/make-map.py` 로 한 번 만든 파일(통계청 2013 경계 가공). 주소→지역 규칙은 build.mjs `unitOf` 와 make-map.py 가 같아야 하고, 빌드 때 "지도에 없는 지역"이 찍히면 두 곳에 규칙을 더한다.
 - `config.json` 사이트 주소, 문의 메일, 애드센스·GA·검색 소유확인 값.
 
 ## 새 계산기 추가

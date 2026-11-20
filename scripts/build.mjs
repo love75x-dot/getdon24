@@ -63,12 +63,38 @@ async function loadPosts() {
 }
 
 // ---------- 로또·연금·판매점 ----------
+// 주소 → 지도 단위(시도|시군구). src/map-kr.json(scripts/make-map.py)과 같은 규칙
+const METRO = ['서울', '부산', '대구', '인천', '광주', '대전', '울산'];
+const GU_GJ = ['동구', '서구', '남구', '북구', '광산구'];
+const PROV_OF = { 서울: '서울', 부산: '부산', 대구: '대구', 인천: '인천', 광주: '광주·전남', 전남: '광주·전남', 전남광주: '광주·전남', 대전: '대전', 울산: '울산', 세종: '세종', 경기: '경기', 강원: '강원', 충북: '충북', 충남: '충남', 전북: '전북', 경북: '경북', 경남: '경남', 제주: '제주' };
+const unmatched = [];
+function unitOf(s) {
+  const t = s.address.split(/\s+/), g = PROV_OF[t[0]];
+  if (!g) return null;
+  if (g === '세종') return '세종|세종';
+  let u = t[1] || '';
+  if (u === '군위군') return '대구|군위군';
+  if (g === '인천') {
+    if (['중구', '동구', '제물포구', '영종구'].includes(u)) u = '중구·동구';
+    else if (['서구', '서해구', '검단구'].includes(u)) u = '서구';
+    else if (u === '남구') u = '미추홀구';
+    return `${g}|${u}`;
+  }
+  if (t[0] === '광주' || (t[0] === '전남광주' && GU_GJ.includes(u))) return `광주·전남|광주 ${u}`;
+  if (METRO.includes(t[0])) return `${g}|${u}`;
+  if (u === '청원군') u = '청주시';
+  if (u === '마산시' || u === '진해시') u = '창원시'; // 2010년 통합 전 주소
+  if (g === '전북' && /^(완산|덕진)구$/.test(u)) u = '전주시'; // 시 이름이 빠진 주소
+  if (u === '여주군') u = '여주시';
+  if (u === '당진군') u = '당진시';
+  return `${g}|${u}`;
+}
 const isInternet = (s) => s.id === '51100000' || s.name.includes('인터넷');
 async function loadPlaces(latestRound) {
   const dir = join(ROOT, 'data/stores');
   const files = (await readdir(dir)).filter((f) => f.endsWith('.json'));
   const rounds = files.map((f) => +f.replace('.json', '')).sort((a, b) => a - b);
-  const region = new Map(), shop = new Map();
+  const region = new Map(), shop = new Map(), units = new Map();
   let total = 0;
   for (const r of rounds) {
     const { stores } = JSON.parse(await readFile(join(dir, `${r}.json`), 'utf8'));
@@ -80,6 +106,12 @@ async function loadPlaces(latestRound) {
       const o = shop.get(key) || { name: s.name, address: s.address, n: 0 };
       o.n++;
       shop.set(key, o);
+      const uk = unitOf(s);
+      if (uk) {
+        const u = units.get(uk) || { n: 0, last: 0, shops: new Map() };
+        u.n++; u.last = Math.max(u.last, r); u.shops.set(key, o);
+        units.set(uk, u);
+      } else unmatched.push(s.address);
     }
   }
   const short = (a) => a.split(' ').slice(0, 3).join(' ');
@@ -99,6 +131,9 @@ async function loadPlaces(latestRound) {
     latest: { r: lr, games: latest.length, rows: [...grouped.values()] },
     regions: [...region.entries()].sort((a, b) => b[1] - a[1]).map(([k, v]) => [k, v, latestRegions.has(k) ? 1 : 0]),
     top: [...shop.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 100).map((s) => [s.name, short(s.address), s.n]),
+    // 1등 지도: [시도, 시군구, 1등 건수, 마지막 1등 회차, [[판매점, 주소, 건수] 상위 10곳]]
+    map: [...units.entries()].map(([k, u]) => [...k.split('|'), u.n, u.last,
+      [...u.shops.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 10).map((o) => [o.name, short(o.address), o.n])]),
   };
 }
 
@@ -152,6 +187,7 @@ function pathOf(t) {
   if (t.startsWith('c-')) return `/calc/${t.slice(2)}/`;
   if (t === 'lotto') return '/lotto/';
   if (t === 'all') return '/lotto/all/';
+  if (t === 'lmap') return '/lotto/map/';
   if (t.startsWith('draw')) return `/lotto/${t.slice(4)}/`;
   if (t === 'pension') return '/pension/';
   if (t === 'penall') return '/pension/all/';
@@ -320,19 +356,25 @@ const appJs = await readFile(join(ROOT, 'src/app.js'), 'utf8');
 const css = await readFile(join(ROOT, 'src/style.css'), 'utf8');
 // 모든 페이지가 받는 기본 데이터는 가볍게: 무거운 자료는 필요한 화면에서만 따로 받는다
 const topBy = (arr, n) => [...arr].sort((a, b) => b[0] - a[0]).slice(0, n);
-const CORE = { ...DATA, draws: topBy(DATA.draws, 12), pension: topBy(DATA.pension, 6), support: [], wtax: null };
+const { map: placeMap, ...placesCore } = DATA.places;
+const CORE = { ...DATA, places: placesCore, draws: topBy(DATA.draws, 12), pension: topBy(DATA.pension, 6), support: [], wtax: null };
 const dataJs = `window.DATA=${JSON.stringify(CORE)};\n`;
 const EXTRA = {
   draws: `window.DATA.draws=${JSON.stringify(DATA.draws)};\n`,
   pension: `window.DATA.pension=${JSON.stringify(DATA.pension)};\n`,
   support: `window.DATA.support=${JSON.stringify(DATA.support)};\n`,
   wtax: `window.DATA.wtax=${JSON.stringify(DATA.wtax)};\n`,
+  map: `window.DATA.lmap={geo:${await readFile(join(ROOT, 'src/map-kr.json'), 'utf8')},u:${JSON.stringify(placeMap)}};\n`,
 };
+DATA.lmap = { geo: JSON.parse(await readFile(join(ROOT, 'src/map-kr.json'), 'utf8')), u: placeMap };
+{ const have = new Set(DATA.lmap.geo.u.map((x) => x[0] + '|' + x[1])), miss = placeMap.filter((x) => !have.has(x[0] + '|' + x[1]));
+  if (miss.length || unmatched.length) console.log('지도에 없는 지역:', miss.map((x) => x[0] + ' ' + x[1] + ' ' + x[2]).join(', '), unmatched.slice(0, 5).join(' / ')); }
 // 화면별로 더 받을 자료
 function extrasFor(route) {
   const x = [];
   if (route === 'all' || /^draw\d/.test(route)) x.push('draws');
   if (route === 'penall') x.push('pension');
+  if (route === 'lmap') x.push('map');
   if (route === 'benefits' || route === 'find') x.push('support');
   if (['c-salary', 'c-salary-compare', 'c-parttime'].includes(route)) x.push('wtax');
   return x;
@@ -420,6 +462,7 @@ for (const c of calcs) {
 
 // 로또
 await emit('lotto', { title: `로또 ${L.round}회 당첨번호 ${nums(L)} · 1등 판매점 | ${site}`, desc: `${L.date} 추첨 로또 ${L.round}회 당첨번호 ${nums(L)}, 보너스 ${L.bonus}. 1등 ${L.ranks[0][1]}명 1인당 ${won(L.ranks[0][0])}. 1등 판매점, 지역별 명당, 실수령액 계산기까지.` }, L.date);
+await emit('lmap', { title: `로또 1등 지도 - 시군구별 1등 판매점 | ${site}`, desc: `${places.from}회부터 ${places.to}회까지 로또 1등이 나온 판매점을 시·도, 시·군·구 지도로 모았어요. 지역을 누르면 그곳 1등 판매점을 볼 수 있어요.` }, L.date);
 await emit('all', { title: `로또 전체 회차 당첨번호 1회~${L.round}회 | ${site}`, desc: `로또 6/45 1회부터 ${L.round}회까지 모든 회차의 당첨번호와 보너스 번호를 한눈에 볼 수 있어요.` }, L.date);
 for (const d of draws) {
   const [prize, win] = d.ranks[0];
