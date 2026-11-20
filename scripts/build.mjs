@@ -140,7 +140,7 @@ async function loadPlaces(latestRound) {
 // 공유 이미지: static/og/{이름}.png 가 있으면 그 화면 전용 이미지 (scripts/make-og.cjs 로 만든다)
 function ogOf(route) {
   const n = route.startsWith('c-') ? route.slice(2) : route;
-  return existsSync(join(ROOT, 'static/og', n + '.png')) ? `/og/${n}.png` : '/og-image.png';
+  return existsSync(join(ROOT, 'static/og', n + '.png')) ? `/og/${n}.png` : '/og-image.png?v=2';
 }
 // ---------- 페이지 틀 ----------
 function page({ route, title, desc, html, tabs, jsonld, assets, noindex, ogType = 'website', pre = false }) {
@@ -162,7 +162,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <meta property="og:url" content="${url}"><meta property="og:image" content="${SITE}${ogOf(route)}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#0B7A5A">
-<link rel="icon" href="/favicon.ico" sizes="any"><link rel="icon" href="/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="받는돈"><meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><link rel="manifest" href="/manifest.webmanifest?v=2"><meta name="apple-mobile-web-app-title" content="받는돈"><meta name="mobile-web-app-capable" content="yes">
 ${verify}
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
