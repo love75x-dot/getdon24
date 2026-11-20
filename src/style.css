@@ -638,3 +638,36 @@ main.wrap>.cv:first-child,main.wrap>.crumb:first-child{margin-top:28px!important
 .mcrumb .mbig{margin-left:auto;margin-right:0;color:var(--navy);font-weight:700;font-size:13.5px}
 .mbig2{display:block;margin-top:10px;text-align:center;padding:10px;border-radius:10px;background:var(--soft);color:var(--navy);font-weight:700;font-size:14px;text-decoration:none}
 .msub{font-size:12.5px;color:var(--mute);margin:-4px 0 0;line-height:1.5}
+/* 이번 달 꼭 챙길 것 */
+.must{padding:14px 0;border-bottom:1px solid var(--line)}.must:last-of-type{border-bottom:0}
+.must .mt{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.must .mt b{font-size:16px;line-height:1.45}
+.must p{margin:6px 0 0;font-size:14.5px;line-height:1.65;color:var(--fg)}
+.must .mper{font-size:13px;color:var(--mute);margin-top:2px}
+.must .mtip{font-size:13.5px;background:var(--soft);border-radius:8px;padding:8px 10px;color:var(--fg)}
+.must .bl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.must .bl a{font-size:13.5px;border:1px solid var(--line);border-radius:99px;padding:6px 12px;color:var(--fg);text-decoration:none}
+.must .asof{display:block;margin-top:8px;font-size:12px;color:var(--mute)}
+.mst{flex:none;display:inline-block;font-size:12px;font-weight:700;border-radius:99px;padding:3px 9px;white-space:nowrap}
+.mst.on{background:var(--soft-acc,var(--soft));color:var(--navy)}
+.mst.hot{background:var(--red);color:#fff}
+.mst.soon{background:var(--soft);color:var(--mute)}
+.hmust .hrow small .mst{margin-right:4px;padding:1px 7px;font-size:11.5px}
+/* 혜택 상세 */
+.crumb{font-size:13px;color:var(--mute);margin-top:4px}.crumb a{color:var(--mute);text-decoration:none}
+.bsum .bamt{font-size:22px;font-weight:800;color:var(--navy);margin:0 0 10px;line-height:1.35}
+.bsum dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0;font-size:15px;line-height:1.6}
+.bsum dt{color:var(--mute);font-size:13.5px;padding-top:2px;white-space:nowrap}.bsum dd{margin:0}
+.bsum .bl{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.bbtn{background:var(--navy);color:#fff!important;border-radius:10px;padding:10px 14px;font-weight:700;font-size:14.5px;text-decoration:none}
+.bbtn2{border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-weight:700;font-size:14.5px;color:var(--fg);text-decoration:none}
+.bsteps,.blist{margin:0;padding-left:22px;font-size:15px;line-height:1.7}.bsteps li,.blist li{margin:6px 0}
+.ben .bname{color:inherit;text-decoration:none}.ben .bname:hover b{text-decoration:underline}
+.ben .bl .bmore{font-weight:700;color:var(--navy)}
+/* 받을 돈 진단 */
+.dq h2{font-size:17px;margin:2px 0 12px}.dqn{font-size:12.5px;color:var(--mute);margin:0}
+.dcount{font-size:16px;font-weight:700;margin:0}.dcount b{color:var(--navy);font-size:24px}
+.dqcta{display:flex;flex-direction:column;gap:2px;margin:12px 0 14px;padding:14px 16px;border-radius:14px;background:var(--navy);color:#fff;text-decoration:none}
+.dqcta b{font-size:16px}.dqcta small{font-size:13px;opacity:.85}
+.scam{display:block;margin-top:14px;padding:12px 14px;border-radius:12px;background:color-mix(in srgb,var(--red) 10%,var(--card));color:var(--fg);font-size:14px;font-weight:600;text-decoration:none;border:1px solid color-mix(in srgb,var(--red) 30%,var(--card))}
+.dq,.dres{margin-top:12px!important}

@@ -394,8 +394,8 @@ const TABS=[['calc','','계산기'],['find','','받을 돈'],['guide','','정보
 const col=n=>n<=10?'y':n<=20?'b':n<=30?'r':n<=40?'g':'n';
 const ball=(n,s='')=>`<span class="ball ${col(n)} ${s}">${n}</span>`;
 const balls=(d,s='')=>`<div class="balls">${d.n.map(n=>ball(n,s)).join('')}<span class="plus">+</span>${ball(d.b,s)}</div>`;
-function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t=='lmap')return '/lotto/map/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';return '/'+t+'/'}
-function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b=='map'?'lmap':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';if(a=='life')return b?'l-'+b:'life';return a}
+function pathOf(t){if(t=='home')return '/';if(t=='calc')return '/calc/';if(t.startsWith('c-'))return '/calc/'+t.slice(2)+'/';if(t=='lotto')return '/lotto/';if(t=='all')return '/lotto/all/';if(t=='lmap')return '/lotto/map/';if(t.startsWith('draw'))return '/lotto/'+t.slice(4)+'/';if(t=='pension')return '/pension/';if(t=='penall')return '/pension/all/';if(t=='guide')return '/blog/';if(t.startsWith('b-'))return '/blog/'+t.slice(2)+'/';if(t.startsWith('l-'))return '/life/'+t.slice(2)+'/';if(t.startsWith('n-'))return '/benefit/'+t.slice(2)+'/';return '/'+t+'/'}
+function routeOf(p){const s=(p||'/').replace(/index\.html$/,'').split('/').filter(Boolean);if(!s.length)return 'home';const a=s[0],b=s[1];if(a=='calc')return b?'c-'+b:'calc';if(a=='lotto')return b=='all'?'all':b=='map'?'lmap':b?'draw'+b:'lotto';if(a=='pension')return b=='all'?'penall':'pension';if(a=='blog')return b?'b-'+decodeURIComponent(b):'guide';if(a=='life')return b?'l-'+b:'life';if(a=='benefit'&&b)return 'n-'+b;return a}
 let cur=(typeof window!='undefined'&&window.__ROUTE)||routeOf(typeof location!='undefined'?location.pathname:'/'),pick=new Set,placeF='region',gens=[];
 function go(t){location.href=pathOf(t)}
 const LOTNOTE=`<div class="lotnote"><div>로또·연금복권 정보는 동행복권 공식 발표 자료 기준이에요.</div><div>만 19세 이상 구매 가능 · 도박 문제 상담 <b>1336</b> (24시간)</div><div>통계와 번호 뽑기는 재미로 보는 정보예요. 당첨 확률을 바꾸지 않아요.</div></div>`;
@@ -936,10 +936,55 @@ function findSel(){if(typeof location=='undefined'||!location.search)return new 
 let findInit=0;
 function findTg2(k){findPick.has(k)?findPick.delete(k):findPick.add(k);try{history.replaceState(null,'','/find/'+(findPick.size?'?t='+[...findPick].join(','):''))}catch(e){}render()}
 function benCard(b){const c=b.calc&&ALLC().find(x=>x.id==b.calc);
- return `<article class="ben"><div class="bt"><b>${b.name}</b>${b.amount?`<span class="ba">${b.amount}</span>`:''}</div>
+ return `<article class="ben"><div class="bt">${A('n-'+b.id,'bname',`<b>${b.name}</b>`)}${b.amount?`<span class="ba">${b.amount}</span>`:''}</div>
  ${b.who?`<p><em>누가</em>${b.who}</p>`:''}${b.period?`<p><em>얼마나</em>${b.period}</p>`:''}${b.apply?`<p><em>신청</em>${b.apply}</p>`:''}${b.note?`<p class="bnote">${b.note}</p>`:''}
- <div class="bl">${b.url?`<a href="${b.url}" target="_blank" rel="noopener">공식 안내 보기 ↗</a>`:''}${c?A('c-'+c.id,'',`${c.label} ›`):''}</div>
+ <div class="bl">${A('n-'+b.id,'bmore','신청 방법 자세히 ›')}${b.url?`<a href="${b.url}" target="_blank" rel="noopener">공식 안내 보기 ↗</a>`:''}${c?A('c-'+c.id,'',`${c.label} ›`):''}</div>
  <small class="asof">기준일 ${b.asof} · 공식 안내를 꼭 확인하세요</small></article>`}
+// ── /benefit/{id}/ 혜택 상세: data/benefits.json 의 확인된 내용만 (steps·docs·mistakes 는 있을 때만) ──
+function benPage(id){const b=BEN.find(x=>x.id==id);if(!b)return `<h1 class="h1">찾는 혜택이 없어요</h1>${A('find','hrow','<b>받을 돈 찾기로 가기 ›</b>')}${foot}`;
+ const BTAGL=Object.fromEntries(FINDT),c=b.calc&&ALLC().find(x=>x.id==b.calc),key=b.name.split(/[ (]/)[0],typ=(BTYPE.find(t=>t[0]==b.type)||[0,''])[1];
+ const posts=allPosts().filter(p=>(p.t+' '+(p.e||'')).includes(key)).slice(0,4);
+ const sib=BEN.filter(x=>x.id!=b.id&&x.tags.some(t=>b.tags.includes(t))).slice(0,6);
+ const life=(typeof LIFE!='undefined'?LIFE:[]).filter(L=>L.ben.includes(b.id));
+ const ol=a=>`<ol class="bsteps">${a.map(x=>`<li>${x}</li>`).join('')}</ol>`,ul=a=>`<ul class="blist">${a.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+ return `<nav class="crumb">${A('find','','받을 돈 찾기')} › ${typ}</nav><h1 class="h1">${b.name}</h1>
+ <p class="lsub">${b.tags.map(t=>BTAGL[t]).filter(Boolean).join(' · ')}</p>
+ <section class="cardx bsum">${b.amount?`<p class="bamt">${b.amount}</p>`:''}<dl>${b.who?`<dt>누가</dt><dd>${b.who}</dd>`:''}${b.period?`<dt>얼마나·언제</dt><dd>${b.period}</dd>`:''}${b.apply?`<dt>어디서 신청</dt><dd>${b.apply}</dd>`:''}</dl>${b.note?`<p class="bnote">${b.note}</p>`:''}
+ <div class="bl">${b.url?`<a class="bbtn" href="${b.url}" target="_blank" rel="noopener">공식 안내 보기 ↗</a>`:''}${c?A('c-'+c.id,'bbtn2',`${c.label}로 계산하기 ›`):''}</div></section>
+ ${b.steps?`<h2>신청 순서</h2>${ol(b.steps)}`:''}
+ ${b.docs?`<h2>챙길 서류</h2>${ul(b.docs)}<p class="note">기관에 따라 더 필요한 서류가 있을 수 있어요. 공식 안내에서 확인하세요.</p>`:''}
+ ${b.mistakes?`<h2>자주 하는 실수</h2>${ul(b.mistakes)}`:''}
+ ${posts.length?`<h2>관련 글</h2>${posts.map(p=>A(p.id,'hrow',`<b>${p.t}</b><small>${p.c} · ${p.d}</small>`)).join('')}`:''}
+ ${life.length?`<h2>이럴 때 함께 챙겨요</h2>${life.map(L=>A('l-'+L.k,'hrow',`<b>${L.e} ${L.t}할 때 받을 돈</b><small>${L.d}</small>`)).join('')}`:''}
+ ${sib.length?`<h2>함께 받을 수 있는 돈</h2>${sib.map(x=>A('n-'+x.id,'hrow',`<b>${x.name}</b><small>${x.amount||x.period||''}</small>`)).join('')}`:''}
+ <p class="note" style="margin-top:14px">기준일 ${b.asof}. 금액과 조건은 해마다 바뀌어요. 받을 수 있는지는 공식 안내에서 꼭 확인하세요. 받는돈은 주민번호·계좌 같은 개인정보를 받지 않아요.</p>${foot}`}
+// ── /check/ 받을 돈 진단: 버튼 질문 5개 → 해당할 수 있는 혜택. 답은 이 화면에만 있고 저장·전송하지 않아요 ──
+const DQ=[['age','나이가 어떻게 되세요?',[['y','19~34세'],['m','35~64세'],['s','65세 이상']]],
+ ['work','지금 어떤 일을 하세요?',[['w','회사원'],['p','알바'],['f','프리랜서·1인 사업자'],['b','자영업(직원 있음)'],['j','구직 중·퇴사'],['u','대학생'],['n','일 안 해요']]],
+ ['kid','아이가 있나요?',[['g','임신 중'],['k0','0~1세'],['k2','2~8세'],['k9','9~20세'],['no','없어요']],1],
+ ['life','해당하는 걸 모두 고르세요',[['r','월세 살아요'],['mr','2024년 이후 혼인신고'],['none','해당 없어요']],1],
+ ['inc','가구 형편은 어떤가요?',[['l','기초생활수급·차상위'],['t','넉넉하지 않은 편'],['h','보통 이상']]]];
+let dqa={};
+function dqPick(k,v,multi){if(multi){const a=new Set(dqa[k]||[]);if(v=='no'||v=='none'){dqa[k]=[v]}else{a.delete('no');a.delete('none');a.has(v)?a.delete(v):a.add(v);dqa[k]=[...a]}}else dqa[k]=v;render()}
+function dqMatch(a){const has=(k,v)=>Array.isArray(a[k])?a[k].includes(v):a[k]==v,W=x=>x.split('').some(c=>a.work==c);
+ const kid0=has('kid','k0'),kid2=has('kid','k2'),preg=has('kid','g'),low=a.inc=='l',notHigh=a.inc!='h',working=W('wpfb'),rent=has('life','r');
+ const R={'pregnancy-voucher':preg,'maternity-leave':preg&&a.work=='w','paternity-leave':preg&&a.work=='w','birth-pay-uninsured':preg&&W('fb'),
+ 'first-voucher':kid0,'parent-pay':kid0,'child-allowance':kid0||kid2,'parental-leave':a.work=='w'&&(kid0||kid2),'child-tax-credit':has('kid','k9'),
+ unemployment:a.work=='j','early-reemploy':a.work=='j',kua:a.work=='j'&&notHigh,'tomorrow-card':W('wpj')||a.age=='y',
+ eitc:working&&notHigh,'youth-rent':a.age=='y'&&rent&&notHigh,'youth-savings':a.age=='y'&&(working||a.work=='u'),kpass:true,
+ 'national-scholarship':a.work=='u',durunuri:a.work=='b','yellow-umbrella':W('fb'),'income-tax':a.work=='f',yearend:W('wp'),
+ 'rent-credit':rent&&W('wp'),'marriage-credit':has('life','mr')&&working,'basic-pension':a.age=='s'&&notHigh,'senior-job':a.age=='s','nps-old-age':a.age=='s',
+ 'housing-benefit':low,'energy-voucher':low&&(a.age=='s'||kid0||kid2||preg),'culture-card':low};
+ return BEN.filter(b=>R[b.id])}
+function checkPage(){const done=DQ.filter(q=>dqa[q[0]]&&(!Array.isArray(dqa[q[0]])||dqa[q[0]].length)).length,all=done==DQ.length;
+ const qs=DQ.map(([k,t,opts,multi],i)=>`<section class="cardx dq"><p class="dqn">${i+1}/${DQ.length}${multi?' · 여러 개 고를 수 있어요':''}</p><h2>${t}</h2><div class="fchips">${opts.map(([v,l])=>{const on=multi?(dqa[k]||[]).includes(v):dqa[k]==v;return `<button type="button" class="${on?'on':''}" aria-pressed="${on}" onclick="dqPick('${k}','${v}',${multi?1:0})">${l}</button>`}).join('')}</div></section>`).join('');
+ let res='';if(all){const L=dqMatch(dqa),urgent=L.filter(b=>/끝나요|마감|까지/.test(b.note||''));
+  res=`<section class="cardx dres" id="dres"><h2>진단 결과</h2><p class="dcount">받을 수 있을지 모르는 돈 <b>${L.length}</b>개</p><p class="note">고른 답으로 대략 골랐어요. 실제로 받을 수 있는지는 각 공식 안내에서 소득·재산 기준을 확인하세요.</p>
+  ${urgent.length?`<p class="hct" style="margin-top:12px">⏰ 기한부터 확인하세요</p>${urgent.map(b=>A('n-'+b.id,'hrow',`<b>${b.name}</b><small>${b.note}</small>`)).join('')}`:''}
+  ${BTYPE.map(([k,l])=>{const xs=L.filter(b=>b.type==k);return xs.length?`<p class="hct" style="margin-top:14px">${l} · ${xs.length}개</p>${xs.map(b=>A('n-'+b.id,'hrow',`<b>${b.name}</b><small>${b.amount||b.period||''}</small>`)).join('')}`:''}).join('')}
+  <div class="shr" style="margin-top:14px"><button type="button" class="btn ghost" onclick="dqa={};render();scrollTo(0,0)">처음부터 다시</button>${A('month','btn','이번 달 꼭 챙길 돈 보기')}</div></section>`}
+ return `<h1 class="h1">받을 돈 진단</h1><p class="lsub">버튼 5번만 누르면 받을 수 있을지 모르는 돈을 골라 드려요. 이름·주민번호 같은 개인정보는 묻지 않고, 답은 저장하지 않아요.</p>
+ ${qs}${all?res+A('b-gov-money-smishing','scam','⚠️ "지원금 신청하세요" 링크 문자는 사기예요. 구별법 보기 ›'):`<p class="note" style="margin-top:12px">${DQ.length-done}개 남았어요.</p>`}${foot}`}
 // ── /life/ 인생 이벤트별로 받을 돈·할 일 ──
 // steps: [언제, 할 일, 링크(선택: 공식 URL 또는 'c-계산기')]. ben: data/benefits.json 의 id. 금액은 확인된 것만.
 const LIFE=[
@@ -994,6 +1039,24 @@ function lifePage(k){const x=LIFEBY[k];if(!x)return lifeIdx();
  <nav class="lnav">${LIFE.filter(y=>y.k!=k).map(y=>A('l-'+y.k,'',`${y.e} ${y.t}`)).join('')}</nav>${foot}`}
 // ── 신고·신청 마감 달력 (/deadlines/) ──
 const DL=(DATA.deadlines||[]).filter(x=>x.end>=todayK());let dlT='전체';
+// ── 이번 달 꼭 챙길 것 (/month/): 마감 달력 + data/musts.json. 오늘부터 31일 안에 열려 있거나 열리는 것 ──
+const addDays=(k,n)=>new Date(+new Date(k+'T00:00:00Z')+n*864e5).toISOString().slice(0,10);
+function monthPicks(from,to){const t=todayK(),a=from==null?t:addDays(t,from),b=addDays(t,to==null?31:to);
+ return [...(DATA.musts||[]),...DL].filter(x=>x.end>=a&&x.start<=b&&(from==null||x.start>=a)).sort((x,y)=>(x.start>t)-(y.start>t)||x.end.localeCompare(y.end))}
+const md=k=>`${+k.slice(5,7)}월 ${+k.slice(8,10)}일`;
+function mustState(x){const t=todayK();if(x.start>t)return [`${md(x.start)} 시작`,'soon'];const n=dday(x.end);if(x.until)return ['지금 할 수 있어요','on'];return [n==0?'오늘 마감':`D-${n}`,n<=7?'hot':'on']}
+function mustCard(x){const [lab,cls]=mustState(x),c=x.calc&&ALLC().find(k=>k.id==x.calc),b=x.ben&&BEN.find(k=>k.id==x.ben);
+ return `<article class="must"><div class="mt"><b>${x.name}</b><span class="mst ${cls}">${lab}</span></div>
+ <p class="mper">${md(x.start)} ~ ${x.until||md(x.end)}${x.moved?' (주말이라 미뤄짐)':''}</p>
+ ${x.why?`<p>${x.why}</p>`:`<p>${x.who||''}</p>`}${x.tip?`<p class="mtip">${x.tip}</p>`:''}
+ <div class="bl">${x.url?`<a href="${x.url}" target="_blank" rel="noopener">공식 사이트 ↗</a>`:''}${b&&b.url?`<a href="${b.url}" target="_blank" rel="noopener">공식 안내 ↗</a>`:''}${c?A('c-'+c.id,'',`${c.label} ›`):''}</div>
+ <small class="asof">${x.must?`근거: ${x.src} (${x.asof})`:`근거: ${x.law||''}`}</small></article>`}
+function monthPage(){const t=todayK(),now=monthPicks(),next=monthPicks(32,62);
+ return `<h1 class="h1">이번 달 꼭 챙길 돈</h1><p class="lsub">${md(t)} 기준 · 앞으로 한 달 안에 마감되거나 시작하는 것만 모았어요</p>
+ <h2>지금 챙길 것 <small>${now.length}개</small></h2>${now.map(mustCard).join('')||'<p class="note">한 달 안에 마감되는 항목이 없어요.</p>'}
+ ${next.length?`<h2>다음 달 미리 보기 <small>${next.length}개</small></h2>${next.map(mustCard).join('')}`:''}
+ <h2>더 챙겨 보기</h2>${[['find','받을 돈 찾기','내 상황에 맞는 지원금·수당'],['deadlines','신고·신청 마감 달력','1년 마감 일정 전체'],['hidden','숨은 돈 찾기','잊은 예금·보험금·카드포인트']].map(([to,a,b])=>A(to,'hrow',`<b>${a}</b><small>${b}</small>`)).join('')}
+ <p class="note" style="margin-top:14px">날짜와 금액은 각 항목에 적은 공식 자료 기준이에요. 해마다 바뀔 수 있으니 신청 전에 공식 사이트에서 꼭 확인하세요.</p>${foot}`}
 const gcal=x=>{const d=s=>s.replace(/-/g,''),n=new Date(+new Date(x.end+'T00:00:00Z')+864e5).toISOString().slice(0,10);return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent('[마감] '+x.name)+'&dates='+d(x.end)+'/'+d(n)+'&details='+encodeURIComponent(x.who+'\n'+x.url+'\n받는돈 getdon24.com/deadlines/')}
 function icsOne(k){const x=DL.find(y=>y.key==k);if(!x)return;const d=s=>s.replace(/-/g,''),n=new Date(+new Date(x.end+'T00:00:00Z')+864e5).toISOString().slice(0,10);
  const t=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//getdon24//KO','BEGIN:VEVENT','UID:'+x.key+'@getdon24.com','DTSTAMP:'+d(todayK())+'T000000Z','DTSTART;VALUE=DATE:'+d(x.end),'DTEND;VALUE=DATE:'+d(n),'SUMMARY:[마감] '+x.name,'DESCRIPTION:'+x.who+'\\n'+x.url,'URL:'+x.url,'BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+x.name+' 마감 3일 전','TRIGGER:-P3D','END:VALARM','END:VEVENT','END:VCALENDAR',''].join('\r\n');
@@ -1078,11 +1141,11 @@ function findPage(){if(!findInit){findInit=1;findPick=findSel()}
  const body=!sel.length?`<p class="note" style="margin-top:14px">해당하는 걸 모두 눌러 보세요. 받을 수 있는 돈을 종류별로 모아 드려요.</p>`
   :list.length?BTYPE.map(([k,l])=>{const xs=list.filter(b=>b.type==k);return xs.length?`<h2>${l} <small>${xs.length}개</small></h2>${xs.map(benCard).join('')}`:''}).join('')
   :`<p class="note" style="margin-top:14px">고른 조건에 맞는 항목을 아직 준비하지 못했어요.</p>`;
- return `<h1 class="h1">받을 돈 찾기</h1><p class="note">나에게 해당하는 걸 고르세요 · 여러 개 가능</p>${chips}${body}
- <section class="cardx hcard fmore" style="margin-top:18px"><p class="hct">받을 돈 더 보기</p>${[['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계']].map(([to,t,x])=>A(to,'hrow',`<b>${t}</b><small>${x}</small>`)).join('')}</section>
+ return `<h1 class="h1">받을 돈 찾기</h1>${A('check','dqcta','<b>🔎 질문 5개로 받을 돈 진단하기</b><small>나이·일·아이·집·형편만 고르면 맞는 돈을 골라 드려요 ›</small>')}<p class="note">또는 나에게 해당하는 걸 직접 고르세요 · 여러 개 가능</p>${chips}${body}
+ <section class="cardx hcard fmore" style="margin-top:18px"><p class="hct">받을 돈 더 보기</p>${[['check','받을 돈 진단','질문 5개로 한 번에'],['month','이번 달 꼭 챙길 돈','마감 임박 신청·세액공제'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계']].map(([to,t,x])=>A(to,'hrow',`<b>${t}</b><small>${x}</small>`)).join('')}</section>
  ${sel.length&&supFor(sel).length?`<h2>지금 신청할 수 있는 혜택 <small>마감 임박순</small></h2>${supFor(sel).slice(0,5).map(supCard).join('')}${A('benefits','btn ghost allbtn','마감 임박 혜택 전체 보기 ›')}`:''}
  ${sel.length?`<div class="shr"><button type="button" class="btn" onclick="findShare()">카카오톡·문자로 공유</button><button type="button" class="btn ghost" onclick="findCopy(this)">링크 복사</button></div><input id="shurl" hidden readonly aria-label="공유 주소" style="width:100%;margin-top:8px">`:''}
- <p class="note" style="margin-top:16px">금액과 조건은 해마다 바뀌어요. 여기 정보는 각 항목의 기준일 기준이고, 실제로 받을 수 있는지는 공식 안내에서 확인하세요.</p>${foot}`}
+ <p class="note" style="margin-top:16px">금액과 조건은 해마다 바뀌어요. 여기 정보는 각 항목의 기준일 기준이고, 실제로 받을 수 있는지는 공식 안내에서 확인하세요.</p>${A('b-gov-money-smishing','scam','⚠️ "지원금 신청하세요" 링크 문자는 사기예요. 구별법 보기 ›')}${foot}`}
 function findUrl(){return (DATA.config&&DATA.config.siteUrl||'')+'/find/'+(findPick.size?'?t='+[...findPick].join(','):'')}
 function findShare(){const u=findUrl(),d={title:'받을 돈 찾기 | 받는돈',text:'나도 받을 수 있는 돈이 있는지 확인해 보세요',url:u};if(navigator.share)navigator.share(d).catch(()=>{});else findCopy()}
 function findCopy(el){const u=findUrl();const ok=()=>{if(el){const t=el.textContent;el.textContent='복사했어요';setTimeout(()=>el.textContent=t,1500)}};const fail=()=>{const b=document.getElementById('shurl');if(b){b.hidden=false;b.value=u;b.select()}};if(navigator.clipboard)navigator.clipboard.writeText(u).then(ok,fail);else fail()}
@@ -1105,19 +1168,20 @@ const HCAT=[['직장인','연봉·퇴직금·실업급여','c-salary'],['알바'
 // 검색 대상: 계산기 + 글 + 주요 화면
 function searchIdx(){const c=ALLC().filter(x=>!x.hidden).map(x=>({to:'c-'+x.id,t:x.title,s:LEAD[x.id]||LEAD[TABAL[x.id]]||'',k:'계산기'}));
  const p=allPosts().map(x=>({to:x.id,t:x.t,s:x.e||'',k:'글'}));
- const g=[['find','받을 돈 찾기','지원금·수당·환급금'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['lotto','로또 당첨번호','이번 회차·1등 판매점'],['pension','연금복권 당첨번호','연금복권720+']].map(([to,t,s])=>({to,t,s,k:'바로가기'}));
+ const g=[['check','받을 돈 진단','질문 5개로 받을 수 있는 돈 찾기'],['month','이번 달 꼭 챙길 돈','마감·신청 임박 연말정산 세액공제'],['find','받을 돈 찾기','지원금·수당·환급금'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['lotto','로또 당첨번호','이번 회차·1등 판매점'],['pension','연금복권 당첨번호','연금복권720+']].map(([to,t,s])=>({to,t,s,k:'바로가기'}));
  return [...c,...g,...p]}
 function hsearch(q){const box=document.getElementById('hsr');if(!box)return;q=q.trim().toLowerCase();if(!q){box.hidden=true;box.innerHTML='';return}
  const words=q.split(/\s+/),hits=searchIdx().map(x=>{const a=(x.t+' '+x.s).toLowerCase();let sc=0;for(const w of words){if(!a.includes(w))return null;sc+=x.t.toLowerCase().includes(w)?2:1}return[sc+(x.k=='계산기'?.5:0),x]}).filter(Boolean).sort((a,b)=>b[0]-a[0]).slice(0,8).map(x=>x[1]);
  box.hidden=false;box.innerHTML=hits.length?hits.map(x=>A(x.to,'hsr-i',`<span>${x.k}</span><b>${x.t}</b>`)).join(''):'<p class="hsr-n">찾는 결과가 없어요. 다른 말로 찾아보세요.</p>'}
-function home(){const d=DRAWS[0],posts=allPosts().slice(0,5),dl=(typeof DL!='undefined'?DL:[]).slice(0,2);
+function home(){const d=DRAWS[0],posts=allPosts().slice(0,5),mp=monthPicks().slice(0,4);
  return `<section class="hhero"><h1>세금 떼고 <em>진짜 받는 돈</em>,<br>바로 계산해요</h1>
  <div class="hsearch" role="search"><input id="hq" type="search" placeholder="계산기·글 찾기 (예: 실업급여, 홈택스)" autocomplete="off" aria-label="계산기와 글 검색" oninput="hsearch(this.value)"><div id="hsr" class="hsr" hidden></div></div></section>
+ <section class="cardx hcard hmust"><p class="hct">이번 달 꼭 챙길 것 ${A('month','hmore','전체 보기 ›')}</p>${mp.map(x=>{const [lab,cls]=mustState(x);return A('month','hrow',`<b>${x.name}</b><small><span class="mst ${cls}">${lab}</span> ${md(x.start)} ~ ${x.until||md(x.end)}</small>`)}).join('')||'<p class="note">한 달 안에 마감되는 항목이 없어요.</p>'}</section>
  <section class="cardx hcard"><p class="hct">자주 쓰는 계산기 ${A('calc','hmore','전체 계산기 ›')}</p><div class="hpop">${HPOP.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'hpi',`<b>${c.label.replace(/ 계산기$/,'')}</b><small>${LEAD[c.id]||LEAD[TABAL[c.id]]||''}</small>`)).join('')}</div></section>
  <div class="hcols"><div><section class="cardx hcard"><p class="hct">최신 글 ${A('guide','hmore',`정보 글 전체 ${allPosts().length}개 ›`)}</p>${posts.map(p=>A(p.id,'hpost',`<span class="hpc">${p.c}</span><b>${p.t}</b>${p.e?`<small>${p.e}</small>`:''}<em>${p.d}</em>`)).join('')}</section></div><div>
  <section class="cardx hcard"><p class="hct">분야별로 찾기</p><div class="hcat">${HCAT.map(([t,s,to])=>A(to,'hci',`<b>${t}</b><small>${s}</small>`)).join('')}</div></section>
- <section class="cardx hcard"><p class="hct">이번에 챙길 것</p>
- ${dl.map(x=>A('deadlines','hrow',`<b>${x.name}</b><small>${ymd(x.end)}까지 · D-${dday(x.end)}</small>`)).join('')}
+ <section class="cardx hcard"><p class="hct">바로가기</p>
+ ${A('check','hrow','<b>받을 돈 진단</b><small>질문 5개로 받을 수 있는 돈 찾기</small>')}
  ${d?A('lotto','hrow',`<b>로또 ${d.r}회 당첨번호</b><small>${d.n.join(' · ')} + ${d.b} · ${ymd(d.date)}</small>`):''}
  ${A('hidden','hrow','<b>숨은 돈 찾기</b><small>잊고 있던 예금·보험금·카드포인트 확인</small>')}</section></div></div>${foot}`}
 // ── /calc/ 모든 계산기: 분야별 목록 ──
@@ -1362,7 +1426,7 @@ function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>
 const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);
-function guide(){const all=allPosts(),cats=['전체','급여','세금','복권','바로가기'].filter(c=>c=='전체'||all.some(p=>p.c==c));
+function guide(){const all=allPosts(),cats=['전체','꼭 챙길 돈','급여','세금','복권','바로가기'].filter(c=>c=='전체'||all.some(p=>p.c==c));
  const top=all[0];return `<h1 class="h1">정보</h1><p class="note">돈 계산에 도움 되는 정보 글 ${all.length}개</p>${top?A(top.id,'cardx gtop',`<span class="hpc">최신 글 · ${top.c}</span><b>${top.t}</b>${top.e?`<small>${top.e}</small>`:''}<em>${top.d}</em>`):''}<input id="bq" placeholder="글 제목 검색" value="${boardQ}" oninput="boardQ=this.value;document.getElementById('bl').innerHTML=bl()" style="margin:10px 0" aria-label="글 제목 검색"><div class="chips">${cats.map(c=>`<button class="${c==boardF?'on':''}" onclick="boardF='${c}';render()">${c}</button>`).join('')}</div><div id="bl">${bl()}</div>${foot}`}
 function bl(){const l=allPosts().filter(p=>(boardF=='전체'||p.c==boardF)&&(!boardQ||p.t.includes(boardQ)));return l.length?l.map(postRow).join(''):'<p class="note">찾는 글이 없어요.</p>'}
 function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x=>x.id==a.calc);
@@ -1372,7 +1436,7 @@ function postMore(s){const all=allPosts(),i=all.findIndex(p=>p.id=='b-'+s);if(i<
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all'||c=='lmap')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='check'||c=='month'||c.startsWith('n-')||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all'||c=='lmap')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}"${k==tabOf(cur)?' class="on" aria-current="page"':''}>${l}</a>`).join('')}
 // 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
@@ -1386,7 +1450,7 @@ function view(){let v=view0();if(!cur.startsWith('c-')&&cur!='home'&&!cur.starts
  if(cur.startsWith('b-'))v=v.replace('<article class="art"','<article class="art cardx"');
  if(PAGES[cur])v=v.replace('<div class="art">','<div class="art cardx">');
  return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur=='all'?allDraws():cur=='lmap'?lottoMap():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur.startsWith('n-')?benPage(cur.slice(2)):cur=='all'?allDraws():cur=='lmap'?lottoMap():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,month:monthPage,check:checkPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}

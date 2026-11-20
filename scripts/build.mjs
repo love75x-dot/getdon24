@@ -34,7 +34,7 @@ function parsePost(slug, text) {
   const html = mdToHtml(m[2]);
   const chars = html.replace(/<[^>]+>/g, '').length;
   // 게시판 분류는 3개(급여·세금·복권)로 묶는다. 글 파일의 category 는 그대로 두고 화면에서만 묶음
-  const CAT3 = { 세금정보: '세금', 복권정보: '복권', 바로가기: '바로가기' };
+  const CAT3 = { 세금정보: '세금', 복권정보: '복권', 바로가기: '바로가기', '꼭 챙길 돈': '꼭 챙길 돈' };
   return { slug, title: meta.title, cat: CAT3[meta.category] || '급여', catRaw: meta.category, date: meta.date, excerpt: meta.excerpt, calc: meta.calc || '', min: Math.max(1, Math.round(chars / 500)), html };
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -194,6 +194,7 @@ function pathOf(t) {
   if (t === 'guide') return '/blog/';
   if (t.startsWith('b-')) return `/blog/${t.slice(2)}/`;
   if (t.startsWith('l-')) return `/life/${t.slice(2)}/`;
+  if (t.startsWith('n-')) return `/benefit/${t.slice(2)}/`;
   return `/${t}/`;
 }
 
@@ -330,6 +331,19 @@ function expandDeadlines(list) {
   }
   return out.sort((a, b) => a.end.localeCompare(b.end)).slice(0, 24);
 }
+// 이번 달 꼭 챙길 것: MM-DD 는 해마다, YYYY-MM-DD 는 그해만. 끝난 것은 뺀다
+function expandMusts(list) {
+  const y = +TODAY.slice(0, 4), out = [];
+  for (const d of list) {
+    const yrs = d.end.length > 5 ? [null] : [y - 1, y, y + 1];
+    for (const yr of yrs) {
+      const start = yr ? `${yr}-${d.start}` : d.start, end = yr ? `${yr}-${d.end}` : d.end;
+      if (end < TODAY) continue;
+      out.push({ ...d, key: `${d.id}-${yr || 'once'}`, start, end, must: 1 });
+    }
+  }
+  return out.sort((a, b) => a.end.localeCompare(b.end));
+}
 function icsEsc(t) { return String(t).replace(/[\\,;]/g, (m) => '\\' + m).replace(/\n/g, '\\n'); }
 function icsOf(items) {
   const d = (s) => s.replace(/-/g, ''), next = (s) => new Date(+new Date(s + 'T00:00:00Z') + 864e5).toISOString().slice(0, 10);
@@ -347,6 +361,7 @@ const DATA = {
   support: await loadSupport(),
   benefits: JSON.parse(await readFile(join(ROOT, 'data/benefits.json'), 'utf8')),
   deadlines: expandDeadlines(JSON.parse(await readFile(join(ROOT, 'data/deadlines.json'), 'utf8'))),
+  musts: expandMusts(JSON.parse(await readFile(join(ROOT, 'data/musts.json'), 'utf8'))),
   hidden: JSON.parse(await readFile(join(ROOT, 'data/hidden.json'), 'utf8')),
   wtax: JSON.parse(await readFile(join(ROOT, 'data/wage-tax-2026-03.json'), 'utf8')),
 };
@@ -463,6 +478,12 @@ for (const c of calcs) {
 
 // 로또
 await emit('lotto', { title: `로또 ${L.round}회 당첨번호 ${nums(L)} · 1등 판매점 | ${site}`, desc: `${L.date} 추첨 로또 ${L.round}회 당첨번호 ${nums(L)}, 보너스 ${L.bonus}. 1등 ${L.ranks[0][1]}명 1인당 ${won(L.ranks[0][0])}. 1등 판매점, 지역별 명당, 실수령액 계산기까지.` }, L.date);
+for (const b of DATA.benefits) {
+  const amt = b.amount ? ` ${b.amount}.` : '';
+  await emit('n-' + b.id, { title: `${b.name} 신청 방법·대상·금액 | ${site}`, desc: `${b.name}:${amt} ${b.who || ''}`.slice(0, 150), jsonld: b.steps ? { '@context': 'https://schema.org', '@type': 'HowTo', name: `${b.name} 신청 방법`, step: b.steps.map((t, i) => ({ '@type': 'HowToStep', position: i + 1, text: t })) } : null });
+}
+await emit('check', { title: `받을 돈 진단 - 질문 5개로 지원금·수당·환급 찾기 | ${site}`, desc: '나이, 하는 일, 아이, 집, 가구 형편 5가지만 고르면 받을 수 있을지 모르는 정부 지원금·수당·세금 환급을 골라 드려요. 개인정보는 묻지 않아요.' });
+await emit('month', { title: `이번 달 꼭 챙길 돈 - 마감 임박 신청·신고·세액공제 | ${site}`, desc: '연말정산 세액공제, 지원금 신청 마감, 세금 신고 기한처럼 한 달 안에 꼭 챙겨야 할 돈을 날짜순으로 모았어요. 공식 근거와 바로가기를 함께 알려 드려요.' });
 await emit('lmap', { title: `로또 1등 지도 - 시군구별 1등 판매점 | ${site}`, desc: `${places.from}회부터 ${places.to}회까지 로또 1등이 나온 판매점을 시·도, 시·군·구 지도로 모았어요. 지역을 누르면 그곳 1등 판매점을 볼 수 있어요.` }, L.date);
 await emit('all', { title: `로또 전체 회차 당첨번호 1회~${L.round}회 | ${site}`, desc: `로또 6/45 1회부터 ${L.round}회까지 모든 회차의 당첨번호와 보너스 번호를 한눈에 볼 수 있어요.` }, L.date);
 for (const d of draws) {
