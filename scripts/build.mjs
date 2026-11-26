@@ -34,7 +34,7 @@ function parsePost(slug, text) {
   const html = mdToHtml(m[2]);
   const chars = html.replace(/<[^>]+>/g, '').length;
   // 게시판 분류는 3개(급여·세금·복권)로 묶는다. 글 파일의 category 는 그대로 두고 화면에서만 묶음
-  const CAT3 = { 세금정보: '세금', 복권정보: '복권', 바로가기: '바로가기', '꼭 챙길 돈': '꼭 챙길 돈' };
+  const CAT3 = { 세금정보: '세금', 복권정보: '복권', 바로가기: '바로가기', '꼭 챙길 돈': '꼭 챙길 돈', 생활정보: '생활' };
   return { slug, title: meta.title, cat: CAT3[meta.category] || '급여', catRaw: meta.category, date: meta.date, excerpt: meta.excerpt, calc: meta.calc || '', min: Math.max(1, Math.round(chars / 500)), html };
 }
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -59,7 +59,16 @@ async function loadPosts() {
   for (const f of (await readdir(dir)).filter((f) => f.endsWith('.md')).sort()) {
     all.push(parsePost(f.replace(/\.md$/, ''), await readFile(join(dir, f), 'utf8')));
   }
-  return all.filter((p) => p.date <= TODAY).sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
+  const live = all.filter((p) => p.date <= TODAY).sort((a, b) => b.date.localeCompare(a.date) || a.slug.localeCompare(b.slug));
+  // 글 형식(프롬프트3)의 '최신 글 보기' 자리: 다른 최신 글 5개로 채운다
+  for (const p of live) p.html = p.html.replace(/<ul id="rss-list"([^>]*)><\/ul>/, (_, at) => `<ul id="rss-list"${at}>${live.filter((x) => x.slug !== p.slug).slice(0, 5).map((x) => `<li><a href="/blog/${x.slug}/">${esc(x.title)}</a></li>`).join('')}</ul>`);
+  return live;
+}
+// 글 안의 자주 묻는 질문(custom-faq)을 검색엔진용 FAQPage 로
+function faqOf(html) {
+  const out = [], re = /<h3 class="custom-faq__question"><strong>Q\d+\.\s*([\s\S]*?)<\/strong><\/h3>\s*<p class="custom-faq__answer"><strong>A\d+\.<\/strong>\s*([\s\S]*?)<\/p>/g;
+  let m; while ((m = re.exec(html))) out.push({ q: m[1].replace(/<[^>]+>/g, '').trim(), a: m[2].replace(/<[^>]+>/g, '').trim() });
+  return out;
 }
 
 // ---------- 로또·연금·판매점 ----------
@@ -165,7 +174,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : ''}
 <link rel="icon" href="/favicon.ico?v=2" sizes="any"><link rel="icon" href="/favicon.png?v=2" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2"><link rel="manifest" href="/manifest.webmanifest?v=2"><meta name="apple-mobile-web-app-title" content="받는돈"><meta name="mobile-web-app-capable" content="yes">
 ${verify}
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">${html && html.includes('material-symbols') ? '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0&display=block">' : ''}
 <link rel="stylesheet" href="/assets/style.css?v=${assets.css}">
 ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, '\\u003c')}</script>` : ''}
 ${ads}${ga}
@@ -535,7 +544,7 @@ await emit('guide', { title: `정보 게시판 | ${site}`, desc: '급여, 세금
 for (const p of posts) {
   await emit(`b-${p.slug}`, {
     title: `${p.title} | ${site}`, desc: p.excerpt, ogType: 'article',
-    jsonld: { '@context': 'https://schema.org', '@type': 'Article', headline: p.title, description: p.excerpt, datePublished: p.date, dateModified: p.date, author: { '@type': 'Organization', name: site }, publisher: { '@type': 'Organization', name: site, logo: { '@type': 'ImageObject', url: `${SITE}/apple-touch-icon.png` } }, image: `${SITE}/og-image.png`, mainEntityOfPage: SITE + pathOf(`b-${p.slug}`) },
+    jsonld: ((art) => { const f = faqOf(p.html); return f.length ? [art, { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: f.map((x) => ({ '@type': 'Question', name: x.q, acceptedAnswer: { '@type': 'Answer', text: x.a } })) }] : art; })({ '@context': 'https://schema.org', '@type': 'Article', headline: p.title, description: p.excerpt, datePublished: p.date, dateModified: p.date, author: { '@type': 'Organization', name: site }, publisher: { '@type': 'Organization', name: site, logo: { '@type': 'ImageObject', url: `${SITE}/apple-touch-icon.png` } }, image: `${SITE}/og-image.png`, mainEntityOfPage: SITE + pathOf(`b-${p.slug}`) }),
   }, p.date, { postHtml: p.html });
 }
 

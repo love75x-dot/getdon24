@@ -1427,7 +1427,7 @@ function runC(id){const c=calcs.find(x=>x.id==id);if(!c)return;const set=(i,h)=>
 const pd=s=>ymd(ARTICLES[s].date);
 function allPosts(){return POSTS.map(p=>({id:'b-'+p.slug,t:p.title,c:p.cat,d:ymd(p.date),e:p.excerpt})).sort((a,b)=>b.d.localeCompare(a.d))}
 const postRow=p=>A(p.id,'gcard',`<div><b class="one">${p.t}</b><small class="one">${p.c} · ${p.d}</small></div><span>›</span>`);
-function guide(){const all=allPosts(),cats=['전체','꼭 챙길 돈','급여','세금','복권','바로가기'].filter(c=>c=='전체'||all.some(p=>p.c==c));
+function guide(){const all=allPosts(),cats=['전체','꼭 챙길 돈','급여','세금','생활','복권','바로가기'].filter(c=>c=='전체'||all.some(p=>p.c==c));
  const top=all[0];return `<h1 class="h1">정보</h1><p class="note">돈 계산에 도움 되는 정보 글 ${all.length}개</p>${top?A(top.id,'cardx gtop',`<span class="hpc">최신 글 · ${top.c}</span><b>${top.t}</b>${top.e?`<small>${top.e}</small>`:''}<em>${top.d}</em>`):''}<input id="bq" placeholder="글 제목 검색" value="${boardQ}" oninput="boardQ=this.value;document.getElementById('bl').innerHTML=bl()" style="margin:10px 0" aria-label="글 제목 검색"><div class="chips">${cats.map(c=>`<button class="${c==boardF?'on':''}" onclick="boardF='${c}';render()">${c}</button>`).join('')}</div><div id="bl">${bl()}</div>${foot}`}
 function bl(){const l=allPosts().filter(p=>(boardF=='전체'||p.c==boardF)&&(!boardQ||p.t.includes(boardQ)));return l.length?l.map(postRow).join(''):'<p class="note">찾는 글이 없어요.</p>'}
 function bpost(s){const a=ARTICLES[s];if(!a)return guide();const c=ALLC().find(x=>x.id==a.calc);
