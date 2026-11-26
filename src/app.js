@@ -1051,6 +1051,23 @@ function mustCard(x){const [lab,cls]=mustState(x),c=x.calc&&ALLC().find(k=>k.id=
  ${x.why?`<p>${x.why}</p>`:`<p>${x.who||''}</p>`}${x.tip?`<p class="mtip">${x.tip}</p>`:''}
  <div class="bl">${x.url?`<a href="${x.url}" target="_blank" rel="noopener">공식 사이트 ↗</a>`:''}${b&&b.url?`<a href="${b.url}" target="_blank" rel="noopener">공식 안내 ↗</a>`:''}${c?A('c-'+c.id,'',`${c.label} ›`):''}</div>
  <small class="asof">${x.must?`근거: ${x.src} (${x.asof})`:`근거: ${x.law||''}`}</small></article>`}
+// 2027년 달라지는 돈: st ok=확정, mid=국회 심의 중, gov=정부안. 12월 국회 처리 뒤 숫자와 상태를 다시 확인한다.
+const Y27=[
+ {st:'ok',name:'최저임금 시급 10,700원',what:'2027년 1월 1일부터 시급 10,700원, 주 40시간 기준 월 2,236,300원이에요. 2026년(10,320원)보다 380원 올라요.',c:'minwage-check',src:'고용노동부 고시',asof:'2026-08-05',url:'https://www.minimumwage.go.kr'},
+ {st:'ok',name:'생계급여 1인 월 최대 87만 5,533원',what:'기준 중위소득이 6.7% 올라 4인 가구 692만 9,885원이 돼요. 생계급여 최대 금액은 1인 가구 87만 5,533원, 4인 가구 221만 7,563원이에요.',src:'보건복지부 중앙생활보장위원회 의결',asof:'2026-07-28',url:'https://www.bokjiro.go.kr'},
+ {st:'ok',name:'결혼세액공제는 2026년 혼인신고까지',what:'한 사람 50만 원(부부 100만 원)을 돌려받는 결혼세액공제는 2024~2026년 혼인신고한 경우만 해당돼요. 2027년에 혼인신고하면 받을 수 없어요.',ben:'marriage-credit',src:'정책브리핑 「자주 묻는 연말정산 ⑧결혼 세액공제?」',asof:'2024-11-26',url:'https://www.korea.kr/news/policyNewsView.do?newsId=148936697'},
+ {st:'mid',name:'기초연금 소득별 3단계로',what:'소득 하위 30%는 월 38만 원(약 3만 원 인상), 30~45%는 35만 9,000원, 45~70%는 약 35만 원이에요. 하위 45% 이하 부부는 부부감액이 20%에서 10%로 줄어요. 기초연금법 개정안이 국회 상임위 소위원회를 통과했고 아직 확정 전이에요.',ben:'basic-pension',src:'국회 보건복지위 법안소위 통과 보도',asof:'2026-11-25',url:'https://fnnews.com/news/202611252000518851'},
+ {st:'gov',name:'아동수당 월 20만 원으로 개편',what:'정부 예산안은 아동기본수당을 월 20만 원(현금 10만 원 + 지역사랑상품권 10만 원)으로 올리고, 2027년 10세 미만부터 해마다 한 살씩 넓혀 2030년 12세까지 주는 내용이에요. 2027년 7월 이후 출생아부터 적용하는 방안이 검토되고 있어요.',ben:'child-allowance',src:'보건복지부 2027년 예산안',asof:'2026-09-04',url:'https://www.korea.kr/news/policyNewsView.do?newsId=148971270'},
+ {st:'gov',name:'아이맞이지원금 첫째 1,000만 원',what:'정부 예산안은 첫만남이용권과 부모급여를 아이맞이지원금으로 합쳐 첫째 1,000만 원, 둘째 1,200만 원, 셋째 이상 1,500만 원을 1년 동안 나눠 주는 내용이에요. 확정 전이라 지금 아이는 기존 부모급여·첫만남이용권을 그대로 신청하세요.',ben:'parent-pay',src:'보건복지부 2027년 예산안',asof:'2026-09-04',url:'https://www.korea.kr/news/policyNewsView.do?newsId=148971270'},
+ {st:'gov',name:'월세 세액공제 한도 1,200만 원',what:'2026년 세제개편안은 월세 공제 한도를 연 1,000만 원에서 1,200만 원으로 올리고, 청년은 17%를 적용하는 내용이에요. 임신 뒤 회사에서 받은 출산지원금도 비과세로 넓혀요. 국회에서 세법이 통과돼야 확정돼요.',ben:'rent-credit',src:'재정경제부 2026년 세제개편안',asof:'2026-08-07',url:'https://www.korea.kr/news/policyNewsView.do?newsId=148969672'}];
+const Y27S={ok:['확정','on'],mid:['국회 심의 중','soon'],gov:['정부안','soon']};
+function y27Page(){const card=x=>{const [lab,cls]=Y27S[x.st],c=x.c&&ALLC().find(k=>k.id==x.c),b=x.ben&&BEN.find(k=>k.id==x.ben);
+ return `<article class="must"><div class="mt"><b>${x.name}</b><span class="mst ${cls}">${lab}</span></div><p>${x.what}</p><div class="bl"><a href="${x.url}" target="_blank" rel="noopener">근거 자료 ↗</a>${b?A('n-'+b.id,'',`${b.name} 안내 ›`):''}${c?A('c-'+c.id,'',`${c.label} ›`):''}</div><small class="asof">근거: ${x.src} (${x.asof})</small></article>`};
+ return `<h1 class="h1">2027년 달라지는 돈</h1><p class="lsub">2026년 11월 26일 기준 · 확정된 것과 아직 바뀔 수 있는 것을 나눠 표시했어요</p>
+ <p class="note" style="margin:0 0 6px"><b>정부안</b>과 <b>국회 심의 중</b>은 아직 확정이 아니에요. 국회 처리 과정에서 금액과 시기가 바뀔 수 있어요. 확정되면 이 페이지를 고쳐 둘게요.</p>
+ <h2>확정 <small>${Y27.filter(x=>x.st=='ok').length}개</small></h2>${Y27.filter(x=>x.st=='ok').map(card).join('')}
+ <h2>바뀔 수 있어요 <small>${Y27.filter(x=>x.st!='ok').length}개</small></h2>${Y27.filter(x=>x.st!='ok').map(card).join('')}
+ <h2>더 챙겨 보기</h2>${[['month','이번 달 꼭 챙길 돈','올해 안에 끝내야 할 세액공제·신청'],['find','받을 돈 찾기','지금 받을 수 있는 지원금·수당'],['deadlines','신고·신청 마감 달력','2027년 마감 일정']].map(([to,a,b])=>A(to,'hrow',`<b>${a}</b><small>${b}</small>`)).join('')}${foot}`}
 function monthPage(){const t=todayK(),now=monthPicks(),next=monthPicks(32,62);
  return `<h1 class="h1">이번 달 꼭 챙길 돈</h1><p class="lsub">${md(t)} 기준 · 앞으로 한 달 안에 마감되거나 시작하는 것만 모았어요</p>
  <h2>지금 챙길 것 <small>${now.length}개</small></h2>${now.map(mustCard).join('')||'<p class="note">한 달 안에 마감되는 항목이 없어요.</p>'}
@@ -1168,7 +1185,7 @@ const HCAT=[['직장인','연봉·퇴직금·실업급여','c-salary'],['알바'
 // 검색 대상: 계산기 + 글 + 주요 화면
 function searchIdx(){const c=ALLC().filter(x=>!x.hidden).map(x=>({to:'c-'+x.id,t:x.title,s:LEAD[x.id]||LEAD[TABAL[x.id]]||'',k:'계산기'}));
  const p=allPosts().map(x=>({to:x.id,t:x.t,s:x.e||'',k:'글'}));
- const g=[['check','받을 돈 진단','질문 5개로 받을 수 있는 돈 찾기'],['month','이번 달 꼭 챙길 돈','마감·신청 임박 연말정산 세액공제'],['find','받을 돈 찾기','지원금·수당·환급금'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['lotto','로또 당첨번호','이번 회차·1등 판매점'],['pension','연금복권 당첨번호','연금복권720+']].map(([to,t,s])=>({to,t,s,k:'바로가기'}));
+ const g=[['check','받을 돈 진단','질문 5개로 받을 수 있는 돈 찾기'],['month','이번 달 꼭 챙길 돈','마감·신청 임박 연말정산 세액공제'],['2027','2027년 달라지는 돈','최저임금·기초연금·아동수당'],['find','받을 돈 찾기','지원금·수당·환급금'],['hidden','숨은 돈 찾기','휴면예금·보험금·카드포인트'],['deadlines','신고·신청 마감 달력','종합소득세·근로장려금·자동차세'],['benefits','마감 임박 혜택','정부 지원사업'],['links','공식 사이트 바로가기','홈택스·정부24·복지로·고용24'],['record','받은 돈 기록장','한 해 받은 돈 합계'],['life','인생 이벤트별 받을 돈','결혼·출산·이사·퇴사·은퇴'],['lotto','로또 당첨번호','이번 회차·1등 판매점'],['pension','연금복권 당첨번호','연금복권720+']].map(([to,t,s])=>({to,t,s,k:'바로가기'}));
  const n=BEN.map(b=>({to:'n-'+b.id,t:b.name,s:(b.amount||'')+' '+(b.who||''),k:'받을 돈'}));
  return [...c,...n,...g,...p]}
 function hsearch(q){const box=document.getElementById('hsr');if(!box)return;q=q.trim().toLowerCase();if(!q){box.hidden=true;box.innerHTML='';return}
@@ -1177,7 +1194,7 @@ function hsearch(q){const box=document.getElementById('hsr');if(!box)return;q=q.
 function home(){const d=DRAWS[0],posts=allPosts().slice(0,5),mp=monthPicks().slice(0,4);
  return `<section class="hhero"><h1>받을 돈, <em>놓치지 마세요</em></h1><p class="hsub">지원금 찾기부터 실수령액 계산까지 한 곳에서</p>
  <div class="hsearch" role="search"><input id="hq" type="search" placeholder="받을 돈·계산기 찾기 (예: 기초연금, 실업급여)" autocomplete="off" aria-label="받을 돈, 계산기, 글 검색" oninput="hsearch(this.value)"><div id="hsr" class="hsr" hidden></div></div></section>
- <section class="cardx hcard hmust"><p class="hct">이번 달 꼭 챙길 것 ${A('month','hmore','전체 보기 ›')}</p>${mp.map(x=>{const [lab,cls]=mustState(x);return A('month','hrow',`<b>${x.name}</b><small><span class="mst ${cls}">${lab}</span> ${md(x.start)} ~ ${x.until||md(x.end)}</small>`)}).join('')||'<p class="note">한 달 안에 마감되는 항목이 없어요.</p>'}</section>
+ <section class="cardx hcard hmust"><p class="hct">이번 달 꼭 챙길 것 ${A('month','hmore','전체 보기 ›')}</p>${mp.map(x=>{const [lab,cls]=mustState(x);return A('month','hrow',`<b>${x.name}</b><small><span class="mst ${cls}">${lab}</span> ${md(x.start)} ~ ${x.until||md(x.end)}</small>`)}).join('')||'<p class="note">한 달 안에 마감되는 항목이 없어요.</p>'}${A('2027','hrow',`<b>2027년 달라지는 돈 <span class="mst soon">NEW</span></b><small>최저임금·기초연금·아동수당, 확정과 정부안 구분</small>`)}</section>
  <section class="cardx hcard"><p class="hct">자주 쓰는 계산기 ${A('calc','hmore','전체 계산기 ›')}</p><div class="hpop">${HPOP.map(id=>ALLC().find(c=>c.id==id)).filter(Boolean).map(c=>A('c-'+c.id,'hpi',`<b>${c.label.replace(/ 계산기$/,'')}</b><small>${LEAD[c.id]||LEAD[TABAL[c.id]]||''}</small>`)).join('')}</div></section>
  <div class="hcols"><div><section class="cardx hcard"><p class="hct">최신 글 ${A('guide','hmore',`정보 글 전체 ${allPosts().length}개 ›`)}</p>${posts.map(p=>A(p.id,'hpost',`<span class="hpc">${p.c}</span><b>${p.t}</b>${p.e?`<small>${p.e}</small>`:''}<em>${p.d}</em>`)).join('')}</section></div><div>
  <section class="cardx hcard"><p class="hct">분야별로 찾기</p><div class="hcat">${HCAT.map(([t,s,to])=>A(to,'hci',`<b>${t}</b><small>${s}</small>`)).join('')}</div></section>
@@ -1437,7 +1454,7 @@ function postMore(s){const all=allPosts(),i=all.findIndex(p=>p.id=='b-'+s);if(i<
 function lotSwitch(k){return `<nav class="lsw" aria-label="복권 종류">${A('lotto',k=='lotto'?'on':'','로또 6/45')}${A('pension',k=='pension'?'on':'','연금복권720+')}</nav>`}
 function lotto(){const seg=`<div class="chips" style="margin-top:12px">${[['win','당첨번호'],['place','지역·명당'],['gen','번호뽑기']].map(([k,l])=>`<button class="${k==lottoF?'on':''}" onclick="lottoF='${k}';render()">${l}</button>`).join('')}</div>`;
  return lotSwitch('lotto')+seg+(lottoF=='place'?place():lottoF=='gen'?gen():lottoWin())}
-function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='check'||c=='month'||c.startsWith('n-')||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all'||c=='lmap')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
+function tabOf(c){if(PAGES[c])return '';if(c=='find'||c=='check'||c=='month'||c=='2027'||c.startsWith('n-')||c=='benefits'||c=='deadlines'||c=='hidden'||c=='record'||c=='links'||c=='life'||c.startsWith('l-'))return 'find';if(c.startsWith('c-'))return 'calc';if(c.startsWith('draw')||c=='all'||c=='lmap')return 'lotto';if(c=='penall'||c=='pension')return 'lotto';if(c.startsWith('g-')||c.startsWith('b-'))return 'guide';return c}
 
 function tabsHtml(){return TABS.map(([k,i,l])=>`<a href="${pathOf(k)}"${k==tabOf(cur)?' class="on" aria-current="page"':''}>${l}</a>`).join('')}
 // 계산기 외 화면: 맨 바깥 h2 로 시작하는 구역을 흰 카드로 감싼다 (계산기와 같은 모양)
@@ -1451,7 +1468,7 @@ function view(){let v=view0();if(!cur.startsWith('c-')&&cur!='home'&&!cur.starts
  if(cur.startsWith('b-'))v=v.replace('<article class="art"','<article class="art cardx"');
  if(PAGES[cur])v=v.replace('<div class="art">','<div class="art cardx">');
  return tabOf(cur)=='lotto'?v.replace('<div class="ad-slot"',LOTNOTE+'<div class="ad-slot"'):v}
-function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur.startsWith('n-')?benPage(cur.slice(2)):cur=='all'?allDraws():cur=='lmap'?lottoMap():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,month:monthPage,check:checkPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
+function view0(){return cur.startsWith('c-')?calcView(cur.slice(2)):cur.startsWith('b-')?bpost(cur.slice(2)):cur.startsWith('l-')?lifePage(cur.slice(2)):cur.startsWith('n-')?benPage(cur.slice(2)):cur=='all'?allDraws():cur=='lmap'?lottoMap():cur=='penall'?penAll():cur.startsWith('draw')?draw(+cur.slice(4)):PAGES[cur]?`<h1 class="h1">${PAGES[cur][0]}</h1><div class="art">${PAGES[cur][1]}</div>`+foot:({home,calc:calcList,lotto,guide,pension,find:findPage,month:monthPage,'2027':y27Page,check:checkPage,benefits:benefitsPage,life:lifeIdx,deadlines:deadlinesPage,hidden:hiddenPage,record:recordPage,links:linksPage}[cur]||home)()}
 function render(){document.getElementById('tabs').innerHTML=tabsHtml();
  const v=view();if(!(cur.startsWith('b-')&&window.__PRE))document.getElementById('app').innerHTML=v;if(cur.startsWith('c-'))runC(cur.slice(2));tick()}
 function nextAt(dow,h,m){const now=new Date,k=new Date(now.getTime()+(now.getTimezoneOffset()+540)*6e4),t=new Date(k);t.setDate(k.getDate()+((dow-k.getDay()+7)%7));t.setHours(h,m,0,0);if(t<k)t.setDate(t.getDate()+7);const s=Math.floor((t-k)/1e3),p=x=>String(x).padStart(2,'0');return `${Math.floor(s/86400)}일 ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
