@@ -180,7 +180,7 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld).replace(
 ${ads}${ga}
 </head>
 <body>
-<header><div class="wrap" style="padding-bottom:0"><div class="hd"><div class="logo"><a href="/">받는<b>돈</b></a></div></div><nav class="topnav" id="tabs" aria-label="주요 메뉴">${tabs}</nav></div></header>
+<header><div class="wrap" style="padding-bottom:0"><div class="hd"><div class="logo"><a href="/">받는<b>돈</b></a></div><button type="button" class="hsbtn" onclick="openSearch()" aria-label="검색"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><nav class="topnav" id="tabs" aria-label="주요 메뉴">${tabs}</nav></div></header>
 <main class="wrap" id="app">${html}</main>
 <script>window.__ROUTE=${JSON.stringify(route)};${pre ? 'window.__PRE=1;' : ''}</script>
 <script src="/assets/data.js?v=${assets.data}"></script>${extrasFor(route).map((k) => `<script src="/assets/data-${k}.js?v=${assets['x_' + k]}"></script>`).join('')}

@@ -67,3 +67,5 @@ calc: lotto-tax
 <p class="note">복권은 만 19세 이상만 살 수 있어요. 복권은 재미로 즐기고, 도박 문제는 ☎1336(24시간)에서 상담할 수 있어요.</p>
 
 <div class="데이비-버튼3개"><a href="/" id="button1" class="데이비-버튼"><span class="material-symbols-outlined">home</span> 받는돈 홈</a><a href="/calc/lotto-tax/" id="button2" class="데이비-버튼"><span class="material-symbols-outlined">settings</span> 로또 세금 계산기</a><a href="https://www.dhlottery.co.kr" id="button3" class="데이비-버튼"><span class="material-symbols-outlined">info</span> 동행복권 바로가기</a></div>
+
+<div class="refs"><p class="refs-t">참고한 공식 자료</p><ul><li><a href="https://www.dhlottery.co.kr" target="_blank" rel="noopener">동행복권: 당첨금 지급 안내</a></li><li><a href="https://www.law.go.kr/법령/소득세법" target="_blank" rel="noopener">국가법령정보센터: 소득세법</a></li><li><a href="https://www.law.go.kr/법령/복권 및 복권기금법" target="_blank" rel="noopener">국가법령정보센터: 복권 및 복권기금법</a></li></ul><p class="refs-n">금액과 기준은 바뀔 수 있어요. 신청하거나 신고하기 전에 공식 사이트에서 한 번 더 확인하세요.</p></div>
