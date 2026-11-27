@@ -4498,6 +4498,22 @@
   "firstSeen": "2026-11-26"
  },
  {
+  "id": "biz-PBLN_000000000128170",
+  "name": "[대구] 2026년 3차년도 대구한의대학교 글로컬대학 Start-up with local 프로젝트 모집 공고",
+  "host": "대구광역시",
+  "target": "창업벤처",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-26",
+  "end": "2026-12-02",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128170",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000127477",
   "name": "2026년 문화산수 충청유람(충남 구곡 탐방) 관광 상품 운영 인센티브 지원 변경 공고",
   "host": "충청남도",
@@ -4624,6 +4640,22 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-26"
+ },
+ {
+  "id": "biz-PBLN_000000000128176",
+  "name": "[경남] 의령군 2026년 7차 소상공인 디지털 인프라 지원 사업 공고",
+  "host": "경상남도",
+  "target": "소상공인",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-27",
+  "end": "2026-12-03",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128176",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  },
  {
   "id": "biz-PBLN_000000000120498",
@@ -5223,6 +5255,54 @@
   "firstSeen": "2026-11-26"
  },
  {
+  "id": "biz-PBLN_000000000128156",
+  "name": "[전남광주] 2026년 드론기업 역량강화 지원사업 재공고(R&D)",
+  "host": "전남광주통합특별시",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-30",
+  "end": "2026-12-04",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128156",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128162",
+  "name": "[전남광주] 고흥군 2027년 농수산물 중앙아시아 홍보(판촉)행사 지원사업 공고",
+  "host": "전남광주통합특별시",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-23",
+  "end": "2026-12-04",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128162",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128168",
+  "name": "[전북] 김제시 2026년 2차 수출사다리 지원사업 모집 공고",
+  "host": "산업통상부",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-25",
+  "end": "2026-12-06",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128168",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000127963",
   "name": "[전남광주] 여수시 2027년 수산식품 국제식품인증 취득 지원사업 신청자 모집 공고",
   "host": "전남광주통합특별시",
@@ -5404,6 +5484,38 @@
   "firstSeen": "2026-11-26"
  },
  {
+  "id": "biz-PBLN_000000000128167",
+  "name": "[경북] 구미시 2026년 12월 중소기업 시설자금 융자지원 계획 공고",
+  "host": "경상북도",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-12-01",
+  "end": "2026-12-07",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128167",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128171",
+  "name": "2027년 중국 광저우 국제치과전시회(DSC 2027) 수출컨소시엄 국고지원 참가기업 모집 공고",
+  "host": "중소벤처기업부",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-26",
+  "end": "2026-12-07",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128171",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000128009",
   "name": "[경기] 구리시 2026년 농산물유통사업 물류비 지원 신청 공고",
   "host": "경기도",
@@ -5565,6 +5677,55 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-26"
+ },
+ {
+  "id": "biz-PBLN_000000000128159",
+  "name": "[전남광주] 신안군 2027년 청년어촌정착 지원사업 대상자 모집 공고",
+  "host": "전남광주통합특별시",
+  "target": "중소기업",
+  "tags": [
+   "소상공인",
+   "청년"
+  ],
+  "amount": "",
+  "start": "2026-11-20",
+  "end": "2026-12-09",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128159",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128165",
+  "name": "[전남광주] 함평군 2026년 3차 중동 사태 어업용 면세유 유가 연동 보조금 지원사업 모집 공고",
+  "host": "해양수산부",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-26",
+  "end": "2026-12-09",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128165",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128166",
+  "name": "2026년 3차 제주 로케이션 영상물 제작비 지원사업 공고",
+  "host": "제주특별자치도",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-30",
+  "end": "2026-12-09",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128166",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  },
  {
   "id": "biz-PBLN_000000000120387",
@@ -5791,6 +5952,39 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-26"
+ },
+ {
+  "id": "biz-PBLN_000000000128157",
+  "name": "2027년 상생협력 실증 프로그램 사전 공고",
+  "host": "기후에너지환경부",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-23",
+  "end": "2026-12-10",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128157",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128173",
+  "name": "[경남] 거제시 2027년 청년어촌 정착지원사업 신청 공고",
+  "host": "경상남도",
+  "target": "창업벤처",
+  "tags": [
+   "소상공인",
+   "청년"
+  ],
+  "amount": "",
+  "start": "2026-11-27",
+  "end": "2026-12-10",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128173",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  },
  {
   "id": "biz-PBLN_000000000120694",
@@ -6419,6 +6613,22 @@
   "firstSeen": "2026-11-26"
  },
  {
+  "id": "biz-PBLN_000000000128174",
+  "name": "[충북] 2026년 충북 경제자유구역 입주기업 혁신성장 지원사업 글로벌 사업화 프로그램 참여기업 모집 재공고",
+  "host": "충청북도",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-27",
+  "end": "2026-12-11",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128174",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000117730",
   "name": "[경기] 김포시 2026년 음식점 위생등급 지정업소 종합청소비 지원사업 참여업소 모집 공고",
   "host": "경기도",
@@ -6581,6 +6791,22 @@
   "firstSeen": "2026-11-26"
  },
  {
+  "id": "biz-PBLN_000000000128175",
+  "name": "[경기] 남부권 2026년 4차 중소기업 개발생산판로 맞춤형 지원사업 통합 공고",
+  "host": "경기도",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-27",
+  "end": "2026-12-14",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128175",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000127770",
   "name": "[부산] 소상공인 에너지바우처 지급 시행 수정 공고",
   "host": "부산광역시",
@@ -6662,6 +6888,23 @@
   "firstSeen": "2026-11-19"
  },
  {
+  "id": "biz-PBLN_000000000128172",
+  "name": "[경남] 김해시 2027년 청년창업농 맞춤형 지원사업 공모계획 공고",
+  "host": "경상남도",
+  "target": "창업벤처",
+  "tags": [
+   "소상공인",
+   "청년"
+  ],
+  "amount": "",
+  "start": "2026-11-25",
+  "end": "2026-12-16",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128172",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000127653",
   "name": "[경남] 진주시 2027년 유기농업자재 지원사업 신청 공고",
   "host": "경상남도",
@@ -6693,6 +6936,22 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-19"
+ },
+ {
+  "id": "biz-PBLN_000000000128163",
+  "name": "[전남광주] 진도군 2027년 해양수산사업 모집 공고",
+  "host": "전남광주통합특별시",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-12-08",
+  "end": "2026-12-17",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128163",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  },
  {
   "id": "biz-PBLN_000000000117365",
@@ -6937,6 +7196,38 @@
   "firstSeen": "2026-11-24"
  },
  {
+  "id": "biz-PBLN_000000000128161",
+  "name": "[전남광주] 2027년 원예특작분야 사업신청ㆍ접수 공고",
+  "host": "전남광주통합특별시",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-12-01",
+  "end": "2026-12-18",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128161",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
+  "id": "biz-PBLN_000000000128164",
+  "name": "[전남광주] 신안군 2027년 1차 해양수산사업 공모 변경 공고",
+  "host": "전남광주통합특별시",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-23",
+  "end": "2026-12-18",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128164",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
+ },
+ {
   "id": "biz-PBLN_000000000126296",
   "name": "[제주] 서귀포시 2026년 소상공인 출산급여 지원사업 공고",
   "host": "제주특별자치도",
@@ -7068,6 +7359,23 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-25"
+ },
+ {
+  "id": "biz-PBLN_000000000128177",
+  "name": "[경남] 함안군 2027년 청년창업농 맞춤형 지원사업 신청 공고",
+  "host": "경상남도",
+  "target": "창업벤처",
+  "tags": [
+   "소상공인",
+   "청년"
+  ],
+  "amount": "",
+  "start": "2026-11-24",
+  "end": "2026-12-22",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128177",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  },
  {
   "id": "biz-PBLN_000000000118467",
@@ -8534,6 +8842,22 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-26"
+ },
+ {
+  "id": "biz-PBLN_000000000128169",
+  "name": "[경기] 화성시 2027년 유기농업자재 지원사업 신청 공고",
+  "host": "경기도",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "2026-11-26",
+  "end": "2026-12-31",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128169",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  },
  {
   "id": "biz-PBLN_000000000128085",
@@ -23717,5 +24041,21 @@
   "source": "기업마당",
   "checkedAt": "2026-11-27",
   "firstSeen": "2026-11-26"
+ },
+ {
+  "id": "biz-PBLN_000000000128158",
+  "name": "[경북] 구미시 2026년 매출채권보험료 지원사업 신청 접수 공고",
+  "host": "경상북도",
+  "target": "중소기업",
+  "tags": [
+   "소상공인"
+  ],
+  "amount": "",
+  "start": "",
+  "end": "",
+  "url": "https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=PBLN_000000000128158",
+  "source": "기업마당",
+  "checkedAt": "2026-11-27",
+  "firstSeen": "2026-11-27"
  }
 ]
