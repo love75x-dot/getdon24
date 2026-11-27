@@ -15,6 +15,7 @@
 - `data/` 로또·연금·판매점 데이터. GitHub Actions 가 자동 갱신하므로 직접 고치지 않는다.
 - `src/map-kr.json` 로또 1등 지도(/lotto/map/) 경계. `scripts/make-map.py` 로 한 번 만든 파일(통계청 2013 경계 가공). 주소→지역 규칙은 build.mjs `unitOf` 와 make-map.py 가 같아야 하고, 빌드 때 "지도에 없는 지역"이 찍히면 두 곳에 규칙을 더한다.
 - 손으로 관리하는 자료(봇이 안 건드림): `data/benefits.json` 받을 돈 항목(/find/, /benefit/{id}/ 상세. steps·docs·mistakes 는 공식 출처로 확인한 것만), `data/musts.json` 이번 달 꼭 챙길 것(/month/·홈. start·end 가 MM-DD 면 해마다, YYYY-MM-DD 면 그해만), `data/deadlines.json` 신고 마감. 받을 돈 진단(/check/) 규칙은 app.js `dqMatch`. benefits·musts 의 `asof`(기준일)가 1년 넘으면 화면에 "1년 넘은 기준"이 자동 표시되니, 공식 출처를 다시 확인하고 `asof`·`src`·`srcUrl` 을 고친다.
+- 정보 글 형식은 `docs/post-format.md` 를 따른다(제목 "키워드 | 숫자 후킹", CTA·3섹션·표·FAQ·버튼).
 - 정보 글은 맨 끝에 `<div class="refs">` "참고한 공식 자료" 상자를 둔다(바로가기 글 제외). 새 글도 같은 형식으로 공식 출처를 넣는다.
 - `config.json` 사이트 주소, 문의 메일, 애드센스·GA·검색 소유확인 값.
 
