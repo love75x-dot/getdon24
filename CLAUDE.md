@@ -18,6 +18,7 @@
 - 정보 글 형식은 `docs/post-format.md` 를 따른다(제목 "키워드 | 숫자 후킹", CTA·3섹션·표·FAQ·버튼).
 - 정보 글은 맨 끝에 `<div class="refs">` "참고한 공식 자료" 상자를 둔다(바로가기 글 제외). 새 글도 같은 형식으로 공식 출처를 넣는다.
 - `scripts/indexnow.mjs` 새로 공개된 글·회차 주소를 IndexNow(네이버·Bing)로 알림. update.yml 이 데이터를 저장한 뒤 자동 실행. 열쇠는 config.json `indexNowKey`, 확인 파일 `static/{열쇠}.txt`(공개 값).
+- `tools/cf-ticker/worker.js` Cloudflare Worker "알람 시계". GitHub 예약 실행이 몇 시간씩 밀려서, Worker 예약 실행(매일 07:05, 토 21~22시 20분마다, 일 09:17, 목 19:15·19:45 KST)이 update.yml 을 workflow_dispatch 로 깨운다. Worker 비밀 값 GH_TOKEN 은 이 저장소 Actions 읽기·쓰기만 있는 GitHub 세분화 토큰(만료되면 새로 만들어 넣는다).
 - `config.json` 사이트 주소, 문의 메일, 애드센스·GA·검색 소유확인 값.
 
 ## 새 계산기 추가
